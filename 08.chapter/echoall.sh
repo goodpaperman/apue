@@ -1,0 +1,2 @@
+#! ./echoall script-arg
+

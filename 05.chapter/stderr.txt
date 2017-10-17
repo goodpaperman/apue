@@ -1,0 +1,2 @@
+this is stderr
+a = 123!

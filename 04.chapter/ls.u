@@ -1,0 +1,39 @@
+total 584K
+lrwxrwxrwx. 1 yunhai yunhai    3 2017-01-19 04:20 entry -> tmp
+lrwxrwxrwx. 1 yunhai yunhai    6 2017-01-19 04:20 proxy -> target
+lrwxrwxrwx. 1 yunhai yunhai   12 2017-01-19 04:20 fake_proxy -> nonexistence
+lrwxrwxrwx. 1 yunhai yunhai   12 2017-01-19 04:20 fake_entry -> nonexistence
+-rwxrwxr-x. 1 yunhai yunhai  20K 2017-01-19 04:20 ftw
+drwxrwxr-x. 2 yunhai yunhai 4.0K 2017-01-19 04:20 tmp
+-rw-rw-r--. 1 yunhai yunhai  590 2017-01-19 04:25 umask_fd.c
+-rwxrwxrwx. 1 yunhai yunhai 117K 2017-01-19 04:25 target
+-rw-rw-r--. 1 yunhai yunhai 4.4K 2017-01-19 04:25 stat_fd.o
+-rwxrwxr-x. 1 yunhai yunhai  20K 2017-01-19 04:25 stat_fd
+-rw-rw-r--. 1 yunhai yunhai  60K 2017-01-19 04:25 ll.strace
+-rw-rw-r--. 1 yunhai yunhai 2.8K 2017-01-19 04:25 hold.o
+-rw-rw-r--. 1 yunhai yunhai  271 2017-01-19 04:25 hold.c
+-rw-rw-r--. 1 yunhai yunhai  743 2017-01-19 04:25 ftw.c
+-rwxrw-r--. 1 yunhai yunhai   81 2017-01-19 04:25 foo.sh
+-rw-r--r--. 1 yunhai yunhai 4.1K 2017-01-19 04:25 follow_links.c~
+-rw-r--r--. 1 yunhai yunhai 4.3K 2017-01-19 04:25 follow_links.c
+-rw-rw-r--. 1 yunhai yunhai 4.0K 2017-01-19 04:25 chmod_fd.o
+-rw-r--r--. 1 yunhai yunhai  366 2017-01-19 04:25 chmod_fd.c
+-rwxrwxr-x. 1 yunhai yunhai  20K 2017-01-19 04:25 chmod_fd
+-rw-rw-r--. 1 yunhai yunhai 3.6K 2017-01-19 04:25 acc.o
+-rwxrwxr-x. 1 yunhai yunhai  19K 2017-01-19 04:25 acc
+-rw-r--r--. 1 yunhai yunhai 1.1K 2017-01-19 04:25 Makefile
+-rwxr-xr-x. 1 yunhai yunhai 117K 2017-01-19 04:25 ls
+-rw-rw-r--. 1 yunhai yunhai  365 2017-01-19 04:25 ftw.c~
+-rw-r--r--. 1 yunhai yunhai  918 2017-01-19 04:25 Makefile~
+-rw-rw-r--. 1 yunhai yunhai 9.4K 2017-01-19 04:25 follow_links.o
+-rw-rw-r--. 1 yunhai yunhai  905 2017-01-19 04:25 stat_fd.c
+-rwxrwxr-x. 1 yunhai yunhai  18K 2017-01-19 04:25 hold
+-rw-rw-r--. 1 yunhai yunhai 4.6K 2017-01-19 04:25 ftw.o
+-rwxrwxr-x. 1 yunhai yunhai  24K 2017-01-19 04:25 follow_links
+-rw-rw-r--. 1 yunhai yunhai 8.4K 2017-01-19 04:25 ls.strace
+-rw-rw-r--. 1 yunhai yunhai  17K 2017-01-19 04:25 apue.o
+-rw-rw-r--. 1 yunhai yunhai  942 2017-01-19 04:25 acc.c
+-rw-rw-r--. 1 yunhai yunhai 3.2K 2017-01-19 04:25 umask_fd.o
+-rwxrwxr-x. 1 yunhai yunhai  19K 2017-01-19 04:25 umask_fd
+-rw-rw-r--. 1 yunhai yunhai 2.2K 2017-01-19 04:46 ls.c
+-rw-rw-r--. 1 yunhai yunhai    0 2017-01-19 04:47 ls.u

@@ -1,0 +1,563 @@
+    1  ll
+    2  g apue
+    3  cd code
+    4  ll
+    5  make
+    6  cd apue
+    7  make
+    8  make clean
+    9  make
+   10  ll
+   11  cd ..
+   12  mkdir tools
+   13  cd tools
+   14  mv ~/Desktop/bashrc .
+   15  mv ~/Desktop/vimrc .
+   16  mv ~/Desktop/bashmarks-master.tar.gz .
+   17  ll
+   18  tar xzvf bashmarks-master.tar.gz .
+   19  ll
+   20  tar xzvf bashmarks-master.tar.gz 
+   21  ll
+   22  cd bashmarks-master
+   23  ll
+   24  make 
+   25  make install
+   26  ll
+   27  cd 
+   28  cd -
+   29  cd ..
+   30  ls
+   31  diff vimrc /etc/vimrc
+   32  diff bashrc ~/.bashrc
+   33  exit
+   34  ll
+   35  cd ..
+   36  vi .bashrc
+   37  . .bashrc
+   38  l
+   39  cd code/apue
+   40  s apue
+   41  cd ../akae
+   42  s akae
+   43  cd ~
+   44  g akae
+   45  g apue
+   46  g ..
+   47  ll
+   48  cd ..
+   49  l
+   50  vi /etc/vimrc
+   51  sudo vi /etc/vimrc
+   52  ll
+   53  cd tools
+   54  ll
+   55  vi ~/.bashrc
+   56  . ~/.bash
+   57  . ~/.bashrc
+   58  cd ..
+   59  vi /etc/vimrc
+   60  sudo vi /etc/vimrc
+   61  ll
+   62  cd code
+   63  cd apue
+   64  cd 02.chapter/
+   65  ll
+   66  make clean
+   67  vi seekhole.c
+   68  ll
+   69  vi read_inter.c 
+   70  cp read_inter.c write_seek.c
+   71  vi seekable.c
+   72  vi seekhole.c
+   73  make seekhole
+   74  ./seekhole
+   75  ll
+   76  vi file.hole
+   77  vi file.nohole 
+   78  vi seekhole.c
+   79  make clean
+   80  l
+   81  ls
+   82  ll
+   83  vi write_seek.c 
+   84  vi Makefile 
+   85  make
+   86  ll
+   87  ./write_seek file.append
+   88  ll
+   89  vi write_seek.c
+   90  write_seek 
+   91  ./write_seek
+   92  ./write_seek file.app
+   93  strace ./write_seek file.app
+   94  vi write_seek.c
+   95  vi read_inter.c
+   96  make
+   97  ./write_seek file.app
+   98  vi write_seek.c
+   99  make
+  100  ./write_seek file.app
+  101  ll
+  102  ls -lhrt
+  103  rm file.app
+  104  ls -lhrt
+  105  vi write_seek.c
+  106  make 
+  107  ./write_seek  file.app
+  108  ll
+  109  ls -lhrt
+  110  vi file.app
+  111  sudo vi file.app
+  112  rm file.app
+  113  vi write_seek.c
+  114  make
+  115  ./write_seek file.app
+  116  ls -lhrt
+  117  vi file.app
+  118  vi write_seek.c
+  119  rm file.app
+  120  ll
+  121  make
+  122  vi write_seek.c
+  123  make
+  124  ./write_seek file.app
+  125  ls -lhrt
+  126  vi file.app
+  127  vi write_seek.c
+  128  make
+  129  ./write_seek file.app
+  130  vi file.app
+  131  vi write_seek.c
+  132  make
+  133  rm file.app
+  134  ./write_seek file.app
+  135  vi file.app
+  136  ls -lhrt
+  137  vi write_seek.c
+  138  make
+  139  vi write_seek.c
+  140  make
+  141  rm file.app
+  142  ./write_seek file.app
+  143  vi file.app
+  144  ls -lhrt
+  145  ls -l
+  146  vi creat.c
+  147  ls -lhrts
+  148  ls -lhts
+  149  ls -lrts
+  150  vi write_seek.c
+  151  make
+  152  vi write_seek.c
+  153  make
+  154  vi write_seek.c
+  155  make
+  156  ls 
+  157  rm file.app
+  158  ./write_seek file.app
+  159  vi file.app
+  160  vi write_seek.c
+  161  make
+  162  ./write_seek file.app
+  163  cd 
+  164  cd -
+  165  cd --
+  166  g apue
+  167  ls
+  168  grep RLIMIT_FSIZE . -R -color
+  169  grep RLIMIT_FSIZE . -R
+  170  vi 01.chapter/limit.c
+  171  cd 01.chapter/
+  172  make
+  173  ./limit 
+  174  limit
+  175  vi ~/.bashrc
+  176  vi ~/.local/bin/bashmarks.sh 
+  177  . ~/.bashrc
+  178  g akae
+  179  exit
+  180  g akae
+  181  g apue
+  182  cd 02.chapter/
+  183  ls
+  184  cp write_seek.c write_limit.c
+  185  vi write_limit.c 
+  186  vi Makefile 
+  187  make
+  188  vi write_limit.c 
+  189  make
+  190  ./write_limit file.app
+  191  ll
+  192  ls -lhrt
+  193  ulimit -f 512K -S
+  194  ulimit -f 512000 -S
+  195  ulimit -a
+  196  ls -l
+  197  rm file.app
+  198  ./write_limit file.app
+  199  ll
+  200  ulimit -f 512000 -H
+  201  ulimit -a
+  202  ulimit -f
+  203  ulimit -fS
+  204  ulimit -f -S
+  205  ulimit -f -H
+  206  rm file.app
+  207  ./write_limit file.app
+  208  ll
+  209  ulimit -f 1 -S
+  210  ulimit -a
+  211  ulimit -f -S
+  212  ulimit -f -H
+  213  rm file.app
+  214  ./write_limit file.app
+  215  ll
+  216  rm file.app
+  217  strace ./write_limit file.app
+  218  ll
+  219  vi write_seek.c
+  220  ulimit -f unlimited -H
+  221  sudo ulimit -f unlimited -H
+  222  su
+  223  ulimit -f 1024
+  224  ulimit -f 
+  225  ulimit -f -H
+  226  ulimit -f unlimited
+  227  su
+  228  ulimit -S -a
+  229  ulimit -H -a
+  230  vi write_limit.c
+  231  make
+  232  vi write_limit.c
+  233  make
+  234  rm file.app
+  235  ulimit -f 1 -S
+  236  ulimit -f
+  237  ./write_limit file.app
+  238  rm file.app
+  239  ls
+  240  vi write_limit.c
+  241  ll
+  242  ulimit -S -f 1024
+  243  vi write_limit.c
+  244  make
+  245  ls
+  246  rm file.app
+  247  ulimit -S -f 1
+  248  ./write_limit file.app
+  249  rm file.app
+  250  strace ./write_limit file.app
+  251  vi write_limit
+  252  ulimit -S -f 1024
+  253  vi write_limit.c
+  254  make
+  255  ulimit -S -f 1
+  256  rm file.app 
+  257  ./write_limit file.app
+  258  ulimit -S -f 1024
+  259  ulimit -S -f 1
+  260  rm file.app
+  261  ./write_limit file.app
+  262  rm file.app
+  263  strace ./write_limit file.app
+  264  ll
+  265  rm file.app
+  266  ./write_limit file.app
+  267  strace ./write_limit file.app
+  268  ll
+  269  vi copy.c
+  270  ulimit -f unlimited
+  271  su
+  272  ulimit -a
+  273  ulimit -f -H
+  274  ulimit -f -H unlimited
+  275  ulimit -H -f unlimited
+  276  ulimit -S -f unlimited
+  277  ulimit -a
+  278  ll
+  279  vi copy.c
+  280  vi Makefile 
+  281  make
+  282  ./copy
+  283  ls
+  284  ls -lhrt
+  285  copy < /dev/random > /dev/null
+  286  ./copy < /dev/random > /dev/null
+  287  ./copy < /dev/random
+  288  ll
+  289  dd if=/dev/random of=file.tst bs=807159 count=128
+  290  ls -lhrt
+  291  cat file.tst
+  292  rm file.tst
+  293  dd if=/dev/zero of=file.tst bs=807159 count=128
+  294  exit
+  295  g apue
+  296  cd 02.chapter/
+  297  ls
+  298  ls -lhrt
+  299  ./stat_fd /dev/random
+  300  ./stat_fd /dev/zero 
+  301  cd ..
+  302  ll .
+  303  ll -d .
+  304  chmod u-x .
+  305  ll -d .
+  306  ls -a
+  307  cd ..
+  308  ll
+  309  cd apue
+  310  su
+  311  ll .
+  312  ll -l
+  313  ls
+  314  cd ..
+  315  ll
+  316  cd code
+  317  cd code/apue
+  318  ll -d code -R
+  319  chmod go+x code
+  320  ll -d code
+  321  cd code
+  322  tree
+  323  pstree
+  324  sudo yum install tree
+  325  ll
+  326  tree
+  327  cd code
+  328  chmod u+x code
+  329  tree
+  330  chmod u-x code
+  331  cd code/apue/02.chapter
+  332  cd code/apue/
+  333  cd code/
+  334  cd code/apue
+  335  ll
+  336  cd code
+  337  cd apue
+  338  chmod u+x apue
+  339  cd apue
+  340  cd 02.chapter/
+  341  bg
+  342  jobs
+  343  cd ..
+  344  ls -R
+  345  ll -R
+  346  ls
+  347  ll
+  348  ls -lhrt
+  349  ll /dev
+  350  cd 02.chapter/
+  351  ./sync_fd 
+  352  ls -lhrt
+  353  head file.log
+  354  rm file.log
+  355  ls -lhrt
+  356  ./sync_fd 
+  357  ls -lhrt
+  358  ll /var/spool/mail/
+  359  ll /var/spool/
+  360  mkdir testdir
+  361  ll
+  362  chmod g+s testdir
+  363  ll
+  364  rm testdir
+  365  rmdir testdir
+  366  su
+  367  ll
+  368  cd testdir
+  369  ll
+  370  ll -d
+  371  touch test
+  372  cd ..
+  373  su
+  374  ll
+  375  cd testdir
+  376  ll
+  377  touch test
+  378  cd ..
+  379  su
+  380  cd testdir
+  381  ll -d
+  382  touch test
+  383  ll
+  384  cd ..
+  385  su
+  386  cd testdir
+  387  ll -d
+  388  ll -a
+  389  touch hello
+  390  ll -d
+  391  ll -a
+  392  mkdir abc
+  393  ll -a
+  394  ll /bin/ping
+  395  ll /bin/
+  396  ll
+  397  cd ..
+  398  chmod g-s sync_fd
+  399  ls -lhrt
+  400  ./stat_fd
+  401  ./stat_fd file.log
+  402  ./copy
+  403  ls -lhrt
+  404  vi copy.c
+  405  ./copy file.log out.log
+  406  ll
+  407  ls -lhrt
+  408  vi test_file_copy.sh 
+  409  vi copy.c
+  410  cat test_file_copy.sh 
+  411  ./copy 4096 < file.log > file.out
+  412  ll
+  413  ls -lhrt
+  414  cat file.out
+  415  ls -lhrt
+  416  su
+  417  ls -lhrt
+  418  ./copy 4096 < file.log > file.out
+  419  ll
+  420  ls -lhrt
+  421  rm file.out
+  422  su 
+  423  ls -lhrt
+  424  ./copy 4096 < file.log > file.out
+  425  ./sync_fd 
+  426  ls -lhrt
+  427  su
+  428  ./sync_fd 
+  429  ./copy 4096 < file.log > file.out
+  430  rm file.log
+  431  ./copy 4096 < file.log > file.out
+  432  ./sync_fd 
+  433  ll
+  434  ls -lhrt
+  435  vi file.log
+  436  rm file.out
+  437  ./copy 4096 < file.log > file.out
+  438  ls -lhrt
+  439  rm file.out file.log
+  440  ls -lhrt
+  441  ./sync_fd 
+  442  who
+  443  whoami
+  444  ls -lhrt
+  445  ./copy 4096 < file.log > file.out
+  446  ls -lhrt
+  447  ./copy 4096 < file.log > file.out
+  448  ls -lhrt
+  449  vi acc.c
+  450  vi Makefile 
+  451  make
+  452  ./acc
+  453  ./acc /etc/shadow
+  454  ./acc acc
+  455  ll acc
+  456  ll /etc/shadow
+  457  su
+  458  ls -lhrt
+  459  ./acc /etc/shadow
+  460  ls /usr/bin/ -lhrt
+  461  find / -perm -4000
+  462  find / -perm -4000 2>/dev/null
+  463  find / -perm -4000 > setuid.log 2>/dev/null
+  464  cat setuid.log 
+  465  find / -perm -0007 -type d 2>/dev/null
+  466  find / -perm -0007 -type d > setnsticky.log 2>/dev/null
+  467  cat setnsticky.log 
+  468  mv setnsticky.log setnosticky.log
+  469  ls -lhrt
+  470  vi setuid.log
+  471  vi setnosticky.log 
+  472  ll /var/tmp
+  473  ll -d /var/tmp
+  474  find / -perm -1007 -type d 2>/dev/null
+  475  find / -perm -0007 ! -perm -1000 -type d 2>/dev/null
+  476  ll testdir -d
+  477  vi setnosticky.log 
+  478  grep F_OK /usr/include -nR --color
+  479  grep R_OK /usr/include -nR --color
+  480  grep W_OK /usr/include -nR --color
+  481  grep X_OK /usr/include -nR --color
+  482  ll
+  483  ls -lhrt
+  484  ./acc /usr/bin/Xorg
+  485  whoami
+  486  man umask
+  487  vi umask_fd.c
+  488  vi Makefile 
+  489  make
+  490  ./umask_fd 
+  491  ls -lhrt
+  492  umask
+  493  vi umask_fd.c
+  494  make
+  495  ./umask_fd 
+  496  vi umask_fd.c
+  497  make
+  498  ./umask_fd 
+  499  ls
+  500  ll
+  501  touch abc
+  502  ls -lhrt
+  503  umask 022
+  504  touch cba
+  505  ls -lhrt
+  506  umask
+  507  rm foo bar abc cba
+  508  ls -lhrt
+  509  vi acc.c
+  510  make
+  511  ./acc
+  512  ./acc /dev/random
+  513  ./acc ./file.log
+  514  ./acc /etc/passwd
+  515  chown yunhai:yunhai acc
+  516  ls -lhrt
+  517  ./acc acc.c
+  518  vi acc.c
+  519  make
+  520  vi acc.c
+  521  make
+  522  vi acc.c
+  523  make
+  524  ll
+  525  ./acc sync_fd F
+  526  ./acc sync_fd R
+  527  ./acc sync_fd W
+  528  ./acc sync_fd X
+  529  ./acc /etc/passwd W
+  530  find / -perm 0100
+  531  find / -perm 0100 2>/dev/null
+  532  find / -perm 0200 2>/dev/null
+  533  ll /proc/8188/clear_refs 
+  534  find / -perm 0400 2>/dev/null
+  535  ll /proc/8188/io 
+  536  find / -perm 0400 2>/dev/null | more
+  537  find / -perm 0100 2>/dev/null | more
+  538  find / -perm -0100 2>/dev/null | more
+  539  find / -perm +0100 2>/dev/null | more
+  540  find / -perm 0111 2>/dev/null | more
+  541  ls
+  542  jobs
+  543  vi umask_fd.c
+  544  vi acc.c
+  545  make
+  546  ls 
+  547  vi *.log
+  548  vi setuid.log
+  549  vi setnosticky.log 
+  550  ll /dev
+  551  ll /tmp
+  552  ll /meida
+  553  .. /media
+  554  ll /media
+  555  ll /var
+  556  ls /
+  557  ll /mnt
+  558  ll /opt
+  559  ll /boot
+  560  ll /sbin
+  561  ll
+  562  history
+  563  history > history.txt
