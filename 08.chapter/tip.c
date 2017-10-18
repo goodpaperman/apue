@@ -37,6 +37,7 @@ int main (int argc, char *argv[])
     err_sys ("flock"); 
 
   printf ("lock file\n"); 
+  sleep (10); 
   ret = setuid (uid); 
   if (ret == -1)
     err_sys ("setuid"); 
@@ -45,7 +46,7 @@ int main (int argc, char *argv[])
   print_ids (); 
 
   printf ("do something...\n"); 
-  sleep (1); 
+  sleep (10); 
 
   ret = setuid (euid); 
   if (ret == -1)
@@ -59,6 +60,7 @@ int main (int argc, char *argv[])
     err_sys ("funlock"); 
 
   close (fd); 
+  sleep (10); 
   return 0; 
 }
 
