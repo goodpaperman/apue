@@ -1,4 +1,10 @@
-all: fork fork_stdout fork_nproc vfork wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall tip pit
+all: fork fork_stdout fork_nproc vfork wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall tip pit tpi
+
+tpi: tpi.o apue.o
+	gcc -Wall -g $^ -o $@
+
+tpi.o: tpi.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 pit: pit.o apue.o
 	gcc -Wall -g $^ -o $@
