@@ -13,6 +13,21 @@ void print_ids ()
   printf ("euid = %d\n", euid); 
 }
 
+void create_uucp (char const* lock)
+{
+  int pid = fork (); 
+  if (pid < 0)
+    err_sys ("fork"); 
+  else if (pid == 0)
+  {
+    // children 
+    execlp ("./uucp", "./uucp", lock, NULL); 
+    err_sys ("execlp"); 
+  }
+  else 
+    printf ("create uucp %u\n", pid); 
+}
+
 int main (int argc, char *argv[])
 {
   if (argc < 2)
@@ -46,6 +61,7 @@ int main (int argc, char *argv[])
   print_ids (); 
 
   printf ("do something...\n"); 
+  create_uucp (lock); 
   sleep (10); 
 
   ret = setuid (euid); 
