@@ -26,6 +26,7 @@ int main (int argc, char *argv[])
   if (waitpid (pid, NULL, 0) < 0)
     err_sys ("wait error"); 
 
+#if 0
   if ((pid = fork ()) < 0)
     err_sys ("fork error"); 
   else if (pid == 0)
@@ -33,6 +34,7 @@ int main (int argc, char *argv[])
     if (execlp (exename, exename, "only 1 arg", (char *)0) < 0)
       err_sys ("execlp error"); 
   }
+#endif 
 
   exit (0); 
 }
