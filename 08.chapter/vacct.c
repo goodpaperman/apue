@@ -7,16 +7,25 @@ static unsigned long compt2ulong (comp_t comptime)
 {
     unsigned long val; 
     int           exp; 	
+#if 1
     val = comptime & 017777; 
     exp = (comptime >> 13) & 7; 
     while (exp-- > 0)
 	val *= 8; 
+#else 
+    val = comptime & 0x1fff; 
+    exp = ((comptime >> 13) & 0x7) * 3; 
+    val = val << exp; 
+#endif 
 
     return (val); 
 } 
 
 int main (void) 
 {
+    int tck = sysconf (_SC_CLK_TCK); 
+    printf ("clock tick: %d\n", tck); 
+
     struct acct acdata; 
     FILE        *fp; 
     if ((fp = fopen (ACCTFILE, "r")) == NULL)
