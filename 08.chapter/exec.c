@@ -8,6 +8,9 @@ int main (int argc, char *argv[])
 {
   pid_t pid; 
   char *exename = "echoall"; 
+  //char *exename = "echoall.sh"; 
+  //char *exename = "echoit.sh"; 
+  //char *exename = "echoall.awk"; 
   char pwd[PATH_MAX] = { 0 }; 
   getcwd(pwd, PATH_MAX); 
   if (argc > 1)
