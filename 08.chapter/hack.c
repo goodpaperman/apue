@@ -4,6 +4,7 @@
 int strcmp (char const* s1, char const* s2)
 {
   printf ("hack function invoked, s1: %s, s2: %s\n", s1, s2); 
+  sleep (1); 
   //return 0; 
   //return strcmp (s1, s2); 
   char const* p1=s1, *p2=s2; 
