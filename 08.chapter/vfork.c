@@ -15,12 +15,17 @@ int main (void)
     err_sys ("vfork error"); 
   else if (pid == 0)
   {
+    //sleep (1); 
+    // vfork ensure parent run after child call exit or execute 
+    // !
     glob ++; 
     var ++; 
 #if 0
     _exit (0); 
-#elif 0
+#else
     // flushing stdio !
+    // fflush (NULL); 
+    // fclose(stdout); 
     exit (0); 
 #endif
   }
@@ -28,6 +33,6 @@ int main (void)
   //else 
   //  sleep (2); 
 
-  printf ("pid = %d, glob = %d, var = %d\n", getpid (), glob, var); 
-  exit (0); 
+  int ret = printf ("pid = %d, glob = %d, var = %d\n", getpid (), glob, var); 
+  exit (ret); 
 }
