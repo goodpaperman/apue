@@ -1,4 +1,4 @@
-all: fork fork_stdout fork_nproc vfork wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
+all: fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
 
 tsys: tsys.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -189,12 +189,23 @@ waitpid: waitpid.o apue.o
 waitpid.o: wait.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99 -DUSE_WAITPID -D__USE_BSD
 
-vfork: vfork.o apue.o
 wait: wait.o apue.o
 	gcc -Wall -g $^ -o $@
 
 wait.o: wait.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99 -D__USE_BSD
+
+vforkest: vforkest.o apue.o
+	gcc -Wall -g $^ -o $@
+
+vforkest.o: vforkest.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
+vforkex: vforkex.o apue.o
+	gcc -Wall -g $^ -o $@
+
+vforkex.o: vforkex.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 vfork: vfork.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -225,7 +236,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp fork fork_stdout fork_nproc vfork wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
+	-rm -f *.o core.* *.log *~ *.swp fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
 	@echo "end clean"
 
 .PHONY: clean
