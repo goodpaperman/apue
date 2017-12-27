@@ -1,4 +1,4 @@
-all: fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
+all: fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
 
 tsys: tsys.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -97,6 +97,12 @@ echoall: echoall.o apue.o
 	gcc -Wall -g $^ -o $@
 
 echoall.o: echoall.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
+execp: execp.o apue.o
+	gcc -Wall -g $^ -o $@
+
+execp.o: execp.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99
 
 exec: exec.o apue.o
@@ -236,7 +242,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
+	-rm -f *.o core.* *.log *~ *.swp fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys
 	@echo "end clean"
 
 .PHONY: clean

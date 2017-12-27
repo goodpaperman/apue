@@ -8,7 +8,10 @@ int main (void)
   if ((pid = fork ()) < 0)
     err_sys ("fork error"); 
   else if (pid == 0)
+  {
+    //sleep (10); 
     charatatime ("output from child\n"); 
+  }
   else 
     charatatime ("output from parent\n"); 
 
