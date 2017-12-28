@@ -4,7 +4,7 @@ zombie: zombie.o apue.o
 	gcc -Wall -g $^ -o $@
 
 zombie.o: zombie.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_BSD_SOURCE
 
 tsys: tsys.o apue.o
 	gcc -Wall -g $^ -o $@

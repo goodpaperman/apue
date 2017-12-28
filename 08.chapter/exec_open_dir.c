@@ -1,6 +1,7 @@
 #include "../apue.h"
 #include <sys/types.h>
 #include <sys/stat.h> 
+#include <unistd.h> 
 #include <fcntl.h> 
 #include <dirent.h> 
 
@@ -24,12 +25,23 @@ int main (int argc, char *argv[])
   else 
   {
     str = strdup ("hello world"); 
+    int fd = open(".", O_RDONLY); 
+    if (fd == -1)
+        err_sys ("open"); 
+
+    int flag = fcntl (fd, F_GETFD); 
+    printf ("dir fd(%d) flag: 0x%x, CLOSE_ON_EXEC: %d\n", fd, flag, flag & FD_CLOEXEC); 
+
+    close (fd); 
     dir = opendir ("."); 
     if (dir == NULL)
       err_sys ("open ."); 
     else 
       printf ("open . return %p\n", dir); 
       
+    fd = dirfd (dir);
+    flag = fcntl (fd, F_GETFD); 
+    printf ("dir fd(%d) flag: 0x%x, CLOSE_ON_EXEC: %d\n", fd, flag, flag & FD_CLOEXEC); 
     pid_t pid = 0;
     if ((pid = fork ()) < 0)
       err_sys ("fork error"); 
