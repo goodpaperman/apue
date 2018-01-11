@@ -1,7 +1,7 @@
 #include "../apue.h" 
 #include <sys/wait.h> 
 
-#define YUNH 500
+//#define YUNH 1 //1401
 
 void print ()
 {
@@ -27,11 +27,13 @@ int main ()
         err_sys ("setpgid"); 
 
     print (); 
-    //ret = setpgid (0, YUNH); 
-    //if (ret == -1)
-    //    err_sys ("setpgid"); 
+#ifdef YUNH
+    ret = setpgid (0, YUNH); 
+    if (ret == -1)
+        err_sys ("setpgid"); 
 
-    //print (); 
+    print (); 
+#endif 
     ret = setpgid (pid, 0); 
     if (ret == -1)
         err_sys ("setpgid"); 
@@ -42,11 +44,13 @@ int main ()
         err_sys ("setpgid"); 
 
     print (); 
-    //ret = setpgid (pid, grp+100); 
-    //if (ret == -1)
-    //    err_sys ("setpgid"); 
+#ifdef YUNH
+    ret = setpgid (pid, YUNH); 
+    if (ret == -1)
+        err_sys ("setpgid"); 
 
-    //print (); 
+    print (); 
+#endif 
     ret = setpgid (0, 0); 
     if (ret == -1)
         err_sys ("setpgid"); 
