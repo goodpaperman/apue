@@ -1,4 +1,10 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session
+
+session: session.o apue.o
+	gcc -Wall -g $^ -o $@
+
+session.o: session.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 grpsla: grpsla.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -53,7 +59,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla
+	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session
 	@echo "end clean"
 
 .PHONY: clean
