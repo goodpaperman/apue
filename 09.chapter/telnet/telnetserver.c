@@ -199,8 +199,8 @@ void read_write_pty(int pty, int sockfd)
             exit (ret); 
         }  
 
-        fflush(stdout);//这步很重要，std中经常有数据滞留在存储区中需要此函数刷新   
-        printf("%s", buf);//打印出结果   
+        //fflush(stdout);//这步很重要，std中经常有数据滞留在存储区中需要此函数刷新   
+        //printf("%s", buf);//打印出结果   
         send(sockfd, buf, strlen(buf), 0);  
         memset(buf, 0, MAX_BUFSIZE);  
     }  
