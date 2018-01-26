@@ -21,9 +21,9 @@
 #include "pty_fun.h"   
   
 #define DEFAULTIP         "127.0.0.1"   
-#define DEFAULTPORT       "20013"   
+#define DEFAULTPORT       "23" //"20013"   
 #define DEFAULTBACK       "10"   
-#define DEFAULTDIR        "/root"   
+#define DEFAULTDIR        "~" //"/root"
 #define DEFAULTLOG        "/tmp/telnet-server.log"   
 #define PTY_NAME_SIZE     20   
 #define MAX_BUFSIZE       512   
@@ -46,7 +46,6 @@ void wrtinfomsg(char *msg);
   
 #define MAXBUF        1024   
   
-char buffer[MAXBUF + 1];  
 char *host = 0;  
 char *port = 0;  
 char *back = 0;  
@@ -74,7 +73,7 @@ void AllocateMemory(char **s, int l, char *d)
  */  
 void getoption(int argc, char **argv)  
 {  
-    int c, len;  
+    int c = 0, len = 0;  
     char *p = 0;  
   
     opterr = 0;  
@@ -107,60 +106,55 @@ void getoption(int argc, char **argv)
         else  
             len = 0;  
   
-        if ((!c && !(strcasecmp(long_options[option_index].name, "host"))) || c  
-                == 'H')  
+        if ((!c && !(strcasecmp(long_options[option_index].name, "host"))) || c == 'H')  
             p = host = malloc(len + 1);  
-        else if ((!c && !(strcasecmp(long_options[option_index].name, "port")))  
-                || c == 'P')  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "port"))) || c == 'P')  
             p = port = malloc(len + 1);  
-        else if ((!c && !(strcasecmp(long_options[option_index].name, "back")))  
-                || c == 'B')  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "back")))  || c == 'B')  
             p = back = malloc(len + 1);  
-        else if ((!c && !(strcasecmp(long_options[option_index].name, "dir")))  
-                || c == 'D')  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "dir"))) || c == 'D')  
             p = dirroot = malloc(len + 1);  
-        else if ((!c && !(strcasecmp(long_options[option_index].name, "log")))  
-                || c == 'L')  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "log"))) || c == 'L')  
             p = logdir = malloc(len + 1);  
-        else if ((!c  
-                && !(strcasecmp(long_options[option_index].name, "daemon"))))  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "daemon"))))  
         {  
             daemon_y_n = 1;  
             continue;  
         }  
         else  
             break;  
+
         bzero(p, len + 1);  
         memcpy(p, optarg, len);  
     }  
 }  
   
-void *thread_recv_add_write_pyt(void *arg)  
-{  
-    int ret, sockfd, pty;  
-    char buffer[MAX_BUFSIZE];  
-    thread_arg *arg1 = (thread_arg*) arg;  
-  
-    sockfd = arg1->sockfd;  
-    pty = arg1->pty;  
-  
-    while (1)  
-    {  
-        memset(buffer, 0, MAX_BUFSIZE);  
-        ret = recv(sockfd, buffer, MAX_BUFSIZE, 0);  
-        if (ret < 0)  
-        {  
-            continue;  
-        }  
-        printf("%s", buffer);  
-        write(pty, buffer, strlen(buffer));  
-    }  
-}  
+//void *thread_recv_add_write_pyt(void *arg)  
+//{  
+//    int ret, sockfd, pty;  
+//    char buf[MAX_BUFSIZE];  
+//    thread_arg *arg1 = (thread_arg*) arg;  
+//  
+//    sockfd = arg1->sockfd;  
+//    pty = arg1->pty;  
+//  
+//    while (1)  
+//    {  
+//        memset(buf, 0, MAX_BUFSIZE);  
+//        ret = recv(sockfd, buf, MAX_BUFSIZE, 0);  
+//        if (ret < 0)  
+//        {  
+//            continue;  
+//        }  
+//        printf("%s", buf);  
+//        write(pty, buf, strlen(buf));  
+//    }  
+//}  
   
 void read_write_pty(int pty, int sockfd)  
 {  
-    char buffer[MAX_BUFSIZE];  
-    int ret;  
+    char buf[MAX_BUFSIZE] = { 0 };  
+    int ret = 0;  
     //  pthread_t thread_t;   
     //  pthread_attr_t attr;   
     //  thread_arg arg;   
@@ -173,7 +167,7 @@ void read_write_pty(int pty, int sockfd)
     //      perror("thread create recieve message and write to pty err:\n");   
     //  }   
   
-    pid_t pid;  
+    pid_t pid = 0;  
     if ((pid = fork()) < 0)  
     {  
         perror("");  
@@ -183,30 +177,32 @@ void read_write_pty(int pty, int sockfd)
     {  
         while (1)  
         {  
-            memset(buffer, 0, MAX_BUFSIZE);  
-            ret = recv(sockfd, buffer, MAX_BUFSIZE - 1, 0);  
+            memset(buf, 0, MAX_BUFSIZE);  
+            ret = recv(sockfd, buf, MAX_BUFSIZE - 1, 0);  
             if (ret < 0)  
             {  
-                continue;  
+                //continue;  
+                exit (ret); 
             }  
-            //printf("%s", buffer);   
-            write(pty, buffer, strlen(buffer));  
+            //printf("%s", buf);   
+            write(pty, buf, strlen(buf));  
         }  
     }  
   
-    memset(buffer, 0, MAX_BUFSIZE);  
-  
-    while ((ret = read(pty, buffer, MAX_BUFSIZE - 1)))
+    memset(buf, 0, MAX_BUFSIZE);  
+    while ((ret = read(pty, buf, MAX_BUFSIZE - 1)))
     {  
-        buffer[ret - 1] = 0; //read是读不到字符串结束符的，需要自己添加，否则printf会出错   
+        buf[ret - 1] = 0; //read是读不到字符串结束符的，需要自己添加，否则printf会出错   
         if (ret <= 0)  
         {  
-            break;  
+            //break;  
+            exit (ret); 
         }  
+
         fflush(stdout);//这步很重要，std中经常有数据滞留在存储区中需要此函数刷新   
-        printf("%s", buffer);//打印出结果   
-        send(sockfd, buffer, strlen(buffer), 0);  
-        memset(buffer, 0, MAX_BUFSIZE);  
+        printf("%s", buf);//打印出结果   
+        send(sockfd, buf, strlen(buf), 0);  
+        memset(buf, 0, MAX_BUFSIZE);  
     }  
     return;  
 }  
@@ -214,8 +210,8 @@ void read_write_pty(int pty, int sockfd)
 int main(int argc, char **argv)  
 {  
     struct sockaddr_in addr;  
-    int sock_fd; 
-    socklen_t addrlen;  
+    int sock_fd = 0; 
+    socklen_t addrlen = 0;  
   
     /* 获得程序工作的参数，如 IP 、端口、监听数、网页根目录、目录存放位置等 */  
     getoption(argc, argv);  
@@ -275,17 +271,17 @@ int main(int argc, char **argv)
         }  
     }  
   
+    addrlen = 1; 
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &addrlen, sizeof(addrlen));  
     /* 设置端口快速重用 */  
-    addrlen = 1;  
-  
     addr.sin_family = AF_INET;  
     addr.sin_port = htons(atoi(port));  
+    // should use 'host' instead of INADDR_ANY
     addr.sin_addr.s_addr = htonl(INADDR_ANY);  
-    addrlen = sizeof(struct sockaddr_in);  
   
-    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &addrlen, sizeof(addrlen));  
     /* 绑定地址、端口等信息 */  
-    
+    addrlen = sizeof(struct sockaddr_in);  
+    if (bind(sock_fd, (struct sockaddr *) &addr, addrlen) < 0)  
     {  
         if (!daemon_y_n)  
         {  
@@ -315,7 +311,7 @@ int main(int argc, char **argv)
   
     while (1)  
     {  
-        int new_fd;  
+        int new_fd = 0;  
         addrlen = sizeof(struct sockaddr_in);  
         /* 接受新连接请求 */  
         new_fd = accept(sock_fd, (struct sockaddr *) &addr, &addrlen);  
@@ -331,6 +327,8 @@ int main(int argc, char **argv)
             }  
             break;  
         }  
+
+        char buffer[MAXBUF + 1];  
         bzero(buffer, MAXBUF + 1);  
         sprintf(buffer, "连接来自于: %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));  
         if (!daemon_y_n)  
@@ -344,16 +342,16 @@ int main(int argc, char **argv)
         /* 产生一个子进程去处理请求，当前进程继续等待新的连接到来 */  
         if (!fork())  
         {  
-            int ret, ptrfdm;  
-            char slave_name[PTY_NAME_SIZE];  
+            int ret = -1, ptrfdm = -1;  
+            char slave_name[PTY_NAME_SIZE] = { 0 };  
             struct termios slave_termiors;  
             struct winsize slave_winsize;  
-            pid_t ppid;  
+            pid_t ppid = -1;  
   
-            ret = -1;  
-            ptrfdm = -1;  
-            memset(slave_name, 0, PTY_NAME_SIZE);  
-            ppid = -1;  
+            //ret = -1;  
+            //ptrfdm = -1;  
+            //memset(slave_name, 0, PTY_NAME_SIZE);  
+            //ppid = -1;  
   
             ret = pty_fork(&ptrfdm, slave_name, PTY_NAME_SIZE, &slave_termiors,  
                     &slave_winsize, &ppid);  

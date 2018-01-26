@@ -3,8 +3,8 @@
   
 int ptym_open(char *pts_name, int pts_namesz)  
 {  
-    char *ptr;  
-    char fdm;  
+    char *ptr = 0;  
+    char fdm = 0;  
     /* 
      *return the name of the master device so that on failure 
      *the caller can print an error message. Null terminate to 
@@ -51,9 +51,9 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
         const struct termios *slave_termiors,  
         const struct winsize *slave_winsize, pid_t *ppid)  
 {  
-    int fdm, fds;  
-    pid_t pid;  
-    char pts_name[20];  
+    int fdm = 0, fds = 0;  
+    pid_t pid = 0;  
+    char pts_name[20] = { 0 };  
   
     if ((fdm = ptym_open(pts_name, sizeof(pts_name))) < 0)  
     {  
@@ -106,9 +106,9 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
         {  
             close(fds);  
         }  
+
         *ppid = 0;  
         return 0;  
-  
     }  
     else  
     {  
