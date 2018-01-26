@@ -1,4 +1,13 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd
+
+telnetd: telnet.o pty_fun.o apue.o
+	gcc -Wall -g $^ -o $@
+
+telnet.o: telnet/telnetserver.c telnet/pty_fun.h
+	gcc -Wall -g -c $< -o $@ #-std=c99
+
+pty_fun.o: telnet/pty_fun.c telnet/pty_fun.h
+	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE #-std=c99
 
 pty: pty.o apue.o
 	gcc -Wall -g $^ -o $@ -lutil
@@ -71,7 +80,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty
+	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd
 	@echo "end clean"
 
 .PHONY: clean
