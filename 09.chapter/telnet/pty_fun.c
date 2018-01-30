@@ -1,5 +1,6 @@
 
 #include "pty_fun.h"
+#include <errno.h> 
   
 int ptym_open(char *pts_name, int pts_namesz)  
 {  
@@ -46,6 +47,17 @@ int ptys_open(char *pts_name)
         return OPEN_PTYS_ERR;  
     return fds;  
 }  
+
+void test_tty_exist ()
+{
+    int fdtty = open ("/dev/tty", O_RDWR); 
+    if (fdtty == -1)
+        printf ("open default tty failed, errno = %d\n", errno); 
+    else 
+        printf ("open default tty OK\n"); 
+
+    close (fdtty); 
+}
   
 int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
@@ -76,15 +88,21 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
         {  
             return SETSID_ERR;  
         }  
+
+        test_tty_exist (); 
         if ((fds = ptys_open(pts_name)) < 0)  
         {  
             close(fdm);  
             return OPEN_PTYS_ERR;  
         }  
+
+        test_tty_exist (); 
 #ifdef TIOCSCTTY   
         if (ioctl(fds, TIOCSCTTY, (char *) 0) < 0)  
             return TIOCSCTTY_ERR;  
 #endif   
+
+        test_tty_exist (); 
 //      if (slave_termiors != NULL)   
 //      {   
 //          if (tcsetattr(fds, TCSANOW, slave_termiors) < 0)   

@@ -135,16 +135,15 @@ void read_write_pty(int ptyfd, int sockfd)
 {  
     char pbuf[MAX_BUFSIZE+1] = { 0 };  
     char sbuf[MAX_BUFSIZE+1] = { 0 };  
-    int ret = 0, max = MAX(ptyfd, sockfd);  
+    int ret = 0, max = MAX(ptyfd, sockfd)+1;  
     printf ("max fd: %d, pty: %d, sock: %d\n", max, ptyfd, sockfd); 
 
     fd_set rfds; 
-    FD_ZERO(&rfds); 
-    FD_SET(ptyfd, &rfds); 
-    FD_SET(sockfd, &rfds); 
-
     while (1)
     {
+      FD_ZERO(&rfds); 
+      FD_SET(ptyfd, &rfds); 
+      FD_SET(sockfd, &rfds); 
       ret = select (max+1, &rfds, NULL, NULL, NULL); 
       printf ("select %d\n", ret); 
       if (ret == -1)
@@ -159,6 +158,28 @@ void read_write_pty(int ptyfd, int sockfd)
       }
       else 
       {
+        if (FD_ISSET(sockfd, &rfds))
+        {
+          // socket readable
+          memset(sbuf, 0, MAX_BUFSIZE);  
+          ret = recv(sockfd, sbuf, MAX_BUFSIZE, 0);  
+          if (ret < 0)  
+          {  
+              perror ("recv sockfd"); 
+              break; 
+          }  
+          else if (ret == 0)
+          {
+            perror ("connect break?\n"); 
+            break; 
+          }
+
+          sbuf[ret] = 0; 
+          printf ("read %d from socket: %s\n", ret, sbuf); 
+          ret = write(ptyfd, sbuf, ret);  
+          printf ("write %d to pty\n", ret); 
+        }
+
         if (FD_ISSET(ptyfd, &rfds))
         {
           // ptyfd readable
@@ -180,28 +201,6 @@ void read_write_pty(int ptyfd, int sockfd)
           ret = send(sockfd, pbuf, ret, 0);  
           printf ("send %d to sock\n", ret); 
         }
-
-        if (FD_ISSET(sockfd, &rfds))
-        {
-          // socket readable
-          memset(sbuf, 0, MAX_BUFSIZE);  
-          ret = recv(sockfd, sbuf, MAX_BUFSIZE, 0);  
-          if (ret < 0)  
-          {  
-              perror ("recv sockfd"); 
-              break; 
-          }  
-          else if (ret == 0)
-          {
-            perror ("connect break?\n"); 
-            break; 
-          }
-
-          sbuf[ret] = 0; 
-          printf ("read %d from socket: %s\n", ret, sbuf); 
-          ret = write(ptyfd, sbuf, ret);  
-          printf ("write %d to pty\n", ret); 
-        }  
       }
     }
   
