@@ -23,7 +23,7 @@
 #include "pty_fun.h"   
   
 #define DEFAULTIP         "127.0.0.1"   
-#define DEFAULTPORT       "23" //"20013"   
+#define DEFAULTPORT       "10028" //"23" //"20013"   
 #define DEFAULTBACK       "10"   
 #define DEFAULTDIR        "~" //"/root"
 #define DEFAULTLOG        "/tmp/telnet-server.log"   
@@ -144,8 +144,8 @@ void read_write_pty(int ptyfd, int sockfd)
       FD_ZERO(&rfds); 
       FD_SET(ptyfd, &rfds); 
       FD_SET(sockfd, &rfds); 
-      ret = select (max+1, &rfds, NULL, NULL, NULL); 
-      printf ("select %d\n", ret); 
+      ret = select (max, &rfds, NULL, NULL, NULL); 
+      //printf ("select %d\n", ret); 
       if (ret == -1)
       {
         perror ("select"); 
@@ -161,6 +161,7 @@ void read_write_pty(int ptyfd, int sockfd)
         if (FD_ISSET(sockfd, &rfds))
         {
           // socket readable
+          printf ("socket has event\n"); 
           memset(sbuf, 0, MAX_BUFSIZE);  
           ret = recv(sockfd, sbuf, MAX_BUFSIZE, 0);  
           if (ret < 0)  
@@ -175,7 +176,7 @@ void read_write_pty(int ptyfd, int sockfd)
           }
 
           sbuf[ret] = 0; 
-          printf ("read %d from socket: %s\n", ret, sbuf); 
+          printf ("read %d from socket\n", ret); 
           ret = write(ptyfd, sbuf, ret);  
           printf ("write %d to pty\n", ret); 
         }
@@ -183,6 +184,7 @@ void read_write_pty(int ptyfd, int sockfd)
         if (FD_ISSET(ptyfd, &rfds))
         {
           // ptyfd readable
+          printf ("pty files has event\n"); 
           memset(pbuf, 0, MAX_BUFSIZE);  
           ret = read(ptyfd, pbuf, MAX_BUFSIZE);  
           if (ret < 0)  
@@ -197,7 +199,7 @@ void read_write_pty(int ptyfd, int sockfd)
           }
 
           pbuf[ret] = 0; 
-          printf ("read %d from pty: %s\n", ret, pbuf); 
+          printf ("read %d from pty\n", ret); 
           ret = send(sockfd, pbuf, ret, 0);  
           printf ("send %d to sock\n", ret); 
         }
