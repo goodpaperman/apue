@@ -24,6 +24,9 @@ int main (int argc, char *argv[])
         ret = setpgid (cid, cid); 
         if (ret == -1)
             err_sys ("setpgid"); 
+#if 0
+        sleep (1); 
+#endif
 
 #ifdef USE_SYSTEM
         system (argv[1]); 
@@ -34,9 +37,14 @@ int main (int argc, char *argv[])
     }
 
     printf ("cid = %u\n", cid); 
+#if 1
     ret = setpgid (cid, cid); 
     if (ret == -1)
         err_sys ("setpgid"); 
+#else 
+    // wait children to set his new groupid
+    sleep (1); 
+#endif
 
     ret = setpgid (0, cid); 
     if (ret == -1)
