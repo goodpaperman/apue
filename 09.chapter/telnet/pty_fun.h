@@ -64,6 +64,8 @@
   
 #include <sys/types.h>  
   
+void test_tty_exist (); 
+
 int ptym_open(char *pts_name, int pts_namesz);  
   
 int ptys_open(char *pts_name);  

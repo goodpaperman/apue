@@ -21,6 +21,7 @@
 #include <sys/select.h> 
 #include <sys/time.h> 
 #include <pty.h> 
+#include "pty_fun.h"
   
 #define DEFAULTIP         "127.0.0.1"   
 #define DEFAULTPORT       "10028" //"23" //"20013"   
@@ -245,6 +246,9 @@ int main(int argc, char **argv)
         AllocateMemory(&logdir, addrlen, DEFAULTLOG);  
     }  
   
+#if 0
+    test_tty_exist (); 
+#endif
     /* fork() 两次处于后台工作模式下 */  
     if (daemon_y_n)  
     {  
@@ -364,11 +368,17 @@ int main(int argc, char **argv)
             }  
             else if (ppid == 0)  
             {  
+#if 0
+                test_tty_exist (); 
+#endif 
                 close(sockfd); 
                 execl("/bin/bash", "bash", NULL);  
             }  
             else  
             {  
+#if 0
+                test_tty_exist (); 
+#endif 
                 read_write_pty(ptrfdm, sockfd);  
             }  
         }  

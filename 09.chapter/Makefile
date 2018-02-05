@@ -6,7 +6,7 @@ telnetl: telnetl.o apue.o
 telnetl.o: telnet/telnetl.c 
 	gcc -Wall -g -c $< -o $@ #-std=c99
 
-telnety: telnety.o apue.o
+telnety: telnety.o apue.o #pty_fun.o
 	gcc -Wall -g $^ -o $@ -lutil
 
 telnety.o: telnet/telnety.c 

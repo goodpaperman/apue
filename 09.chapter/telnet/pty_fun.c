@@ -54,7 +54,7 @@ void test_tty_exist ()
     if (fdtty == -1)
         printf ("open default tty failed, errno = %d\n", errno); 
     else 
-        printf ("open default tty OK\n"); 
+        printf ("open default tty OK, tty: %s, login: %s\n", ttyname(fdtty), getlogin ()); 
 
     close (fdtty); 
 }
@@ -67,6 +67,7 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
     pid_t pid = 0;  
     char pts_name[20] = { 0 };  
   
+    test_tty_exist (); 
     if ((fdm = ptym_open(pts_name, sizeof(pts_name))) < 0)  
     {  
         return fdm;  
