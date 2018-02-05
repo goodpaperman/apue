@@ -43,7 +43,11 @@ int ptym_open(char *pts_name, int pts_namesz)
 int ptys_open(char *pts_name)  
 {  
     int fds;  
-    if ((fds = open(pts_name, O_RDWR)) < 0)  
+    // if open O_NOCTTY flag, open pts will not automatically 
+    // set it to default tty, you must call 
+    //    ioctl(fds, TIOCSCTTY, (char *) 0); 
+    // exiplicitly
+    if ((fds = open(pts_name, O_RDWR /*| O_NOCTTY*/)) < 0)  
         return OPEN_PTYS_ERR;  
     return fds;  
 }  
