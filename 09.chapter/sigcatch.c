@@ -9,7 +9,7 @@ void sighandler (int signo)
 
 int main (int argc, char *argv[])
 {
-    int ret = 0; 
+    //int ret = 0; 
     signal (SIGINT, sighandler); 
     signal (SIGQUIT, sighandler); 
     while (1)
