@@ -172,6 +172,7 @@ void read_write_pty(int ptyfd, int sockfd)
 
           sbuf[ret] = 0; 
           printf ("read %d from socket\n", ret); 
+          //printf ("command: %s\n", sbuf); 
           ret = write(ptyfd, sbuf, ret);  
           printf ("write %d to pty\n", ret); 
         }
@@ -195,6 +196,7 @@ void read_write_pty(int ptyfd, int sockfd)
 
           pbuf[ret] = 0; 
           printf ("read %d from pty\n", ret); 
+          printf ("%s", pbuf); 
           ret = send(sockfd, pbuf, ret, 0);  
           printf ("send %d to sock\n", ret); 
         }

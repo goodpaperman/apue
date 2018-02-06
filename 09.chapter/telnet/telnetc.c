@@ -41,7 +41,28 @@ int main (int argc, char *argv[])
       if (strncmp (buf, "exit", 4) == 0)
       {
           quit = 1; 
-          printf ("%d: %s", quit, buf); 
+          //printf ("%d: %s", quit, buf); 
+      }
+      else if (strncmp (buf, "ctlc", 4) == 0)
+      {
+          buf[0]= 03; 
+          buf[1] = 0; 
+      }
+      else if (strncmp (buf, "ctld", 4) == 0)
+      {
+          buf[0]= 04; 
+          buf[1] = 0; 
+      }
+      else if (strncmp (buf, "ctlz", 4) == 0)
+      {
+          buf[0]= 032; 
+          buf[1] = 0; 
+      }
+      else if (strncmp (buf, "ctlq", 4) == 0)
+      {
+          buf[0]= 0134; 
+          buf[1] = 0; 
+          //printf ("%o", buf[0]); 
       }
       
 
