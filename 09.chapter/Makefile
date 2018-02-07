@@ -1,4 +1,10 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt
+
+crypt: crypt.o apue.o
+	gcc -Wall -g $^ -o $@ -lcrypt
+
+crypt.o: crypt.c 
+	gcc -Wall -g -c $< -o $@ -D_XOPEN_SOURCE #-std=c99
 
 sigcatch: sigcatch.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -110,7 +116,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch
+	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt
 	@echo "end clean"
 
 .PHONY: clean
