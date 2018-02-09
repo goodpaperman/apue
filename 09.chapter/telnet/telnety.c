@@ -20,6 +20,7 @@
 #include <strings.h> 
 #include <sys/select.h> 
 #include <sys/time.h> 
+#include <signal.h> 
 #include <pty.h> 
 #include "pty_fun.h"
   
@@ -125,6 +126,16 @@ void getoption(int argc, char **argv)
         memcpy(p, optarg, len);  
     }  
 }  
+
+void print_ids ()
+{
+    printf ("%d: %d %d\n", getpid (), getpgrp (), getsid (0)); 
+}
+
+void sighandler (int signum)
+{
+    printf ("catch signal %d, 0x%x\n", signum, signum); 
+}
   
 void read_write_pty(int ptyfd, int sockfd)  
 {  
@@ -206,9 +217,11 @@ void read_write_pty(int ptyfd, int sockfd)
 
     printf ("pty loop exit\n"); 
     FD_ZERO(&rfds); 
+#if 0
     char const* cmd  = "exit"; 
     write(ptyfd, cmd, strlen(cmd));  
     printf ("send exit to notify bash to exit\n"); 
+#endif 
     close (ptyfd); 
     close (sockfd); 
 }  
@@ -362,6 +375,7 @@ int main(int argc, char **argv)
             ppid = forkpty (&ptrfdm, slave_name, NULL, NULL); 
             //ret = pty_fork(&ptrfdm, slave_name, PTY_NAME_SIZE, &slave_termiors,  
             //        &slave_winsize, &ppid);  
+            print_ids (); 
   
             if (ppid < 0)  
             {  
@@ -374,13 +388,18 @@ int main(int argc, char **argv)
                 test_tty_exist (); 
 #endif 
                 close(sockfd); 
+#if 1
                 execl("/bin/bash", "bash", NULL);  
+#else 
+                execl ("./sigcatch", "sigcatch", NULL); 
+#endif 
             }  
             else  
             {  
 #if 0
                 test_tty_exist (); 
 #endif 
+                signal (SIGHUP, sighandler); 
                 read_write_pty(ptrfdm, sockfd);  
             }  
         }  
