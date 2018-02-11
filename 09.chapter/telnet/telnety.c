@@ -29,6 +29,7 @@
 #define DEFAULTBACK       "10"   
 #define DEFAULTDIR        "~" //"/root"
 #define DEFAULTLOG        "/tmp/telnet-server.log"   
+#define DEFAULTBASH       "/bin/bash"   
 #define PTY_NAME_SIZE     20   
 #define MAX_BUFSIZE       512   
   
@@ -49,6 +50,7 @@ char *port = 0;
 char *back = 0;  
 char *dirroot = 0;  
 char *logdir = 0;  
+char *bash = 0;  
 unsigned char daemon_y_n = 0;  
 FILE *logfp;  
   
@@ -85,6 +87,7 @@ void getoption(int argc, char **argv)
         { "back", 1, 0, 0 },  
         { "dir", 1, 0, 0 },  
         { "log", 1, 0, 0 },  
+        { "bash", 1, 0, 0 },  
         { "daemon", 0, 0, 0 },  
         { 0, 0, 0, 0 } };  
         /* 本程序支持如一些参数： 
@@ -93,9 +96,10 @@ void getoption(int argc, char **argv)
          * --back 监听数量 或者 -B 监听数量 
          * --dir 服务默认目录 或者 -D 服务默认目录 
          * --log 日志存放路径 或者 -L 日志存放路径 
+         * --bash bash路径 或者 -S bash路径 
          * --daemon 使程序进入后台运行模式 
          */  
-        c = getopt_long(argc, argv, "H:P:B:D:L", long_options, &option_index);  
+        c = getopt_long(argc, argv, "H:P:B:D:LS", long_options, &option_index);  
         if (c == -1 || c == '?')  
             break;  
   
@@ -114,6 +118,8 @@ void getoption(int argc, char **argv)
             p = dirroot = malloc(len + 1);  
         else if ((!c && !(strcasecmp(long_options[option_index].name, "log"))) || c == 'L')  
             p = logdir = malloc(len + 1);  
+        else if ((!c && !(strcasecmp(long_options[option_index].name, "bash"))) || c == 'S')  
+            p = bash = malloc(len + 1);  
         else if ((!c && !(strcasecmp(long_options[option_index].name, "daemon"))))  
         {  
             daemon_y_n = 1;  
@@ -137,7 +143,7 @@ void sighandler (int signum)
     printf ("catch signal %d, 0x%x\n", signum, signum); 
 }
   
-void read_write_pty(int ptyfd, int sockfd)  
+void read_write_pty(pid_t cid, int ptyfd, int sockfd)  
 {  
     char pbuf[MAX_BUFSIZE+1] = { 0 };  
     char sbuf[MAX_BUFSIZE+1] = { 0 };  
@@ -178,14 +184,17 @@ void read_write_pty(int ptyfd, int sockfd)
           else if (ret == 0)
           {
             perror ("connect break?\n"); 
+            //printf ("send a SIGHUP to subshell\n"); 
+            //kill (cid, SIGHUP); 
             break; 
           }
 
           sbuf[ret] = 0; 
-          printf ("read %d from socket\n", ret); 
-          //printf ("command: %s\n", sbuf); 
-          ret = write(ptyfd, sbuf, ret);  
-          printf ("write %d to pty\n", ret); 
+          printf ("read %d from socket: %s\n", ret, sbuf); 
+          // add \n to allow fgets return
+          strcat (sbuf, "\n"); 
+          ret = write(ptyfd, sbuf, ret+1);  
+          printf ("write %d to pty\n", ret+1); 
         }
 
         if (FD_ISSET(ptyfd, &rfds))
@@ -207,9 +216,8 @@ void read_write_pty(int ptyfd, int sockfd)
 
           pbuf[ret] = 0; 
           printf ("read %d from pty\n", ret); 
-          printf ("%s", pbuf); 
           ret = send(sockfd, pbuf, ret, 0);  
-          printf ("send %d to sock\n", ret); 
+          printf ("send %d to sock: %s\n", ret, pbuf); 
         }
       }
     }
@@ -259,6 +267,11 @@ int main(int argc, char **argv)
     {  
         addrlen = strlen(DEFAULTLOG);  
         AllocateMemory(&logdir, addrlen, DEFAULTLOG);  
+    }  
+    if (!bash)  
+    {  
+        addrlen = strlen(DEFAULTBASH);  
+        AllocateMemory(&bash, addrlen, DEFAULTBASH);  
     }  
   
 #if 0
@@ -375,7 +388,7 @@ int main(int argc, char **argv)
             ppid = forkpty (&ptrfdm, slave_name, NULL, NULL); 
             //ret = pty_fork(&ptrfdm, slave_name, PTY_NAME_SIZE, &slave_termiors,  
             //        &slave_winsize, &ppid);  
-            print_ids (); 
+            //print_ids (); 
   
             if (ppid < 0)  
             {  
@@ -390,8 +403,10 @@ int main(int argc, char **argv)
                 close(sockfd); 
 #if 0
                 execl("/bin/bash", "bash", NULL);  
-#else 
+#elif 0 
                 execl ("./shell", "shell", NULL); 
+#else 
+                execl (bash, bash, NULL); 
 #endif 
             }  
             else  
@@ -400,7 +415,7 @@ int main(int argc, char **argv)
                 test_tty_exist (); 
 #endif 
                 signal (SIGHUP, sighandler); 
-                read_write_pty(ptrfdm, sockfd);  
+                read_write_pty(ppid, ptrfdm, sockfd);  
             }  
         }  
         //close(sockfd);  

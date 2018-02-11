@@ -8,32 +8,27 @@
 
 #define MAX_BUFSIZE 512
 
-void recv_and_display (int connfd)
+void read_some (int connfd)
 {
-    int ret = 0; 
-    char buf[MAX_BUFSIZE+1] = { 0 }; 
-    //close (connfd); 
-
-    do
+  int ret = 0; 
+  char buf[MAX_BUFSIZE+1] = { 0 }; 
+  // to avoid quit read nothing
+  usleep (100000); 
+  do
+  {
+    ret = recv (connfd, buf, sizeof(buf), MSG_DONTWAIT); 
+    if (ret <= 0)
     {
-      ret = recv (connfd, buf, sizeof(buf), MSG_DONTWAIT); 
-      if (ret <= 0)
-      {
-          if (errno == EAGAIN)
-          {
-              //printf ("recv EAGAIN\n"); 
-              usleep (500000); 
-              continue; 
-          }
+        if (errno == EAGAIN)
+            break; 
 
-          printf ("recv failed, errno %d\n", errno); 
-          break; 
-      }
+        printf ("recv failed, errno %d\n", errno); 
+        break; 
+    }
 
-      buf[ret] = 0; 
-      printf ("%s", buf); 
-    }while (1); 
-    close(connfd); 
+    buf[ret] = 0; 
+    printf ("%s", buf); 
+  }while (1); 
 }
 
 int main (int argc, char *argv[])
@@ -54,17 +49,12 @@ int main (int argc, char *argv[])
     if (ret < 0)
         err_sys ("connect"); 
 
-    if (!fork ())
-    {
-        recv_and_display (connfd); 
-        exit (-1); 
-    }
-
+    read_some (connfd); 
     int n = 0, quit = 0; 
     char buf[MAX_BUFSIZE+1] = { 0 }; 
     while (!quit)
     {
-      printf (">"); 
+      //printf (">"); 
       if (fgets (buf, MAX_BUFSIZE, stdin) == NULL)
       {
           printf ("getting user input failed\n"); 
@@ -99,13 +89,18 @@ int main (int argc, char *argv[])
           //printf ("%o", buf[0]); 
       }
       
-      n = strlen (buf) + 1; 
+      while ((n = strlen (buf)) > 0 && buf[n-1] == '\n')
+          buf[n-1] = 0; 
+
       ret = send (connfd, buf, n, 0);
       if (ret < n)
       {
           printf ("send failed, %d != %d\n", ret, n); 
           break; 
       }
+
+      read_some (connfd); 
+
     }
  
     printf ("connection break...\n"); 
