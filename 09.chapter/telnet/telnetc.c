@@ -8,6 +8,34 @@
 
 #define MAX_BUFSIZE 512
 
+void recv_and_display (int connfd)
+{
+    int ret = 0; 
+    char buf[MAX_BUFSIZE+1] = { 0 }; 
+    //close (connfd); 
+
+    do
+    {
+      ret = recv (connfd, buf, sizeof(buf), MSG_DONTWAIT); 
+      if (ret <= 0)
+      {
+          if (errno == EAGAIN)
+          {
+              //printf ("recv EAGAIN\n"); 
+              usleep (500000); 
+              continue; 
+          }
+
+          printf ("recv failed, errno %d\n", errno); 
+          break; 
+      }
+
+      buf[ret] = 0; 
+      printf ("%s", buf); 
+    }while (1); 
+    close(connfd); 
+}
+
 int main (int argc, char *argv[])
 {
     int ret = 0; 
@@ -25,6 +53,12 @@ int main (int argc, char *argv[])
     ret = connect (connfd, (struct sockaddr *)&addr, addrlen); 
     if (ret < 0)
         err_sys ("connect"); 
+
+    if (!fork ())
+    {
+        recv_and_display (connfd); 
+        exit (-1); 
+    }
 
     int n = 0, quit = 0; 
     char buf[MAX_BUFSIZE+1] = { 0 }; 
@@ -65,7 +99,6 @@ int main (int argc, char *argv[])
           //printf ("%o", buf[0]); 
       }
       
-
       n = strlen (buf) + 1; 
       ret = send (connfd, buf, n, 0);
       if (ret < n)
@@ -73,24 +106,6 @@ int main (int argc, char *argv[])
           printf ("send failed, %d != %d\n", ret, n); 
           break; 
       }
-
-      usleep (100000); 
-
-      do
-      {
-        ret = recv (connfd, buf, sizeof(buf), MSG_DONTWAIT); 
-        if (ret <= 0)
-        {
-            if (errno == EAGAIN)
-                break; 
-
-            printf ("recv failed, errno %d\n", errno); 
-            break; 
-        }
-
-        buf[ret] = 0; 
-        printf ("%s", buf); 
-      }while (1); 
     }
  
     printf ("connection break...\n"); 

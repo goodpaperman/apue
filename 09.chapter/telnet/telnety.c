@@ -388,10 +388,10 @@ int main(int argc, char **argv)
                 test_tty_exist (); 
 #endif 
                 close(sockfd); 
-#if 1
+#if 0
                 execl("/bin/bash", "bash", NULL);  
 #else 
-                execl ("./sigcatch", "sigcatch", NULL); 
+                execl ("./shell", "shell", NULL); 
 #endif 
             }  
             else  
