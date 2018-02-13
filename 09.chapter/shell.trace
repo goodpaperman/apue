@@ -1,0 +1,78 @@
+read(0, "./sigcatch 1 2 &\n", 1024)     = 17
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5427
+waitpid(5427, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+read(0, "ls\n", 1024)                   = 3
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5688
+waitpid(5688, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+read(0, "\n", 1024)                     = 1
+--- SIGINT {si_signo=SIGINT, si_code=SI_KERNEL, si_value={int=51141, ptr=0xc7c5}} ---
+write(1, "interrupt\n", 10)             = 10
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, {SIG_DFL, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+sigreturn() (mask [])                   = 1
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5834
+waitpid(5834, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+write(1, "% ", 2)                       = 2
+read(0, "\n", 1024)                     = 1
+--- SIGQUIT {si_signo=SIGQUIT, si_code=SI_KERNEL, si_value={int=51141, ptr=0xc7c5}} ---
+write(1, "interrupt\n", 10)             = 10
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, {SIG_DFL, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+sigreturn() (mask [])                   = 1
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5847
+waitpid(5847, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+write(1, "% ", 2)                       = 2
+read(0, "jobs\n", 1024)                 = 5
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5918
+waitpid(5918, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+read(0, "ls\n", 1024)                   = 3
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5944
+waitpid(5944, 0xbf85cef8, 0)            = -1 ECHILD (No child processes)
+rt_sigaction(SIGINT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+read(0, "./sigcatch a b \n", 1024)      = 16
+rt_sigaction(SIGINT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_IGN, [], 0}, {0x80488c5, [], SA_INTERRUPT|SA_NODEFER|SA_RESETHAND}, 8) = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+clone(child_stack=0, flags=CLONE_PARENT_SETTID|SIGCHLD, parent_tidptr=0xbf85cef4) = 5945
+waitpid(5945, 0xbf85cef8, 0)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGINT {si_signo=SIGINT, si_code=SI_KERNEL, si_value={int=51141, ptr=0xc7c5}} ---
+waitpid(5945, 0xbf85cef8, 0)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGQUIT {si_signo=SIGQUIT, si_code=SI_KERNEL, si_value={int=51141, ptr=0xc7c5}} ---
+waitpid(5945, 0xbf85cef8, 0)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGHUP {si_signo=SIGHUP, si_code=SI_KERNEL, si_value={int=51141, ptr=0xc7c5}} ---
++++ killed by SIGHUP +++
