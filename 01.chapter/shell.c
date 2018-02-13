@@ -14,6 +14,9 @@ main (void)
   if (signal (SIGINT, sig_int) == SIG_ERR)
     err_sys ("signal error"); 
 
+  signal (SIGQUIT, sig_int); 
+  signal (SIGHUP, sig_int); 
+
   printf ("%% "); 
   while (1) {
   //while (fgets (buf, MAXLINE, stdin) != 0) {
@@ -32,6 +35,7 @@ main (void)
     if (buf [strlen (buf) - 1] == '\n') 
       buf [strlen (buf) - 1] = 0; 
 
+#if 0
     if ((pid = fork ()) < 0) {
       err_sys ("fork error"); 
     } else if (pid == 0) { 
@@ -45,6 +49,9 @@ main (void)
       err_sys ("waitpid error"); 
 
     printf ("%% "); 
+#else 
+    system (buf); 
+#endif 
   } 
 
   exit (0); 
@@ -55,4 +62,8 @@ sig_int (int signo)
 {
   printf ("interrupt\n%% "); 
   signal (SIGINT, sig_int); 
+  signal (SIGQUIT, sig_int); 
+  if (signo == SIGHUP)
+    exit (SIGHUP); 
+  //signal (SIGHUP, sig_int); 
 }
