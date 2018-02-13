@@ -138,10 +138,10 @@ void print_ids ()
     printf ("%d: %d %d\n", getpid (), getpgrp (), getsid (0)); 
 }
 
-void sighandler (int signum)
-{
-    printf ("catch signal %d, 0x%x\n", signum, signum); 
-}
+//void sighandler (int signum)
+//{
+//    printf ("catch signal %d, 0x%x\n", signum, signum); 
+//}
   
 void read_write_pty(pid_t cid, int ptyfd, int sockfd)  
 {  
@@ -414,7 +414,7 @@ int main(int argc, char **argv)
 #if 0
                 test_tty_exist (); 
 #endif 
-                signal (SIGHUP, sighandler); 
+                //signal (SIGHUP, sighandler); 
                 read_write_pty(ppid, ptrfdm, sockfd);  
             }  
         }  
