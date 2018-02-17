@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
             printf ("create children %d\n", pid); 
     }
 
-    while (g_quit < 10)
+    while (g_quit < 3)
     {
         sleep (1); 
         //printf ("quit %d\n", g_quit); 
