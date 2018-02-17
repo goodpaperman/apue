@@ -4,7 +4,7 @@ shell: shell.o apue.o
 	gcc -Wall -g $^ -o $@ 
 
 shell.o: ../01.chapter/shell.c 
-	gcc -Wall -g -c $< -o $@ #-std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 crypt: crypt.o apue.o
 	gcc -Wall -g $^ -o $@ -lcrypt
