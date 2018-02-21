@@ -22,7 +22,6 @@ main (void)
   signal (SIGHUP, sig_int); 
   signal (SIGCHLD, sig_int); 
   //signal (SIGSTOP, sig_int);
-  //signal (SIG_STOP, sig_int);
 
   printf ("%% "); 
   while (1) {
@@ -42,11 +41,6 @@ main (void)
     if (buf [strlen (buf) - 1] == '\n') 
       buf [strlen (buf) - 1] = 0; 
 
-    //if (strncmp (buf, "ctrlz", 5) == 0)
-    //{
-    //  kill (getpid (), SIG_STOP); 
-    //  continue; 
-    //}
     if (strncmp (buf, "ctrlz", 5) == 0)
     {
       pid_t now = g_foregnd; 
@@ -71,12 +65,19 @@ main (void)
         }
 
         g_bkgnd[index] = now; 
-        //ret = tcsetpgrp (0, -1); 
+#ifdef USE_KILL
         ret = kill (now, SIGSTOP); 
         if (ret != 0)
           printf ("kill STOP failed, errno %d\n", errno); 
         else 
           printf ("kill STOP %d OK\n", now); 
+#else 
+        ret = tcsetpgrp (0, -1); 
+        if (ret != 0)
+          printf ("tcsetgrp failed, errno %d\n", errno); 
+        else 
+          printf ("tcsetgrp %d OK\n", now); 
+#endif
       }
       continue; 
     }
@@ -111,23 +112,26 @@ main (void)
         continue; 
       }
 
-      //ret = tcsetpgrp (0, g_bkgnd[index]); 
+#ifdef USE_KILL
       ret = kill(g_bkgnd[index], SIGCONT); 
       if (ret != 0)
-        printf ("setgrp failed, errno %d\n", errno); 
+        printf ("kill CONT failed, errno %d\n", errno); 
       else 
       {
-        printf ("setgrp %d OK\n", g_bkgnd[index]); 
+        printf ("kill CONT %d OK\n", g_bkgnd[index]); 
         g_bkgnd[index] = 0; 
       }
+#else 
+      ret = tcsetpgrp (0, g_bkgnd[index]); 
+      if (ret != 0)
+        printf ("tcsetpgrp failed, errno %d\n", errno); 
+      else 
+      {
+        printf ("tcsetpgrp %d OK\n", g_bkgnd[index]); 
+        g_bkgnd[index] = 0; 
+      }
+#endif 
       
-      //// make any background task foreground
-      //int n = atoi (buf+3); 
-      //ret = tcsetpgrp (0, g_bkgnd[n]); 
-      //if (ret != 0)
-      //  printf ("tcsetgrp failed, errno %d\n", errno); 
-      //else 
-      //  printf ("tcsetgrp %d OK\n",g_bkgnd[n]); 
       continue; 
     }
 
@@ -145,7 +149,7 @@ main (void)
 
       while ((args[n] = strtok(ptr, " ")) != NULL)
       {
-        printf ("split: %s\n", args[n]); 
+        //printf ("split: %s\n", args[n]); 
         ptr = NULL; 
         n++; 
       }
@@ -187,16 +191,10 @@ sig_int (int signo)
   sigaction (SIGCHLD, &act, 0); 
 
   //signal (SIGSTOP, sig_int); 
-  //signal (SIG_STOP, sig_int); 
   //signal (SIGCONT, sig_int); 
   if (signo == SIGHUP)
     exit (SIGHUP); 
   //else if (signo == SIGSTOP)
-  else if (signo == SIG_STOP)
-  {
-    //pid_t now = tcgetpgrp (0); 
-    //if (now > 1)
-  }
   else if (signo == SIGCHLD)
   {
     int status = 0; 
