@@ -1,25 +1,28 @@
 #include "../apue.h"
 #include <sys/wait.h>
 #include <errno.h> 
+#include <signal.h> 
 
 #define MAX_BKGND 10
 // SIGSTOP is non-maskable, use SIGUSR1 instead
 #define SIG_STOP SIGUSR1
 static void sig_int (int); 
 pid_t g_bkgnd[MAX_BKGND] = { 0 }; 
+pid_t g_foregnd = 0; 
 
 int 
 main (void)
 {
   char buf [MAXLINE]; 
   pid_t pid; 
-  int ret, status; 
+  int ret; 
 
   signal (SIGINT, sig_int); 
   signal (SIGQUIT, sig_int); 
   signal (SIGHUP, sig_int); 
+  signal (SIGCHLD, sig_int); 
   //signal (SIGSTOP, sig_int);
-  signal (SIG_STOP, sig_int);
+  //signal (SIG_STOP, sig_int);
 
   printf ("%% "); 
   while (1) {
@@ -44,7 +47,40 @@ main (void)
     //  kill (getpid (), SIG_STOP); 
     //  continue; 
     //}
-    if (strncmp (buf, "jobs", 4) == 0)
+    if (strncmp (buf, "ctrlz", 5) == 0)
+    {
+      pid_t now = g_foregnd; 
+      if (now == 0)
+        printf ("no active foreground task running!\n"); 
+      else 
+      {
+        int index = -1; 
+        for (int i=0; i<MAX_BKGND; ++ i)
+        {
+          if (g_bkgnd[i] == 0)
+          {
+            index = i; 
+            break; 
+          }
+        }
+
+        if (index == -1)
+        {
+          printf ("slot full\n"); 
+          return; 
+        }
+
+        g_bkgnd[index] = now; 
+        //ret = tcsetpgrp (0, -1); 
+        ret = kill (now, SIGSTOP); 
+        if (ret != 0)
+          printf ("kill STOP failed, errno %d\n", errno); 
+        else 
+          printf ("kill STOP %d OK\n", now); 
+      }
+      continue; 
+    }
+    else if (strncmp (buf, "jobs", 4) == 0)
     {
       // show current foreground task
       for (int i=0; i<MAX_BKGND; ++ i)
@@ -72,15 +108,16 @@ main (void)
       if (index == -1)
       {
         printf ("slot empty\n"); 
-        return; 
+        continue; 
       }
 
-      ret = tcsetpgrp (0, g_bkgnd[index]); 
+      //ret = tcsetpgrp (0, g_bkgnd[index]); 
+      ret = kill(g_bkgnd[index], SIGCONT); 
       if (ret != 0)
-        printf ("tcsetgrp failed, errno %d\n", errno); 
+        printf ("setgrp failed, errno %d\n", errno); 
       else 
       {
-        printf ("tcsetgrp %d OK\n", g_bkgnd[index]); 
+        printf ("setgrp %d OK\n", g_bkgnd[index]); 
         g_bkgnd[index] = 0; 
       }
       
@@ -94,19 +131,37 @@ main (void)
       continue; 
     }
 
-#if 0
+#if 1
     if ((pid = fork ()) < 0) {
       err_sys ("fork error"); 
     } else if (pid == 0) { 
-      execlp (buf, buf, (char *) 0); 
+      int n = 0; 
+      char *args[10] = { 0 }; 
+      char *ptr = buf; 
+      // every task in seperate group
+      ret = setpgid (0, 0); 
+      if (ret != 0)
+        err_ret ("setpgid (0, 0) failed"); 
+
+      while ((args[n] = strtok(ptr, " ")) != NULL)
+      {
+        printf ("split: %s\n", args[n]); 
+        ptr = NULL; 
+        n++; 
+      }
+      
+      args[n] = NULL; 
+      execvp (args[0], args); 
       err_ret ("couldn't execute: %s", buf); 
       exit (127); 
     }
 
-    // parent
-    if ((pid = waitpid (pid, &status, 0)) < 0)
-      err_sys ("waitpid error"); 
+    ret = setpgid (pid, 0); 
+    if (ret != 0)
+      err_ret ("setpgid (%d, 0) failed", pid); 
 
+    // parent
+    g_foregnd = pid; 
     printf ("%% "); 
 #else 
     system (buf); 
@@ -123,42 +178,36 @@ sig_int (int signo)
   printf ("interrupt %d\n%% ", signo); 
   signal (SIGINT, sig_int); 
   signal (SIGQUIT, sig_int); 
+  //signal (SIGCHLD, sig_int); 
+  struct sigaction act; 
+  sigemptyset(&act.sa_mask); 
+  act.sa_handler = sig_int; 
+  // no SIGCHLD when child stopped.
+  act.sa_flags = SA_NOCLDSTOP; 
+  sigaction (SIGCHLD, &act, 0); 
+
   //signal (SIGSTOP, sig_int); 
-  signal (SIG_STOP, sig_int); 
+  //signal (SIG_STOP, sig_int); 
   //signal (SIGCONT, sig_int); 
   if (signo == SIGHUP)
     exit (SIGHUP); 
   //else if (signo == SIGSTOP)
   else if (signo == SIG_STOP)
   {
-    pid_t now = tcgetpgrp (0); 
-    if (now > 1)
-      printf ("no active foreground task running!\n"); 
-    else 
+    //pid_t now = tcgetpgrp (0); 
+    //if (now > 1)
+  }
+  else if (signo == SIGCHLD)
+  {
+    int status = 0; 
+    pid_t pid = waitpid (-1, &status, 0); 
+    if (pid < 0)
     {
-      int index = -1; 
-      for (int i=0; i<MAX_BKGND; ++ i)
-      {
-        if (g_bkgnd[i] == 0)
-        {
-          index = i; 
-          break; 
-        }
-      }
-
-      if (index == -1)
-      {
-        printf ("slot full\n"); 
-        return; 
-      }
-
-      g_bkgnd[index] = now; 
-      ret = tcsetpgrp (0, -1); 
-      if (ret != 0)
-        printf ("tcsetgrp failed, errno %d\n", errno); 
-      else 
-        printf ("tcsetgrp %d OK\n", -1); 
+      if (errno != ECHILD)
+        err_sys ("waitpid error"); 
     }
+    else 
+      printf ("wait child %d\n", pid); 
   }
 
   //signal (SIGHUP, sig_int); 
