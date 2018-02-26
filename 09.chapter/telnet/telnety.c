@@ -138,10 +138,10 @@ void print_ids ()
     printf ("%d: %d %d\n", getpid (), getpgrp (), getsid (0)); 
 }
 
-void sighandler (int signum)
-{
-    printf ("catch signal %d, 0x%x\n", signum, signum); 
-}
+//void sighandler (int signum)
+//{
+//    printf ("catch signal %d, 0x%x\n", signum, signum); 
+//}
   
 void read_write_pty(pid_t cid, int ptyfd, int sockfd)  
 {  
@@ -195,6 +195,16 @@ void read_write_pty(pid_t cid, int ptyfd, int sockfd)
           strcat (sbuf, "\n"); 
           ret = write(ptyfd, sbuf, ret+1);  
           printf ("write %d to pty\n", ret+1); 
+          //// send a stop for ctrlz
+          //if (strncmp(sbuf, "ctrlz", 5) == 0)
+          //{
+          //  // SIGSTOP is non-maskable, use SIGUSER1 instead
+          //  printf ("send a STOP to %d\n", cid); 
+          //  //ret = kill (cid, SIGSTOP); 
+          //  ret = kill (cid, SIGUSR1); 
+          //  if (ret != 0)
+          //    perror ("kill"); 
+          //}
         }
 
         if (FD_ISSET(ptyfd, &rfds))
@@ -341,8 +351,8 @@ int main(int argc, char **argv)
         }  
     }  
   
-    printf("host=%s port=%s back=%s dirroot=%s logdir=%s %s是后台工作模式(进程ID：%d)\n",  
-            host, port, back, dirroot, logdir, daemon_y_n ? "" : "不", getpid());  
+    printf("host=%s port=%s back=%s bash=%s dirroot=%s logdir=%s %s是后台工作模式(进程ID：%d)\n",  
+            host, port, back, bash, dirroot, logdir, daemon_y_n ? "" : "不", getpid());  
   
     while (1)  
     {  
@@ -414,7 +424,7 @@ int main(int argc, char **argv)
 #if 0
                 test_tty_exist (); 
 #endif 
-                signal (SIGHUP, sighandler); 
+                //signal (SIGHUP, sighandler); 
                 read_write_pty(ppid, ptrfdm, sockfd);  
             }  
         }  

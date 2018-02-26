@@ -4,13 +4,14 @@
 
 int g_quit = 0; 
 FILE* g_log = 0; 
+
 void sighandler (int signo)
 {
-    fprintf (g_log, "%d catch %d\n", getpid(), signo); 
+    g_quit ++; 
+    fprintf (g_log, "%d catch %d, quit %d\n", getpid(), signo, g_quit); 
     fflush (g_log); 
-    if (signo == SIGHUP)
-        g_quit = 1; 
 
+    //printf ("quit %d\n", g_quit); 
     // PERSIST IT !
     signal (signo, sighandler); 
 }
@@ -22,6 +23,7 @@ int main (int argc, char *argv[])
     signal (SIGINT, sighandler); 
     signal (SIGQUIT, sighandler); 
     signal (SIGHUP, sighandler); 
+    signal (SIGTERM, sighandler); 
     for (int i=1; i<argc; ++ i)
     {
         pid = fork (); 
@@ -35,12 +37,13 @@ int main (int argc, char *argv[])
             printf ("create children %d\n", pid); 
     }
 
-    while (!g_quit)
+    while (g_quit < 3)
     {
         sleep (1); 
+        //printf ("quit %d\n", g_quit); 
     }
 
     fclose (g_log); 
-    printf ("%d quit\n", getpid ()); 
+    printf ("%d quit %d\n", getpid (), g_quit); 
     return 0; 
 }

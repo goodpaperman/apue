@@ -25,13 +25,13 @@ pid.o: pid.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 shell_s: shell.c ../apue.c 
-	gcc -Wall -g $^ -static -o $@
+	gcc -Wall -g $^ -static -o $@ -std=c99
 
 shell: shell.o apue.o
 	gcc -Wall -g $^ -o $@
 
 shell.o: shell.c ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 error: error.o apue.o
 	gcc -Wall -g $^ -o $@
