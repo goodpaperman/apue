@@ -2,19 +2,18 @@
 #include <sys/wait.h>
 #include <errno.h> 
 
-static void sig_int (int); 
+static void sighandler (int); 
 
 int 
 main (void)
 {
   char buf [MAXLINE]; 
-  pid_t pid; 
-  int status; 
 
-  if (signal (SIGINT, sig_int) == SIG_ERR)
-    err_sys ("signal error"); 
+  signal (SIGINT, sighandler); 
+  signal (SIGQUIT, sighandler); 
+  signal (SIGHUP, sighandler); 
 
-  printf ("%% "); 
+  //printf ("%s%% ", ttyname(0)); 
   while (1) {
   //while (fgets (buf, MAXLINE, stdin) != 0) {
     errno = 0; 
@@ -29,14 +28,17 @@ main (void)
         break; 
     }
 
-    if (buf [strlen (buf) - 1] == '\n') 
+    while (strlen(buf) > 0 && buf [strlen (buf) - 1] == '\n') 
       buf [strlen (buf) - 1] = 0; 
 
+#ifdef USE_FORK_EXEC
+    pid_t pid; 
+    int status; 
     if ((pid = fork ()) < 0) {
       err_sys ("fork error"); 
     } else if (pid == 0) { 
       execlp (buf, buf, (char *) 0); 
-      err_ret ("couldn't execute: %s", buf); 
+      err_ret ("couldn't execute: %s, errno %d", buf, errno); 
       exit (127); 
     }
 
@@ -44,6 +46,10 @@ main (void)
     if ((pid = waitpid (pid, &status, 0)) < 0)
       err_sys ("waitpid error"); 
 
+#else 
+      //printf ("system %s\n", buf); 
+      system (buf); 
+#endif 
     printf ("%% "); 
   } 
 
@@ -51,8 +57,9 @@ main (void)
 }
 
 void 
-sig_int (int signo)
+sighandler (int signo)
 {
-  printf ("interrupt\n%% "); 
-  signal (SIGINT, sig_int); 
+  printf ("sig : %d\n", signo); 
+  signal (SIGINT, sighandler); 
+  signal (SIGQUIT, sighandler); 
 }
