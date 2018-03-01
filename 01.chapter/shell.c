@@ -35,7 +35,21 @@ struct jobinfo* forejob ()
 int addjob (char const* cmd, pid_t pid, int state)
 {
     int n = 0; 
-    for (; n<MAX_JOB; ++ n)
+    if (state == JOB_FORE)
+    {
+        for (; n<MAX_JOB; ++ n)
+            if (jobs[n].pid != -1 && jobs[n].state == JOB_FORE)
+                break; 
+
+        if (n != MAX_JOB)
+        {
+            // has fore job !
+            printf ("has fore job %d, skip adding new job %d\n", jobs[n].pid, pid); 
+            return 0; 
+        }
+    }
+
+    for (n=0; n<MAX_JOB; ++ n)
         if (jobs[n].pid == -1)
             break; 
 
@@ -109,7 +123,7 @@ int do_builtin (char const* buf)
 #if 1
       ret = kill(-jobs[n].pid, SIGCONT); 
       if (ret != 0)
-        printf ("kill CONT failed, errno %d\n", errno); 
+        printf ("kill CONT %d failed, errno %d\n", jobs[n].pid, errno); 
       else 
       {
         printf ("kill CONT %d OK\n", jobs[n].pid); 
@@ -133,7 +147,10 @@ int do_builtin (char const* buf)
         if (pid < 0)
             printf ("waitpid error %d\n", errno); 
         else 
+        {
             printf ("wait %d %d\n", jobs[n].pid, status); 
+            deletejob (jobs[n].pid); 
+        }
       }
 
       return 1; 
@@ -235,17 +252,21 @@ main (void)
     if (ret != 0)
       err_ret ("setpgid (%d, 0) failed", pid); 
 
-    if (addjob (buf, pid, backgnd ? JOB_BACK : JOB_FORE) && !backgnd)
+    ret = addjob(buf, pid, backgnd ? JOB_BACK : JOB_FORE); 
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    if (ret && !backgnd)
     {
         int status = 0; 
         pid_t pid = waitpid (pid, &status, 0); 
         if (pid < 0)
-            printf ("waitpid error\n"); 
+            printf ("waitpid error %d\n", errno); 
         else 
+        {
             printf ("wait %d %d\n", pid, status); 
+            deletejob (pid); 
+        }
     }
 
-	sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // parent
     printf ("%% "); 
 #else 
@@ -277,7 +298,7 @@ sighandler (int signo)
 #if 1
         ret = kill (-job->pid, SIGSTOP); 
         if (ret != 0)
-          printf ("kill TSTP failed, errno %d\n", errno); 
+          printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
         else 
         {
           printf ("kill TSTP %d OK\n", job->pid); 
@@ -290,7 +311,6 @@ sighandler (int signo)
         else 
           printf ("tcsetgrp %d OK\n", job->pid); 
 #endif
-        
       }
   }
   else if (signo == SIGCHLD)
