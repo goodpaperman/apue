@@ -45,6 +45,7 @@ int addjob (char const* cmd, pid_t pid, int state)
     jobs[n].pid = pid; 
     strcpy (jobs[n].cmd, cmd); 
     jobs[n].state = state; 
+    printf ("add %s job %d: [%d] %s\n", state == JOB_FORE ? "fore" : "back", pid, strlen(cmd), cmd); 
     return 1; 
 }
 
@@ -57,6 +58,7 @@ void deletejob (pid_t pid)
             jobs[i].pid = -1; 
             jobs[i].state = 0; 
             jobs[i].cmd[0] = 0; 
+            printf ("delete job %d\n", pid); 
         }
     }
 }
@@ -67,7 +69,7 @@ void displayjob ()
         if (jobs[i].state != JOB_FORE && jobs[i].pid != -1)
             printf ("[%d] %d %s (%s)\n", i, jobs[i].pid, jobs[i].cmd, jobs[i].state == JOB_STOP ? "stop":"running"); 
 
-    printf ("\n"); 
+    //printf ("\n"); 
 }
 
 void initjob ()
@@ -79,7 +81,12 @@ void initjob ()
 int do_builtin (char const* buf)
 {
     int ret = 0; 
-    if (strncmp (buf, "jobs", 4) == 0)
+    if (strlen(buf) == 0)
+    {
+        // may be Ctrl+Z ?
+        return 1; 
+    }
+    else if (strncmp (buf, "jobs", 4) == 0)
     {
       pid_t fore = tcgetpgrp (0); 
       printf ("curent task is %d\n", fore); 
@@ -91,8 +98,8 @@ int do_builtin (char const* buf)
     {
       int n = atoi (buf+3); 
       if (n >= MAX_JOB || jobs[n].pid == -1 
-              || (buf[0] == 'b' && jobs[n].state != JOB_STOP)
-              || (buf[0] == 'f' && jobs[n].state != JOB_FORE))
+              || (buf[0] == 'b' && jobs[n].state != JOB_STOP)/*must be STOP*/
+              || (buf[0] == 'f' && jobs[n].state == JOB_FORE)/*can not be FORE*/)
       {
         printf ("slot empty\n"); 
         return 2; 
@@ -124,7 +131,7 @@ int do_builtin (char const* buf)
         int status = 0; 
         pid_t pid = waitpid (jobs[n].pid, &status, 0); 
         if (pid < 0)
-            printf ("waitpid error"); 
+            printf ("waitpid error %d\n", errno); 
         else 
             printf ("wait %d %d\n", jobs[n].pid, status); 
       }
@@ -165,40 +172,60 @@ main (void)
     if (ptr == 0)
     {
       if (errno == EINTR) {
-        printf ("fgets terminal by signal, contining..\n%% "); 
+        //printf ("fgets terminal by signal, contining..\n%% "); 
         continue; 
       }
       else 
-        break; 
+      { 
+          printf ("fgets failed error %d\n", errno); 
+          break; 
+      }
     }
 
     while (strlen(buf) > 0 && buf [strlen (buf) - 1] == '\n') 
       buf [strlen (buf) - 1] = 0; 
 
     if (do_builtin (buf))
+    {
         // eat builtin command
+        printf ("%% "); 
         continue; 
+    }
 
 #if 1
+    int n = 0; 
+    char *args[10] = { 0 }; 
+    ptr = buf; 
+    while ((args[n] = strtok(ptr, " ")) != NULL)
+    {
+      //printf ("split: %s\n", args[n]); 
+      ptr = NULL; 
+      n++; 
+    }
+    
+    int backgnd = 0; 
+    if (n > 1 && args[n-1][0] == '&')
+    {
+        backgnd = 1; 
+        n--; 
+    }
+
+    args[n] = NULL; 
+
+    // to avoid wait failed with ECHILD
+    sigset_t mask; 
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
     if ((pid = fork ()) < 0) {
       err_sys ("fork error"); 
     } else if (pid == 0) { 
-      int n = 0; 
-      char *args[10] = { 0 }; 
-      char *ptr = buf; 
+	  sigprocmask(SIG_UNBLOCK, &mask, NULL);
       // every task in seperate group
       ret = setpgid (0, 0); 
       if (ret != 0)
         err_ret ("setpgid (0, 0) failed"); 
 
-      while ((args[n] = strtok(ptr, " ")) != NULL)
-      {
-        //printf ("split: %s\n", args[n]); 
-        ptr = NULL; 
-        n++; 
-      }
-      
-      args[n] = NULL; 
       execvp (args[0], args); 
       err_ret ("couldn't execute: %s", buf); 
       exit (127); 
@@ -208,16 +235,17 @@ main (void)
     if (ret != 0)
       err_ret ("setpgid (%d, 0) failed", pid); 
 
-    if (addjob (buf, pid, JOB_FORE))
+    if (addjob (buf, pid, backgnd ? JOB_BACK : JOB_FORE) && !backgnd)
     {
         int status = 0; 
         pid_t pid = waitpid (pid, &status, 0); 
         if (pid < 0)
-            printf ("waitpid error"); 
+            printf ("waitpid error\n"); 
         else 
             printf ("wait %d %d\n", pid, status); 
     }
 
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // parent
     printf ("%% "); 
 #else 
@@ -271,12 +299,12 @@ sighandler (int signo)
     pid_t pid = waitpid (-1, &status, 0); 
     if (pid < 0)
     {
-      if (errno != ECHILD)
-        printf ("waitpid error"); 
+      //if (errno != ECHILD)
+      printf ("waitpid error %d\n", errno); 
     }
     else 
     {
-      printf ("wait child %d\n", pid); 
+      printf ("wait child %d %d\n", pid, status); 
       deletejob (pid); 
     }
   }
