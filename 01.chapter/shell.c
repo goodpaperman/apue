@@ -8,6 +8,7 @@
 // SIGSTOP is non-maskable, use SIGUSR1 instead
 #define SIG_STOP SIGUSR1
 static void sighandler (int); 
+static void sigchild (int, siginfo_t *, void*); 
 
 #define JOB_FORE 1
 #define JOB_BACK 2
@@ -175,9 +176,9 @@ main (void)
   
   struct sigaction act; 
   sigemptyset(&act.sa_mask); 
-  act.sa_handler = sighandler; 
+  act.sa_sigaction = sigchild; 
   // no SIGCHLD when child stopped.
-  act.sa_flags = SA_NOCLDSTOP; 
+  act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
   sigaction (SIGCHLD, &act, 0); 
 
   initjob (); 
@@ -253,6 +254,8 @@ main (void)
       err_ret ("setpgid (%d, 0) failed", pid); 
 
     ret = addjob(buf, pid, backgnd ? JOB_BACK : JOB_FORE); 
+    // unblock signal untill addjob over, 
+    // to avoid delete job in signal handler failure.
 	sigprocmask(SIG_UNBLOCK, &mask, NULL);
     if (ret && !backgnd)
     {
@@ -313,22 +316,25 @@ sighandler (int signo)
 #endif
       }
   }
-  else if (signo == SIGCHLD)
+
+  signal (signo, sighandler); 
+}
+
+void sigchild (int signo, siginfo_t *info, void* param)
+{
+  if (signo == SIGCHLD)
   {
     int status = 0; 
-    pid_t pid = waitpid (-1, &status, 0); 
+    pid_t pid = waitpid (info->si_pid, &status, 0); 
     if (pid < 0)
     {
       //if (errno != ECHILD)
-      printf ("waitpid error %d\n", errno); 
+      printf ("waitpid error %d %d\n", info->si_pid, errno); 
     }
     else 
     {
-      printf ("wait child %d %d\n", pid, status); 
+      printf ("wait child %d %d %d\n", pid, info->si_pid, status); 
       deletejob (pid); 
     }
   }
-
-  if (signo != SIGCHLD)
-    signal (signo, sighandler); 
 }
