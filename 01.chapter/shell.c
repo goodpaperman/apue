@@ -81,8 +81,13 @@ void deletejob (pid_t pid)
 void displayjob ()
 {
     for (int i=0; i<MAX_JOB; ++ i)
-        if (jobs[i].state != JOB_FORE && jobs[i].pid != -1)
-            printf ("[%d] %d %s (%s)\n", i, jobs[i].pid, jobs[i].cmd, jobs[i].state == JOB_STOP ? "stop":"running"); 
+        if (jobs[i].pid != -1)
+        {
+            if (jobs[i].state != JOB_FORE)
+                printf ("[%d] %d %s (%s)\n", i, jobs[i].pid, jobs[i].cmd, jobs[i].state == JOB_STOP ? "stop":"running"); 
+            else 
+                printf ("[%d] %d %s (%s)\n", i, jobs[i].pid, jobs[i].cmd, "fore"); 
+        }
 
     //printf ("\n"); 
 }
@@ -314,6 +319,18 @@ sighandler (int signo)
         else 
           printf ("tcsetgrp %d OK\n", job->pid); 
 #endif
+      }
+  }
+  else if (signo == SIGINT || 
+          signo == SIGQUIT)
+  {
+      struct jobinfo* job = forejob (); 
+      if (job == NULL)
+          printf ("no active foreground task running!\n"); 
+      else 
+      {
+          ret = kill (-job->pid, signo); 
+          printf ("kill %d %d return %d, errno %d\n", signo, job->pid, ret, errno); 
       }
   }
 
