@@ -14,6 +14,8 @@ static void sigchild (int, siginfo_t *, void*);
 #define JOB_BACK 2
 #define JOB_STOP 3
 
+char g_sig = ' '; 
+
 struct jobinfo
 {
     char cmd[PATH_MAX]; 
@@ -98,6 +100,27 @@ void initjob ()
         jobs[i].pid = -1; 
 }
 
+void do_wait (pid_t cid, int retry)
+{
+    pid_t pid = 0; 
+    int status = 0, error = 0; 
+    do
+    {
+        g_sig = ' '; 
+        pid = waitpid (cid, &status, 0); 
+        if (pid < 0)
+        {
+            error = errno; 
+            printf ("waitpid error %d\n", errno); 
+        }
+        else 
+        {
+            printf ("wait %d %d\n", cid, status); 
+            deletejob (cid); 
+        }
+    } while (retry && pid < 0 && error == EINTR && g_sig != 'Z'); 
+}
+
 int do_builtin (char const* buf)
 {
     int ret = 0; 
@@ -148,15 +171,7 @@ int do_builtin (char const* buf)
 #endif 
       if (ret == 0 && buf[0] == 'f')
       {
-        int status = 0; 
-        pid_t pid = waitpid (jobs[n].pid, &status, 0); 
-        if (pid < 0)
-            printf ("waitpid error %d\n", errno); 
-        else 
-        {
-            printf ("wait %d %d\n", jobs[n].pid, status); 
-            deletejob (jobs[n].pid); 
-        }
+          do_wait (jobs[n].pid, 1); 
       }
 
       return 1; 
@@ -264,15 +279,7 @@ main (void)
 	sigprocmask(SIG_UNBLOCK, &mask, NULL);
     if (ret && !backgnd)
     {
-        int status = 0; 
-        pid_t pid = waitpid (pid, &status, 0); 
-        if (pid < 0)
-            printf ("waitpid error %d\n", errno); 
-        else 
-        {
-            printf ("wait %d %d\n", pid, status); 
-            deletejob (pid); 
-        }
+        do_wait (pid, 1); 
     }
 
     // parent
@@ -297,6 +304,7 @@ sighandler (int signo)
     exit (SIGHUP); 
   else if (signo == SIGTSTP)
   {
+      g_sig = 'Z'; 
       struct jobinfo* job = forejob (); 
       if (job == NULL)
         printf ("no active foreground task running!\n"); 
@@ -324,6 +332,7 @@ sighandler (int signo)
   else if (signo == SIGINT || 
           signo == SIGQUIT)
   {
+      g_sig = signo == SIGINT ? 'I' : 'Q'; 
       struct jobinfo* job = forejob (); 
       if (job == NULL)
           printf ("no active foreground task running!\n"); 
@@ -339,19 +348,9 @@ sighandler (int signo)
 
 void sigchild (int signo, siginfo_t *info, void* param)
 {
-  if (signo == SIGCHLD)
-  {
-    int status = 0; 
-    pid_t pid = waitpid (info->si_pid, &status, 0); 
-    if (pid < 0)
+    if (signo == SIGCHLD)
     {
-      //if (errno != ECHILD)
-      printf ("waitpid error %d %d\n", info->si_pid, errno); 
+        g_sig = 'C'; 
+        do_wait (info->si_pid, 0); 
     }
-    else 
-    {
-      printf ("wait child %d %d %d\n", pid, info->si_pid, status); 
-      deletejob (pid); 
-    }
-  }
 }
