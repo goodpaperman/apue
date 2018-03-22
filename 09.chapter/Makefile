@@ -1,4 +1,10 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker
+
+placetaker: placetaker.o
+	gcc -Wall -g $^ -o $@ 
+
+placetaker.o: placetaker.c 
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_GNU_SOURCE
 
 tcsetpgrp: tcsetpgrp.o
 	gcc -Wall -g $^ -o $@ 

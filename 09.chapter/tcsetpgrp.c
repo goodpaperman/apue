@@ -19,8 +19,8 @@ static void judge(void){
 
 int main(void){
         signal(SIGTTOU,SIG_IGN);
-        printf("tcgetsid:%d,pgrp=%d,sid=%d\n",tcgetsid(STDIN_FILENO),getpgrp(),getsid(getpid()));
         pid_t spid = tcgetsid(STDIN_FILENO);  
+        printf("tcgetsid:%d,pgrp=%d,sid=%d\n",spid,getpgrp(),getsid(getpid()));
         judge();
         int result;
         result = tcsetpgrp(STDIN_FILENO,getpgrp());

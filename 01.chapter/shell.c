@@ -15,6 +15,7 @@ static void sigchild (int, siginfo_t *, void*);
 #define JOB_STOP 3
 
 char g_sig = ' '; 
+pid_t g_placetaker = -1; 
 
 struct jobinfo
 {
@@ -35,30 +36,37 @@ struct jobinfo* forejob ()
     return NULL; 
 }
 
-void setfpg (pid_t pid)
+void setfpg (pid_t pgid)
 {
     // use stdin as default tty
-    int tty = 0; //open ("/dev/tty", O_RDWR); 
+    int tty = STDIN_FILENO; //open ("/dev/tty", O_RDWR); 
     //if (tty == -1)
     //{
     //    printf ("open default tty failed, errno %d\n", errno); 
     //    return; 
     //}
-
-    // foreground process will have same group id with controlling process
-    int ret = setpgid (pid, getpgrp ()); 
-    if (ret != 0)
-      err_ret ("setpgid (%d, %d) failed", pid, getpgrp ()); 
+    int ret = 0; 
+    //if (pgid != getpgrp ())
+    //{
+    //    // add placeholder to this foreground process group
+    //    // to avoid when pid exit, process group dies, 
+    //    // and controlling tty destroyed.
+    //    ret = setpgid (g_placetaker, pgid); 
+    //    if (ret != 0)
+    //        err_ret ("setpgid (%d, %d) failed", g_placetaker, pgid); 
+    //    else 
+    //        printf("set placetaker to new group %d OK\n", pgid); 
+    //}
 
     // if foreground process group id differs with controlling process, 
     // when it exits, process group dies, the controlling tty attached (by tcsetpgrp)
     // will be destroyed together, and controlling process will have no controlling tty !
     // so keep foreground process same group id with controlling process !!
-    ret = tcsetpgrp (tty, pid); 
+    ret = tcsetpgrp (tty, pgid); 
     if (ret != 0)
-      printf ("tcsetpgrp failed, pid %d,  tty %d, errno %d, current forepg %d\n", pid, tty, errno, tcgetpgrp (0)); 
+      printf ("%d tcsetpgrp failed, pgid %d,  tty %d, errno %d, current forepg %d\n", getpid (), pgid, tty, errno, tcgetpgrp (0)); 
     else 
-      printf ("tcsetpgrp %d OK, tty %d, current fore process group: %d\n", pid, tty, tcgetpgrp (0)); 
+      printf ("%d tcsetpgrp %d OK, tty %d, current fore process group: %d\n", getpid (), pgid, tty, tcgetpgrp (0)); 
 
     //close (tty); 
 }
@@ -91,10 +99,10 @@ int addjob (char const* cmd, pid_t pid, int state)
     strcpy (jobs[n].cmd, cmd); 
     jobs[n].state = state; 
     printf ("add %s job %d: [%d] %s\n", state == JOB_FORE ? "fore" : "back", pid, strlen(cmd), cmd); 
-    //if (state == JOB_FORE)
-    //{
-    //    setfpg (pid); 
-    //}
+    if (state == JOB_FORE)
+    {
+        setfpg (getpgid(pid)); 
+    }
 
     return 1; 
 }
@@ -110,11 +118,11 @@ void deletejob (pid_t pid)
             jobs[i].state = 0; 
             jobs[i].cmd[0] = 0; 
             printf ("delete job %d\n", pid); 
-            //if (fore)
-            //{
-            //    // reset fore process group to controlling process
-            //    setfpg (getpgrp ()); 
-            //}
+            if (fore)
+            {
+                // reset fore process group to controlling process
+                setfpg (getpgrp ()); 
+            }
 
             break;
         }
@@ -141,6 +149,27 @@ void initjob ()
         jobs[i].pid = -1; 
 
     printf ("current fore process group: %d\n", tcgetpgrp (0)); 
+    if ((g_placetaker = fork ()) < 0) {
+      err_sys ("fork error"); 
+    } else if (g_placetaker == 0) { 
+      //execlp ("./placetaker", "placetaker", NULL); 
+      //err_ret ("couldn't execute: placetaker"); 
+      while (1)
+      {
+          if (getppid () == 1)
+          {
+              break; 
+          }
+
+          sleep (1); 
+      }
+
+      printf ("pid %d, ppid %d, pgid %d, sid %d\n", getpid (), getppid (), getpgrp (), getsid (getpid ())); 
+      printf ("placetaker exit\n"); 
+      exit (127); 
+    }
+
+    printf ("placetaker: %d\n", g_placetaker); 
 }
 
 void do_wait (pid_t cid, int retry)
@@ -213,7 +242,7 @@ int do_builtin (char const* buf)
 #endif 
       if (ret == 0 && buf[0] == 'f')
       {
-          setfpg (jobs[n].pid); 
+          setfpg (getpgid(jobs[n].pid)); 
           do_wait (jobs[n].pid, 1); 
       }
 
@@ -259,6 +288,7 @@ main (void)
       else 
       { 
           printf ("fgets failed error %d\n", errno); 
+          sleep (5); 
           break; 
       }
     }
@@ -302,25 +332,23 @@ main (void)
       err_sys ("fork error"); 
     } else if (pid == 0) { 
 	  sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
       // every task in seperate group
-      if (backgnd)
-      {
-        ret = setpgid (0, 0); 
-        if (ret != 0)
-          err_ret ("setpgid (0, 0) failed"); 
-      }
+      ret = setpgid (0, 0); 
+      if (ret != 0)
+        err_ret ("setpgid (0, 0) failed"); 
+
+      if (!backgnd)
+        setfpg (getpid ()); 
 
       execvp (args[0], args); 
       err_ret ("couldn't execute: %s", buf); 
       exit (127); 
     }
 
-    if (backgnd)
-    {
-        ret = setpgid (pid, 0); 
-        if (ret != 0)
-          err_ret ("setpgid (%d, 0) failed", pid); 
-    }
+    ret = setpgid (pid, 0); 
+    if (ret != 0)
+      err_ret ("setpgid (%d, 0) failed", pid); 
 
     ret = addjob(buf, pid, backgnd ? JOB_BACK : JOB_FORE); 
     // unblock signal untill addjob over, 
@@ -376,11 +404,6 @@ sighandler (int signo)
         else 
           printf ("tcsetgrp %d OK\n", job->pid); 
 #endif
-
-        // set process group id to its own for background processes
-        ret = setpgid (job->pid, 0); 
-        if (ret != 0)
-          err_ret ("setpgid (%d, 0) failed", job->pid); 
       }
   }
   else if (signo == SIGINT || 
@@ -405,6 +428,7 @@ void sigchild (int signo, siginfo_t *info, void* param)
     if (signo == SIGCHLD)
     {
         g_sig = 'C'; 
+        //printf ("do wait from SIGINT\n"); 
         do_wait (info->si_pid, 0); 
     }
 }
