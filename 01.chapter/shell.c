@@ -36,7 +36,7 @@ struct jobinfo* forejob ()
     return NULL; 
 }
 
-void setfpg (pid_t pgid)
+void setfpg (pid_t pgid, int shadow)
 {
     // use stdin as default tty
     int tty = STDIN_FILENO; //open ("/dev/tty", O_RDWR); 
@@ -46,17 +46,17 @@ void setfpg (pid_t pgid)
     //    return; 
     //}
     int ret = 0; 
-    //if (pgid != getpgrp ())
-    //{
-    //    // add placeholder to this foreground process group
-    //    // to avoid when pid exit, process group dies, 
-    //    // and controlling tty destroyed.
-    //    ret = setpgid (g_placetaker, pgid); 
-    //    if (ret != 0)
-    //        err_ret ("setpgid (%d, %d) failed", g_placetaker, pgid); 
-    //    else 
-    //        printf("set placetaker to new group %d OK\n", pgid); 
-    //}
+    if (shadow)
+    {
+        // add placeholder to this foreground process group
+        // to avoid when pid exit, process group dies, 
+        // and controlling tty destroyed.
+        ret = setpgid (g_placetaker, pgid); 
+        if (ret != 0)
+            err_ret ("setpgid (%d, %d) failed", g_placetaker, pgid); 
+        else 
+            printf("set placetaker to new group %d OK\n", pgid); 
+    }
 
     // if foreground process group id differs with controlling process, 
     // when it exits, process group dies, the controlling tty attached (by tcsetpgrp)
@@ -101,7 +101,7 @@ int addjob (char const* cmd, pid_t pid, int state)
     printf ("add %s job %d: [%d] %s\n", state == JOB_FORE ? "fore" : "back", pid, strlen(cmd), cmd); 
     if (state == JOB_FORE)
     {
-        setfpg (getpgid(pid)); 
+        setfpg (getpgid(pid), 1); 
     }
 
     return 1; 
@@ -121,7 +121,7 @@ void deletejob (pid_t pid)
             if (fore)
             {
                 // reset fore process group to controlling process
-                setfpg (getpgrp ()); 
+                setfpg (getpgrp (), 0); 
             }
 
             break;
@@ -242,7 +242,7 @@ int do_builtin (char const* buf)
 #endif 
       if (ret == 0 && buf[0] == 'f')
       {
-          setfpg (getpgid(jobs[n].pid)); 
+          setfpg (getpgid(jobs[n].pid), 1); 
           do_wait (jobs[n].pid, 1); 
       }
 
@@ -288,7 +288,7 @@ main (void)
       else 
       { 
           printf ("fgets failed error %d\n", errno); 
-          sleep (5); 
+          sleep (10); 
           break; 
       }
     }
@@ -339,7 +339,7 @@ main (void)
         err_ret ("setpgid (0, 0) failed"); 
 
       if (!backgnd)
-        setfpg (getpid ()); 
+        setfpg (getpgrp (), 1); 
 
       execvp (args[0], args); 
       err_ret ("couldn't execute: %s", buf); 
