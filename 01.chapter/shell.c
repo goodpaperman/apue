@@ -15,7 +15,10 @@ static void sigchild (int, siginfo_t *, void*);
 #define JOB_STOP 3
 
 char g_sig = ' '; 
+int g_tty = 0; 
+#ifdef USE_SHADOW
 pid_t g_placetaker = -1; 
+#endif
 
 struct jobinfo
 {
@@ -39,13 +42,14 @@ struct jobinfo* forejob ()
 void setfpg (pid_t pgid, int shadow)
 {
     // use stdin as default tty
-    int tty = STDIN_FILENO; //open ("/dev/tty", O_RDWR); 
+    //int tty = STDIN_FILENO; //open ("/dev/tty", O_RDWR); 
     //if (tty == -1)
     //{
     //    printf ("open default tty failed, errno %d\n", errno); 
     //    return; 
     //}
     int ret = 0; 
+#ifdef USE_SHADOW
     if (shadow)
     {
         // add placeholder to this foreground process group
@@ -57,16 +61,17 @@ void setfpg (pid_t pgid, int shadow)
         else 
             printf("set placetaker to new group %d OK\n", pgid); 
     }
+#endif 
 
     // if foreground process group id differs with controlling process, 
     // when it exits, process group dies, the controlling tty attached (by tcsetpgrp)
     // will be destroyed together, and controlling process will have no controlling tty !
     // so keep foreground process same group id with controlling process !!
-    ret = tcsetpgrp (tty, pgid); 
+    ret = tcsetpgrp (g_tty, pgid); 
     if (ret != 0)
-      printf ("%d tcsetpgrp failed, pgid %d,  tty %d, errno %d, current forepg %d\n", getpid (), pgid, tty, errno, tcgetpgrp (0)); 
+      printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d,  tty %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, errno, tcgetpgrp (0)); 
     else 
-      printf ("%d tcsetpgrp %d OK, tty %d, current fore process group: %d\n", getpid (), pgid, tty, tcgetpgrp (0)); 
+      printf ("%d.%d.%d.%d tcsetpgrp %d OK, tty %d, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, tcgetpgrp (0)); 
 
     //close (tty); 
 }
@@ -149,6 +154,7 @@ void initjob ()
         jobs[i].pid = -1; 
 
     printf ("current fore process group: %d\n", tcgetpgrp (0)); 
+#ifdef USE_SHADOW
     if ((g_placetaker = fork ()) < 0) {
       err_sys ("fork error"); 
     } else if (g_placetaker == 0) { 
@@ -170,6 +176,7 @@ void initjob ()
     }
 
     printf ("placetaker: %d\n", g_placetaker); 
+#endif 
 }
 
 void do_wait (pid_t cid, int retry)
@@ -258,6 +265,9 @@ main (void)
   char buf [MAXLINE]; 
   pid_t pid; 
   int ret; 
+  //g_tty = open ("/dev/tty", O_RDWR); 
+  g_tty = dup2 (STDOUT_FILENO, 255); 
+  printf ("g_tty : %d, %s\n", g_tty, ttyname (g_tty)); 
 
   signal (SIGINT, sighandler); 
   //signal (SIGSTOP, sighandler);
@@ -366,6 +376,7 @@ main (void)
 #endif 
   } 
 
+  close(g_tty); 
   exit (0); 
 }
 
