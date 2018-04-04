@@ -8,6 +8,7 @@ FILE* g_log = 0;
 void sighandler (int signo)
 {
     g_quit ++; 
+    printf ("%d catch %d, quit %d\n", getpid(), signo, g_quit); 
     fprintf (g_log, "%d catch %d, quit %d\n", getpid(), signo, g_quit); 
     fflush (g_log); 
 

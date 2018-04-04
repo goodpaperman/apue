@@ -28,7 +28,7 @@ shell: shell.o apue.o
 	gcc -Wall -g $^ -o $@ 
 
 shell.o: ../01.chapter/shell.c 
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -DUSE_TIOCSPGRP
 
 crypt: crypt.o apue.o
 	gcc -Wall -g $^ -o $@ -lcrypt
@@ -146,7 +146,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh returnback
+	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback
 	@echo "end clean"
 
 .PHONY: clean

@@ -63,6 +63,7 @@ void setfpg (pid_t pgid, int shadow)
     }
 #endif 
 
+#ifdef  USE_TIOCSPGRP
     // if foreground process group id differs with controlling process, 
     // when it exits, process group dies, the controlling tty attached (by tcsetpgrp)
     // will be destroyed together, and controlling process will have no controlling tty !
@@ -72,6 +73,7 @@ void setfpg (pid_t pgid, int shadow)
       printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d,  tty %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, errno, tcgetpgrp (0)); 
     else 
       printf ("%d.%d.%d.%d tcsetpgrp %d OK, tty %d, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, tcgetpgrp (0)); 
+#endif 
 
     //close (tty); 
 }
@@ -227,8 +229,6 @@ int do_builtin (char const* buf)
         return 2; 
       }
 
-//#ifdef USE_KILL
-#if 1
       ret = kill(-jobs[n].pid, SIGCONT); 
       if (ret != 0)
         printf ("kill CONT %d failed, errno %d\n", jobs[n].pid, errno); 
@@ -237,16 +237,7 @@ int do_builtin (char const* buf)
         printf ("kill CONT %d OK\n", jobs[n].pid); 
         jobs[n].state = buf[0] == 'f' ? JOB_FORE : JOB_BACK; 
       }
-#else 
-      ret = tcsetpgrp (0, g_bkgnd[index]); 
-      if (ret != 0)
-        printf ("tcsetpgrp failed, errno %d\n", errno); 
-      else 
-      {
-        printf ("tcsetpgrp %d OK\n", g_bkgnd[index]); 
-        g_bkgnd[index] = 0; 
-      }
-#endif 
+
       if (ret == 0 && buf[0] == 'f')
       {
           setfpg (getpgid(jobs[n].pid), 1); 
@@ -269,18 +260,25 @@ main (void)
   g_tty = dup2 (STDOUT_FILENO, 255); 
   printf ("g_tty : %d, %s\n", g_tty, ttyname (g_tty)); 
 
+#ifndef USE_TIOCSPGRP
   signal (SIGINT, sighandler); 
   //signal (SIGSTOP, sighandler);
   signal (SIGTSTP, sighandler); 
   signal (SIGQUIT, sighandler); 
   //signal (SIGHUP, sighandler); 
   //signal (SIGCHLD, sighandler); 
+#endif 
   
   struct sigaction act; 
   sigemptyset(&act.sa_mask); 
   act.sa_sigaction = sigchild; 
+#ifndef USE_TIOCSPGRP
   // no SIGCHLD when child stopped.
   act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+#else 
+  act.sa_flags = SA_SIGINFO;
+#endif 
+
   sigaction (SIGCHLD, &act, 0); 
 
   initjob (); 
@@ -398,8 +396,6 @@ sighandler (int signo)
         printf ("no active foreground task running!\n"); 
       else 
       {
-//#ifdef USE_KILL
-#if 1
         ret = kill (-job->pid, SIGSTOP); 
         if (ret != 0)
           printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
@@ -408,13 +404,6 @@ sighandler (int signo)
           printf ("kill TSTP %d OK\n", job->pid); 
           job->state = JOB_STOP; 
         }
-#else 
-        ret = tcsetpgrp (0, -1); 
-        if (ret != 0)
-          printf ("tcsetgrp failed, errno %d\n", errno); 
-        else 
-          printf ("tcsetgrp %d OK\n", job->pid); 
-#endif
       }
   }
   else if (signo == SIGINT || 
@@ -439,7 +428,20 @@ void sigchild (int signo, siginfo_t *info, void* param)
     if (signo == SIGCHLD)
     {
         g_sig = 'C'; 
-        //printf ("do wait from SIGINT\n"); 
-        do_wait (info->si_pid, 0); 
+        if (info->si_code == CLD_STOPPED)
+        {
+            // not die, just stopped, change it backgrounding.
+            printf ("child %d stop\n", info->si_pid); 
+            struct jobinfo* job = forejob (); 
+            if (job == NULL)
+              printf ("no active foreground task running!\n"); 
+            else 
+              job->state = JOB_STOP; 
+        }
+        else 
+        {
+            printf ("child %d die\n", info->si_pid); 
+            do_wait (info->si_pid, 0); 
+        }
     }
 }
