@@ -267,6 +267,9 @@ main (void)
   signal (SIGQUIT, sighandler); 
   //signal (SIGHUP, sighandler); 
   //signal (SIGCHLD, sighandler); 
+#else 
+  signal (SIGTTOU, SIG_IGN); 
+  signal (SIGTTIN, SIG_IGN); 
 #endif 
   
   struct sigaction act; 
@@ -427,19 +430,24 @@ void sigchild (int signo, siginfo_t *info, void* param)
 {
     if (signo == SIGCHLD)
     {
-        g_sig = 'C'; 
         if (info->si_code == CLD_STOPPED)
         {
+            g_sig = 'Z'; 
             // not die, just stopped, change it backgrounding.
             printf ("child %d stop\n", info->si_pid); 
             struct jobinfo* job = forejob (); 
             if (job == NULL)
               printf ("no active foreground task running!\n"); 
             else 
+            {
+                // reset fore process group
               job->state = JOB_STOP; 
+              setfpg (getpgrp (), 0); 
+            }
         }
         else 
         {
+            g_sig = 'C'; 
             printf ("child %d die\n", info->si_pid); 
             do_wait (info->si_pid, 0); 
         }
