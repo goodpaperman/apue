@@ -15,7 +15,6 @@ static void sigchild (int, siginfo_t *, void*);
 #define JOB_STOP 3
 
 char g_sig = ' '; 
-int g_tty = 0; 
 
 struct jobinfo
 {
@@ -52,11 +51,11 @@ void setfpg (pid_t pgid, int shadow)
     // when it exits, process group dies, the controlling tty attached (by tcsetpgrp)
     // will be destroyed together, and controlling process will have no controlling tty !
     // so keep foreground process same group id with controlling process !!
-    ret = tcsetpgrp (g_tty, pgid); 
+    ret = tcsetpgrp (STDIN_FILENO, pgid); 
     if (ret != 0)
-      printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d,  tty %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, errno, tcgetpgrp (0)); 
+      printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, errno, tcgetpgrp (0)); 
     else 
-      printf ("%d.%d.%d.%d tcsetpgrp %d OK, tty %d, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, g_tty, tcgetpgrp (0)); 
+      printf ("%d.%d.%d.%d tcsetpgrp %d OK, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, tcgetpgrp (0)); 
 #endif 
 
     //close (tty); 
@@ -219,9 +218,7 @@ main (void)
   char buf [MAXLINE]; 
   pid_t pid; 
   int ret; 
-  //g_tty = open ("/dev/tty", O_RDWR); 
-  g_tty = dup2 (STDOUT_FILENO, 255); 
-  printf ("g_tty : %d, %s\n", g_tty, ttyname (g_tty)); 
+  printf ("tty: %s\n", ttyname (STDIN_FILENO)); 
 
 #ifndef USE_TIOCSPGRP
   signal (SIGINT, sighandler); 
@@ -340,7 +337,6 @@ main (void)
 #endif 
   } 
 
-  close(g_tty); 
   exit (0); 
 }
 
