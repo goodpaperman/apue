@@ -16,9 +16,6 @@ static void sigchild (int, siginfo_t *, void*);
 
 char g_sig = ' '; 
 int g_tty = 0; 
-#ifdef USE_SHADOW
-pid_t g_placetaker = -1; 
-#endif
 
 struct jobinfo
 {
@@ -49,19 +46,6 @@ void setfpg (pid_t pgid, int shadow)
     //    return; 
     //}
     int ret = 0; 
-#ifdef USE_SHADOW
-    if (shadow)
-    {
-        // add placeholder to this foreground process group
-        // to avoid when pid exit, process group dies, 
-        // and controlling tty destroyed.
-        ret = setpgid (g_placetaker, pgid); 
-        if (ret != 0)
-            err_ret ("setpgid (%d, %d) failed", g_placetaker, pgid); 
-        else 
-            printf("set placetaker to new group %d OK\n", pgid); 
-    }
-#endif 
 
 #ifdef  USE_TIOCSPGRP
     // if foreground process group id differs with controlling process, 
@@ -156,29 +140,6 @@ void initjob ()
         jobs[i].pid = -1; 
 
     printf ("current fore process group: %d\n", tcgetpgrp (0)); 
-#ifdef USE_SHADOW
-    if ((g_placetaker = fork ()) < 0) {
-      err_sys ("fork error"); 
-    } else if (g_placetaker == 0) { 
-      //execlp ("./placetaker", "placetaker", NULL); 
-      //err_ret ("couldn't execute: placetaker"); 
-      while (1)
-      {
-          if (getppid () == 1)
-          {
-              break; 
-          }
-
-          sleep (1); 
-      }
-
-      printf ("pid %d, ppid %d, pgid %d, sid %d\n", getpid (), getppid (), getpgrp (), getsid (getpid ())); 
-      printf ("placetaker exit\n"); 
-      exit (127); 
-    }
-
-    printf ("placetaker: %d\n", g_placetaker); 
-#endif 
 }
 
 void do_wait (pid_t cid, int retry)
@@ -187,7 +148,8 @@ void do_wait (pid_t cid, int retry)
     int status = 0, error = 0; 
     do
     {
-        g_sig = ' '; 
+        printf ("prepare to wait child, last sig: %c\n", g_sig); 
+        //g_sig = ' '; 
         pid = waitpid (cid, &status, 0); 
         if (pid < 0)
         {
@@ -200,6 +162,7 @@ void do_wait (pid_t cid, int retry)
             deletejob (cid); 
         }
     } while (retry && pid < 0 && error == EINTR && g_sig != 'Z'); 
+    printf ("break wait due to sig: %c\n", g_sig); 
 }
 
 int do_builtin (char const* buf)
