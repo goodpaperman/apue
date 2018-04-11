@@ -53,9 +53,9 @@ void setfpg (pid_t pgid, int shadow)
     // so keep foreground process same group id with controlling process !!
     ret = tcsetpgrp (STDIN_FILENO, pgid); 
     if (ret != 0)
-      printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, errno, tcgetpgrp (0)); 
+        printf ("%d.%d.%d.%d tcsetpgrp failed, pgid %d, errno %d, current forepg %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, errno, tcgetpgrp (0)); 
     else 
-      printf ("%d.%d.%d.%d tcsetpgrp %d OK, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, tcgetpgrp (0)); 
+        printf ("%d.%d.%d.%d tcsetpgrp %d OK, current fore process group: %d\n", getsid(getpid ()), getpgrp(), getppid(), getpid(), pgid, tcgetpgrp (0)); 
 #endif 
 
     //close (tty); 
@@ -147,21 +147,23 @@ void do_wait (pid_t cid, int retry)
     int status = 0, error = 0; 
     do
     {
-        printf ("prepare to wait child, last sig: %c\n", g_sig); 
+        //printf ("prepare to wait child, last sig: %c\n", g_sig); 
         //g_sig = ' '; 
         pid = waitpid (cid, &status, 0); 
         if (pid < 0)
         {
             error = errno; 
-            printf ("waitpid error %d\n", errno); 
+            printf ("%s waitpid error %d, lastsig %c\n", retry ? "sync" : "async", errno, g_sig); 
         }
         else 
         {
-            printf ("wait %d %d\n", cid, status); 
+            printf ("%s waitpid %d %d\n", retry ? "sync" : "async", cid, status); 
             deletejob (cid); 
         }
+        // only break if child stop
     } while (retry && pid < 0 && error == EINTR && g_sig != 'Z'); 
-    printf ("break wait due to sig: %c\n", g_sig); 
+    if (pid < 0 && error == EINTR)
+        printf ("break wait due to sig: %c\n", g_sig); 
 }
 
 int do_builtin (char const* buf)
@@ -174,241 +176,255 @@ int do_builtin (char const* buf)
     }
     else if (strncmp (buf, "jobs", 4) == 0)
     {
-      pid_t fore = tcgetpgrp (0); 
-      printf ("curent task is %d\n", fore); 
-      displayjob (); 
-      return 1; 
+        pid_t fore = tcgetpgrp (0); 
+        printf ("curent task is %d\n", fore); 
+        displayjob (); 
+        return 1; 
     }
     else if (strncmp (buf, "fg", 2) == 0 || 
             strncmp (buf, "bg", 2) == 0)
     {
-      int n = atoi (buf+3); 
-      if (n >= MAX_JOB || jobs[n].pid == -1 
-              || (buf[0] == 'b' && jobs[n].state != JOB_STOP)/*must be STOP*/
-              || (buf[0] == 'f' && jobs[n].state == JOB_FORE)/*can not be FORE*/)
-      {
-        printf ("slot empty\n"); 
-        return 2; 
-      }
+        int n = atoi (buf+3); 
+        if (n >= MAX_JOB || jobs[n].pid == -1 
+                || (buf[0] == 'b' && jobs[n].state != JOB_STOP)/*must be STOP*/
+                || (buf[0] == 'f' && jobs[n].state == JOB_FORE)/*can not be FORE*/)
+        {
+            printf ("slot empty\n"); 
+            return 2; 
+        }
 
-      ret = kill(-jobs[n].pid, SIGCONT); 
-      if (ret != 0)
-        printf ("kill CONT %d failed, errno %d\n", jobs[n].pid, errno); 
-      else 
-      {
-        printf ("kill CONT %d OK\n", jobs[n].pid); 
-        jobs[n].state = buf[0] == 'f' ? JOB_FORE : JOB_BACK; 
-      }
+        ret = kill(-jobs[n].pid, SIGCONT); 
+        if (ret != 0)
+            printf ("kill CONT %d failed, errno %d\n", jobs[n].pid, errno); 
+        else 
+        {
+            printf ("kill CONT %d OK\n", jobs[n].pid); 
+            jobs[n].state = buf[0] == 'f' ? JOB_FORE : JOB_BACK; 
+        }
 
-      if (ret == 0 && buf[0] == 'f')
-      {
-          setfpg (getpgid(jobs[n].pid), 1); 
-          do_wait (jobs[n].pid, 1); 
-      }
+        if (ret == 0 && buf[0] == 'f')
+        {
+            setfpg (getpgid(jobs[n].pid), 1); 
+            do_wait (jobs[n].pid, 1); 
+        }
 
-      return 1; 
+        return 1; 
     }
 
     return 0; 
 }
 
-int 
+    int 
 main (void)
 {
-  char buf [MAXLINE]; 
-  pid_t pid; 
-  int ret; 
-  printf ("tty: %s\n", ttyname (STDIN_FILENO)); 
+    char buf [MAXLINE]; 
+    pid_t pid; 
+    int ret; 
+    printf ("tty: %s\n", ttyname (STDIN_FILENO)); 
 
 #ifndef USE_TIOCSPGRP
-  signal (SIGINT, sighandler); 
-  //signal (SIGSTOP, sighandler);
-  signal (SIGTSTP, sighandler); 
-  signal (SIGQUIT, sighandler); 
-  //signal (SIGHUP, sighandler); 
-  //signal (SIGCHLD, sighandler); 
+    signal (SIGINT, sighandler); 
+    //signal (SIGSTOP, sighandler);
+    signal (SIGTSTP, sighandler); 
+    signal (SIGQUIT, sighandler); 
+    //signal (SIGHUP, sighandler); 
+    //signal (SIGCHLD, sighandler); 
 #else 
-  signal (SIGTTOU, SIG_IGN); 
-  signal (SIGTTIN, SIG_IGN); 
+    signal (SIGTTOU, SIG_IGN); 
+    signal (SIGTTIN, sighandler); 
 #endif 
-  
-  struct sigaction act; 
-  sigemptyset(&act.sa_mask); 
-  act.sa_sigaction = sigchild; 
+
+    struct sigaction act; 
+    sigemptyset(&act.sa_mask); 
+    act.sa_sigaction = sigchild; 
 #ifndef USE_TIOCSPGRP
-  // no SIGCHLD when child stopped.
-  act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    // no SIGCHLD when child stopped.
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
 #else 
-  act.sa_flags = SA_SIGINFO;
+    act.sa_flags = SA_SIGINFO;
 #endif 
 
-  sigaction (SIGCHLD, &act, 0); 
+    sigaction (SIGCHLD, &act, 0); 
 
-  initjob (); 
-  //printf ("%s%% ", ttyname(0)); 
-  while (1) {
-  //while (fgets (buf, MAXLINE, stdin) != 0) {
-    errno = 0; 
-    char *ptr = fgets (buf, MAXLINE, stdin); 
-    if (ptr == 0)
-    {
-      if (errno == EINTR) {
-        //printf ("fgets terminal by signal, contining..\n%% "); 
-        continue; 
-      }
-      else 
-      { 
-          printf ("fgets failed error %d\n", errno); 
-          sleep (10); 
-          break; 
-      }
-    }
-
-    while (strlen(buf) > 0 && buf [strlen (buf) - 1] == '\n') 
-      buf [strlen (buf) - 1] = 0; 
-
-    if (do_builtin (buf))
-    {
-        // eat builtin command
-        printf ("%% "); 
-        continue; 
-    }
-
-#if 1
-    int n = 0; 
-    char *args[10] = { 0 }; 
-    ptr = buf; 
-    while ((args[n] = strtok(ptr, " ")) != NULL)
-    {
-      //printf ("split: %s\n", args[n]); 
-      ptr = NULL; 
-      n++; 
-    }
-    
-    int backgnd = 0; 
-    if (n > 1 && args[n-1][0] == '&')
-    {
-        backgnd = 1; 
-        n--; 
-    }
-
-    args[n] = NULL; 
-
-    // to avoid wait failed with ECHILD
-    sigset_t mask; 
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGCHLD);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
-    if ((pid = fork ()) < 0) {
-      err_sys ("fork error"); 
-    } else if (pid == 0) { 
-	  sigprocmask(SIG_UNBLOCK, &mask, NULL);
-
-      // every task in seperate group
-      ret = setpgid (0, 0); 
-      if (ret != 0)
-        err_ret ("setpgid (0, 0) failed"); 
-
-      if (!backgnd)
-        setfpg (getpgrp (), 1); 
-
-      execvp (args[0], args); 
-      err_ret ("couldn't execute: %s", buf); 
-      exit (127); 
-    }
-
-    ret = setpgid (pid, 0); 
-    if (ret != 0)
-      err_ret ("setpgid (%d, 0) failed", pid); 
-
-    ret = addjob(buf, pid, backgnd ? JOB_BACK : JOB_FORE); 
-    // unblock signal untill addjob over, 
-    // to avoid delete job in signal handler failure.
-	sigprocmask(SIG_UNBLOCK, &mask, NULL);
-    if (ret && !backgnd)
-    {
-        do_wait (pid, 1); 
-    }
-
-    // parent
-    printf ("%% "); 
-#else 
-    system (buf); 
-#endif 
-  } 
-
-  exit (0); 
-}
-
-void 
-sighandler (int signo)
-{
-  int ret = 0; 
-  printf ("interrupt %d\n%% ", signo); 
-
-  //signal (SIGSTOP, sighandler); 
-  //signal (SIGCONT, sighandler); 
-  if (signo == SIGHUP)
-    exit (SIGHUP); 
-  else if (signo == SIGTSTP)
-  {
-      g_sig = 'Z'; 
-      struct jobinfo* job = forejob (); 
-      if (job == NULL)
-        printf ("no active foreground task running!\n"); 
-      else 
-      {
-        ret = kill (-job->pid, SIGSTOP); 
-        if (ret != 0)
-          printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
-        else 
+    initjob (); 
+    //printf ("%s%% ", ttyname(0)); 
+    while (1) {
+        //while (fgets (buf, MAXLINE, stdin) != 0) {
+        errno = 0; 
+        char *ptr = fgets (buf, MAXLINE, stdin); 
+        if (ptr == 0)
         {
-          printf ("kill TSTP %d OK\n", job->pid); 
-          job->state = JOB_STOP; 
-        }
-      }
-  }
-  else if (signo == SIGINT || 
-          signo == SIGQUIT)
-  {
-      g_sig = signo == SIGINT ? 'I' : 'Q'; 
-      struct jobinfo* job = forejob (); 
-      if (job == NULL)
-          printf ("no active foreground task running!\n"); 
-      else 
-      {
-          ret = kill (-job->pid, signo); 
-          printf ("kill %d %d return %d, errno %d\n", signo, job->pid, ret, errno); 
-      }
-  }
-
-  signal (signo, sighandler); 
-}
-
-void sigchild (int signo, siginfo_t *info, void* param)
-{
-    if (signo == SIGCHLD)
-    {
-        if (info->si_code == CLD_STOPPED)
-        {
-            g_sig = 'Z'; 
-            // not die, just stopped, change it backgrounding.
-            printf ("child %d stop\n", info->si_pid); 
-            struct jobinfo* job = forejob (); 
-            if (job == NULL)
-              printf ("no active foreground task running!\n"); 
+            if (errno == EINTR) {
+                //printf ("fgets terminal by signal, contining..\n%% "); 
+                continue; 
+            }
             else 
-            {
-                // reset fore process group
-              job->state = JOB_STOP; 
-              setfpg (getpgrp (), 0); 
+            { 
+                printf ("fgets failed error %d\n", errno); 
+                sleep (10); 
+                break; 
             }
         }
-        else 
+
+        while (strlen(buf) > 0 && buf [strlen (buf) - 1] == '\n') 
+            buf [strlen (buf) - 1] = 0; 
+
+        if (do_builtin (buf))
         {
-            g_sig = 'C'; 
-            printf ("child %d die\n", info->si_pid); 
-            do_wait (info->si_pid, 0); 
+            // eat builtin command
+            printf ("%% "); 
+            continue; 
+        }
+
+#if 1
+        int n = 0; 
+        char *args[10] = { 0 }; 
+        ptr = buf; 
+        while ((args[n] = strtok(ptr, " ")) != NULL)
+        {
+            //printf ("split: %s\n", args[n]); 
+            ptr = NULL; 
+            n++; 
+        }
+
+        int backgnd = 0; 
+        if (n > 1 && args[n-1][0] == '&')
+        {
+            backgnd = 1; 
+            n--; 
+        }
+
+        args[n] = NULL; 
+
+        // to avoid wait failed with ECHILD
+        sigset_t mask; 
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGCHLD);
+        sigprocmask(SIG_BLOCK, &mask, NULL);
+        if ((pid = fork ()) < 0) {
+            err_sys ("fork error"); 
+        } else if (pid == 0) { 
+            sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+            // every task in seperate group
+            ret = setpgid (0, 0); 
+            if (ret != 0)
+                err_ret ("setpgid (0, 0) failed"); 
+
+            if (!backgnd)
+                setfpg (getpgrp (), 1); 
+
+            execvp (args[0], args); 
+            err_ret ("couldn't execute: %s", buf); 
+            exit (127); 
+        }
+
+        ret = setpgid (pid, 0); 
+        if (ret != 0)
+            err_ret ("setpgid (%d, 0) failed", pid); 
+
+        ret = addjob(buf, pid, backgnd ? JOB_BACK : JOB_FORE); 
+        // unblock signal untill addjob over, 
+        // to avoid delete job in signal handler failure.
+        sigprocmask(SIG_UNBLOCK, &mask, NULL);
+        if (ret && !backgnd)
+        {
+            do_wait (pid, 1); 
+        }
+
+        // parent
+        printf ("%% "); 
+#else 
+        system (buf); 
+#endif 
+    } 
+
+    exit (0); 
+    }
+
+    void 
+        sighandler (int signo)
+        {
+            int ret = 0; 
+            printf ("interrupt %d\n%% ", signo); 
+
+            //signal (SIGSTOP, sighandler); 
+            //signal (SIGCONT, sighandler); 
+            if (signo == SIGHUP)
+            {
+                g_sig = 'H'; 
+                exit (SIGHUP); 
+            }
+            else if (signo == SIGTSTP)
+            {
+                g_sig = 'Z'; 
+                struct jobinfo* job = forejob (); 
+                if (job == NULL)
+                    printf ("no active foreground task running!\n"); 
+                else 
+                {
+                    ret = kill (-job->pid, SIGSTOP); 
+                    if (ret != 0)
+                        printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
+                    else 
+                    {
+                        printf ("kill TSTP %d OK\n", job->pid); 
+                        job->state = JOB_STOP; 
+                    }
+                }
+            }
+            else if (signo == SIGINT || 
+                    signo == SIGQUIT)
+            {
+                g_sig = signo == SIGINT ? 'I' : 'Q'; 
+                struct jobinfo* job = forejob (); 
+                if (job == NULL)
+                    printf ("no active foreground task running!\n"); 
+                else 
+                {
+                    ret = kill (-job->pid, signo); 
+                    printf ("kill %d %d return %d, errno %d\n", signo, job->pid, ret, errno); 
+                }
+            }
+            else
+            {
+                printf ("recv signal %d\n", signo); 
+            }
+
+            signal (signo, sighandler); 
+        }
+
+    void sigchild (int signo, siginfo_t *info, void* param)
+    {
+        if (signo == SIGCHLD)
+        {
+            if (info->si_code == CLD_STOPPED)
+            {
+                g_sig = 'Z'; 
+                // not die, just stopped, change it backgrounding.
+                printf ("child %d stop\n", info->si_pid); 
+                struct jobinfo* job = forejob (); 
+                if (job == NULL)
+                    printf ("no active foreground task running!\n"); 
+                else 
+                {
+                    // reset fore process group
+                    job->state = JOB_STOP; 
+                    setfpg (getpgrp (), 0); 
+                }
+            }
+            else if (info->si_code == CLD_EXITED ||
+                    info->si_code == CLD_KILLED || 
+                    info->si_code == CLD_DUMPED)
+            {
+                g_sig = 'D'; 
+                printf ("child %d die\n", info->si_pid); 
+                do_wait (info->si_pid, 0); 
+            }
+            else 
+            {
+                g_sig = 'C'; 
+                printf ("child %d state changed: %d\n", info->si_pid, info->si_code); 
+            }
         }
     }
-}
