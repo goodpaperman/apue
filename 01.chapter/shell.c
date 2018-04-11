@@ -231,7 +231,7 @@ main (void)
     //signal (SIGCHLD, sighandler); 
 #else 
     signal (SIGTTOU, SIG_IGN); 
-    signal (SIGTTIN, sighandler); 
+    //signal (SIGTTIN, sighandler); 
 #endif 
 
     struct sigaction act; 

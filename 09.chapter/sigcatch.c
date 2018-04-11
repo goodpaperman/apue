@@ -25,6 +25,8 @@ int main (int argc, char *argv[])
     signal (SIGQUIT, sighandler); 
     signal (SIGHUP, sighandler); 
     signal (SIGTERM, sighandler); 
+    signal (SIGTTIN, SIG_IGN); 
+    signal (SIGTTOU, SIG_IGN); 
     for (int i=1; i<argc; ++ i)
     {
         pid = fork (); 
