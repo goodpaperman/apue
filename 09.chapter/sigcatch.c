@@ -8,6 +8,7 @@ FILE* g_log = 0;
 void sighandler (int signo)
 {
     g_quit ++; 
+    // to test  SIGTTOU
     printf ("%d catch %d, quit %d\n", getpid(), signo, g_quit); 
     fprintf (g_log, "%d catch %d, quit %d\n", getpid(), signo, g_quit); 
     fflush (g_log); 
@@ -25,8 +26,8 @@ int main (int argc, char *argv[])
     signal (SIGQUIT, sighandler); 
     signal (SIGHUP, sighandler); 
     signal (SIGTERM, sighandler); 
-    signal (SIGTTIN, SIG_IGN); 
-    signal (SIGTTOU, SIG_IGN); 
+    //signal (SIGTTIN, SIG_IGN); 
+    //signal (SIGTTOU, SIG_IGN); 
     for (int i=1; i<argc; ++ i)
     {
         pid = fork (); 
@@ -40,10 +41,14 @@ int main (int argc, char *argv[])
             printf ("create children %d\n", pid); 
     }
 
+    int in = 0; 
     while (g_quit < 3)
     {
-        sleep (1); 
+        sleep (10); 
+        // to test  SIGTTIN
         //printf ("quit %d\n", g_quit); 
+        printf ("input number: \n"); 
+        scanf ("%d", &in); 
     }
 
     fclose (g_log); 

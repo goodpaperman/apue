@@ -35,6 +35,15 @@ struct jobinfo* forejob ()
     return NULL; 
 }
 
+struct jobinfo* backjob (pid_t pid)
+{
+    for (int i=0; i<MAX_JOB; ++ i)
+        if (jobs[i].state != JOB_FORE && jobs[i].pid == pid)
+            return &jobs[i]; 
+
+    return NULL; 
+}
+
 void setfpg (pid_t pgid, int shadow)
 {
     // use stdin as default tty
@@ -402,16 +411,42 @@ main (void)
             {
                 g_sig = 'Z'; 
                 // not die, just stopped, change it backgrounding.
+                // note here 2 scenes, 
+                // first child is foreground process and receive Ctrl+Z; 
+                // second child is background process and want read/write something
+                //     to console and receive SIGTTIN/SIGTTOU and stopped.
+                //
                 printf ("child %d stop\n", info->si_pid); 
                 struct jobinfo* job = forejob (); 
                 if (job == NULL)
-                    printf ("no active foreground task running!\n"); 
+                {
+                    printf ("no active foreground task running, try to see background\n"); 
+                    job = backjob (info->si_pid); 
+                    if (job == NULL)
+                        printf ("no inactive background task find!\n"); 
+                    else 
+                        // just update state is OK
+                        job->state = JOB_STOP; 
+                }
+                else if (job->pid != info->si_pid)
+                    printf ("warning: stopped child is not the fore job!\n"); 
                 else 
                 {
                     // reset fore process group
                     job->state = JOB_STOP; 
                     setfpg (getpgrp (), 0); 
                 }
+            }
+            else if (info->si_code == CLD_CONTINUED)
+            {
+                g_sig = 'C'; 
+                printf ("child %d continue\n", info->si_pid); 
+                struct jobinfo* job = backjob (info->si_pid); 
+                if (job == NULL)
+                    printf ("no inactive background task find!\n"); 
+                else 
+                    // just update state is OK.
+                    job->state = JOB_BACK; 
             }
             else if (info->si_code == CLD_EXITED ||
                     info->si_code == CLD_KILLED || 
@@ -423,7 +458,7 @@ main (void)
             }
             else 
             {
-                g_sig = 'C'; 
+                g_sig = 'O'; 
                 printf ("child %d state changed: %d\n", info->si_pid, info->si_code); 
             }
         }
