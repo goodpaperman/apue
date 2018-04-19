@@ -35,10 +35,10 @@ struct jobinfo* forejob ()
     return NULL; 
 }
 
-struct jobinfo* backjob (pid_t pid)
+struct jobinfo* findjob (pid_t pid)
 {
     for (int i=0; i<MAX_JOB; ++ i)
-        if (jobs[i].state != JOB_FORE && jobs[i].pid == pid)
+        if (jobs[i].pid == pid)
             return &jobs[i]; 
 
     return NULL; 
@@ -417,36 +417,46 @@ main (void)
                 //     to console and receive SIGTTIN/SIGTTOU and stopped.
                 //
                 printf ("child %d stop\n", info->si_pid); 
-                struct jobinfo* job = forejob (); 
+                struct jobinfo* job = findjob (info->si_pid); 
                 if (job == NULL)
                 {
-                    printf ("no active foreground task running, try to see background\n"); 
-                    job = backjob (info->si_pid); 
-                    if (job == NULL)
-                        printf ("no inactive background task find!\n"); 
-                    else 
-                        // just update state is OK
-                        job->state = JOB_STOP; 
+                        printf ("no task find!\n"); 
                 }
-                else if (job->pid != info->si_pid)
-                    printf ("warning: stopped child is not the fore job!\n"); 
-                else 
+                else
                 {
-                    // reset fore process group
-                    job->state = JOB_STOP; 
-                    setfpg (getpgrp (), 0); 
+                    switch (job->state)
+                    {
+                        case JOB_FORE:
+                            // reset fore process group
+                            job->state = JOB_STOP; 
+                            setfpg (getpgrp (), 0); 
+                            break; 
+                        case JOB_BACK:
+                            // just update state is OK
+                            job->state = JOB_STOP; 
+                            printf ("update task %d state to stop\n", job->pid); 
+                            break; 
+                        default:
+                            break; 
+                    }
                 }
             }
             else if (info->si_code == CLD_CONTINUED)
             {
                 g_sig = 'C'; 
                 printf ("child %d continue\n", info->si_pid); 
-                struct jobinfo* job = backjob (info->si_pid); 
+                struct jobinfo* job = findjob (info->si_pid); 
                 if (job == NULL)
-                    printf ("no inactive background task find!\n"); 
+                    printf ("no task find!\n"); 
                 else 
-                    // just update state is OK.
-                    job->state = JOB_BACK; 
+                {
+                    if (job->state == JOB_STOP)
+                    {
+                        // just update state is OK.
+                        job->state = JOB_BACK;  // NOT JOB_FORE !
+                        printf ("update task %d state to running\n", job->pid); 
+                    }
+                }
             }
             else if (info->si_code == CLD_EXITED ||
                     info->si_code == CLD_KILLED || 
