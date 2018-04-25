@@ -44,7 +44,7 @@ struct jobinfo* findjob (pid_t pid)
     return NULL; 
 }
 
-void setfpg (pid_t pgid, int shadow)
+void setfpg (pid_t pgid)
 {
     // use stdin as default tty
     //int tty = STDIN_FILENO; //open ("/dev/tty", O_RDWR); 
@@ -100,7 +100,7 @@ int addjob (char const* cmd, pid_t pid, int state)
     printf ("add %s job %d: [%d] %s\n", state == JOB_FORE ? "fore" : "back", pid, strlen(cmd), cmd); 
     if (state == JOB_FORE)
     {
-        setfpg (getpgid(pid), 1); 
+        setfpg (getpgid(pid)); 
     }
 
     return 1; 
@@ -120,7 +120,7 @@ void deletejob (pid_t pid)
             if (fore)
             {
                 // reset fore process group to controlling process
-                setfpg (getpgrp (), 0); 
+                setfpg (getpgrp ()); 
             }
 
             break;
@@ -175,6 +175,64 @@ void do_wait (pid_t cid, int retry)
         printf ("break wait due to sig: %c\n", g_sig); 
 }
 
+int check_child_state (struct jobinfo* job, int cont, int fore)
+{
+    int status = 0; 
+    int ret = waitpid (job->pid, &status, WNOHANG | WUNTRACED | WCONTINUED); 
+    if (ret == job->pid)
+    {
+        printf ("waitpid status 0x%x\n", status); 
+        if (WIFCONTINUED(status))
+        {
+            job->state = fore ? JOB_FORE : JOB_BACK; 
+            if (fore)
+            {
+                setfpg (getpgid(job->pid)); 
+                do_wait (job->pid, 1); 
+            }
+        }
+        else if (WIFSTOPPED(status))
+        {
+            // not actually changed 
+            printf ("child stopped by sig %d\n", WSTOPSIG(status)); 
+            if (job->state == JOB_FORE)
+                setfpg (getpgrp ()); 
+
+            job->state = JOB_STOP; 
+        }
+        else
+        {
+            printf ("is child die ?\n"); 
+        }
+    }
+    else if (ret == 0)
+    {
+        printf ("child state not change, using state given\n"); 
+        if (cont)
+        {
+            job->state = fore ? JOB_FORE : JOB_BACK; 
+            if (fore)
+            {
+                setfpg (getpgid(job->pid)); 
+                do_wait (job->pid, 1); 
+            }
+        }
+        else 
+        {
+            if (job->state == JOB_FORE)
+                setfpg (getpgrp ()); 
+
+            job->state = JOB_STOP; 
+        }
+    }
+    else 
+    {
+        printf ("waitpid failed, errno %d\n", errno); 
+    }
+
+    return ret; 
+}
+
 int do_builtin (char const* buf)
 {
     int ret = 0; 
@@ -208,13 +266,9 @@ int do_builtin (char const* buf)
         else 
         {
             printf ("kill CONT %d OK\n", jobs[n].pid); 
-            jobs[n].state = buf[0] == 'f' ? JOB_FORE : JOB_BACK; 
-        }
 
-        if (ret == 0 && buf[0] == 'f')
-        {
-            setfpg (getpgid(jobs[n].pid), 1); 
-            do_wait (jobs[n].pid, 1); 
+            //usleep (1000);  // to wait child change state
+            check_child_state (&jobs[n], 1, buf[0] == 'f'); 
         }
 
         return 1; 
@@ -321,7 +375,7 @@ main (void)
                 err_ret ("setpgid (0, 0) failed"); 
 
             if (!backgnd)
-                setfpg (getpgrp (), 1); 
+                setfpg (getpgrp ()); 
 
             execvp (args[0], args); 
             err_ret ("couldn't execute: %s", buf); 
@@ -351,57 +405,56 @@ main (void)
     exit (0); 
     }
 
-    void 
-        sighandler (int signo)
+    void sighandler (int signo)
+    {
+        int ret = 0; 
+        printf ("interrupt %d\n%% ", signo); 
+
+        //signal (SIGSTOP, sighandler); 
+        //signal (SIGCONT, sighandler); 
+        if (signo == SIGHUP)
         {
-            int ret = 0; 
-            printf ("interrupt %d\n%% ", signo); 
-
-            //signal (SIGSTOP, sighandler); 
-            //signal (SIGCONT, sighandler); 
-            if (signo == SIGHUP)
-            {
-                g_sig = 'H'; 
-                exit (SIGHUP); 
-            }
-            else if (signo == SIGTSTP)
-            {
-                g_sig = 'Z'; 
-                struct jobinfo* job = forejob (); 
-                if (job == NULL)
-                    printf ("no active foreground task running!\n"); 
-                else 
-                {
-                    ret = kill (-job->pid, SIGSTOP); 
-                    if (ret != 0)
-                        printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
-                    else 
-                    {
-                        printf ("kill TSTP %d OK\n", job->pid); 
-                        job->state = JOB_STOP; 
-                    }
-                }
-            }
-            else if (signo == SIGINT || 
-                    signo == SIGQUIT)
-            {
-                g_sig = signo == SIGINT ? 'I' : 'Q'; 
-                struct jobinfo* job = forejob (); 
-                if (job == NULL)
-                    printf ("no active foreground task running!\n"); 
-                else 
-                {
-                    ret = kill (-job->pid, signo); 
-                    printf ("kill %d %d return %d, errno %d\n", signo, job->pid, ret, errno); 
-                }
-            }
-            else
-            {
-                printf ("recv signal %d\n", signo); 
-            }
-
-            signal (signo, sighandler); 
+            g_sig = 'H'; 
+            exit (SIGHUP); 
         }
+        else if (signo == SIGTSTP)
+        {
+            g_sig = 'Z'; 
+            struct jobinfo* job = forejob (); 
+            if (job == NULL)
+                printf ("no active foreground task running!\n"); 
+            else 
+            {
+                ret = kill (-job->pid, SIGSTOP); 
+                if (ret != 0)
+                    printf ("kill TSTP %d failed, errno %d\n", job->pid, errno); 
+                else 
+                {
+                    printf ("kill TSTP %d OK\n", job->pid); 
+                    job->state = JOB_STOP; 
+                }
+            }
+        }
+        else if (signo == SIGINT || 
+                signo == SIGQUIT)
+        {
+            g_sig = signo == SIGINT ? 'I' : 'Q'; 
+            struct jobinfo* job = forejob (); 
+            if (job == NULL)
+                printf ("no active foreground task running!\n"); 
+            else 
+            {
+                ret = kill (-job->pid, signo); 
+                printf ("kill %d %d return %d, errno %d\n", signo, job->pid, ret, errno); 
+            }
+        }
+        else
+        {
+            printf ("recv signal %d\n", signo); 
+        }
+
+        signal (signo, sighandler); 
+    }
 
     void sigchild (int signo, siginfo_t *info, void* param)
     {
@@ -420,25 +473,26 @@ main (void)
                 struct jobinfo* job = findjob (info->si_pid); 
                 if (job == NULL)
                 {
-                        printf ("no task find!\n"); 
+                    printf ("no task find!\n"); 
                 }
                 else
                 {
-                    switch (job->state)
-                    {
-                        case JOB_FORE:
-                            // reset fore process group
-                            job->state = JOB_STOP; 
-                            setfpg (getpgrp (), 0); 
-                            break; 
-                        case JOB_BACK:
-                            // just update state is OK
-                            job->state = JOB_STOP; 
-                            printf ("update task %d state to stop\n", job->pid); 
-                            break; 
-                        default:
-                            break; 
-                    }
+                    check_child_state (job, 0, 0); 
+                    //switch (job->state)
+                    //{
+                    //    case JOB_FORE:
+                    //        // reset fore process group
+                    //        job->state = JOB_STOP; 
+                    //        setfpg (getpgrp ()); 
+                    //        break; 
+                    //    case JOB_BACK:
+                    //        // just update state is OK
+                    //        job->state = JOB_STOP; 
+                    //        printf ("update task %d state to stop\n", job->pid); 
+                    //        break; 
+                    //    default:
+                    //        break; 
+                    //}
                 }
             }
             else if (info->si_code == CLD_CONTINUED)
@@ -450,12 +504,13 @@ main (void)
                     printf ("no task find!\n"); 
                 else 
                 {
-                    if (job->state == JOB_STOP)
-                    {
-                        // just update state is OK.
-                        job->state = JOB_BACK;  // NOT JOB_FORE !
-                        printf ("update task %d state to running\n", job->pid); 
-                    }
+                    check_child_state (job, 1, 0); 
+                    //if (job->state == JOB_STOP)
+                    //{
+                    //    // just update state is OK.
+                    //    job->state = JOB_BACK;  // NOT JOB_FORE !
+                    //    printf ("update task %d state to running\n", job->pid); 
+                    //}
                 }
             }
             else if (info->si_code == CLD_EXITED ||
