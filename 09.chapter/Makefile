@@ -24,7 +24,7 @@ tsh: tsh.o apue.o
 tsh.o: tsh.c 
 	gcc -Wall -g -c $< -o $@ -std=c99 -D_GNU_SOURCE
 
-shell: shell.o apue.o
+shell: shell.o apue.o log.o
 	gcc -Wall -g $^ -o $@ 
 
 shell.o: ../01.chapter/shell.c 
@@ -54,7 +54,7 @@ telnetl: telnetl.o apue.o
 telnetl.o: telnet/telnetl.c 
 	gcc -Wall -g -c $< -o $@ #-std=c99
 
-telnety: telnety.o apue.o #pty_fun.o
+telnety: telnety.o apue.o log.o #pty_fun.o
 	gcc -Wall -g $^ -o $@ -lutil
 
 telnety.o: telnet/telnety.c 
@@ -140,6 +140,9 @@ grpid: grpid.o apue.o
 
 grpid.o: grpid.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99
+
+log.o: ../log.c ../log.h
+	gcc -Wall -g -c $< -o $@
 
 apue.o: ../apue.c ../apue.h 
 	gcc -Wall -g -c $< -o $@ -D__USE_BSD

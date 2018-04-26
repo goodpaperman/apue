@@ -10,8 +10,8 @@ void sighandler (int signo)
     g_quit ++; 
     // to test  SIGTTOU
     printf ("%d catch %d, quit %d\n", getpid(), signo, g_quit); 
-    fprintf (g_log, "%d catch %d, quit %d\n", getpid(), signo, g_quit); 
-    fflush (g_log); 
+    //fprintf (g_log, "%d catch %d, quit %d\n", getpid(), signo, g_quit); 
+    //fflush (g_log); 
 
     //printf ("quit %d\n", g_quit); 
     // PERSIST IT !
@@ -49,6 +49,7 @@ int main (int argc, char *argv[])
         //printf ("quit %d\n", g_quit); 
         printf ("input number: \n"); 
         scanf ("%d", &in); 
+        printf ("get %d\n", in); 
     }
 
     fclose (g_log); 
