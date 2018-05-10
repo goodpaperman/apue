@@ -1,4 +1,10 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback orphan.c
+
+orphan: orphan.o apue.o
+	gcc -Wall -g $^ -o $@ 
+
+orphan.o: orphan.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_GNU_SOURCE
 
 returnback: returnback.o
 	gcc -Wall -g $^ -o $@ 
