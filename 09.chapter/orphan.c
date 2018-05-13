@@ -13,9 +13,9 @@ static void pr_ids (char const* name)
     fflush (stdout); 
 }
 
-#define N 5
+#define N 10
 #define ALL_STOP
-//#define ALL_SLEEP
+#define ALL_SLEEP
 
 int main (void)
 {
@@ -60,7 +60,8 @@ int main (void)
         }
     }
 
-    sleep (5); 
+    sleep (3); 
+    printf ("parent exit\n"); 
     exit (0); 
     return 0; 
 }
