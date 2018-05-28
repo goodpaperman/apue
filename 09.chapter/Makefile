@@ -1,4 +1,4 @@
-all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback orphan.c
+all: grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback orphan
 
 orphan: orphan.o apue.o
 	gcc -Wall -g $^ -o $@ 
