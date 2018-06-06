@@ -1,4 +1,10 @@
 #include "../apue.h" 
+#include <errno.h>
+
+void sig_eater (int signum)
+{
+    printf ("got signal %d\n", signum); 
+}
 
 void test_abrt ()
 {
@@ -18,6 +24,8 @@ void test_fpe ()
 //#define MAXLINE 80
 void test_pipe ()
 {
+    int ret = 0; 
+    signal (SIGPIPE, sig_eater); 
     int fd[2] = { 0 }; 
     if (pipe(fd) < 0)
         err_sys ("pipe error");
@@ -28,20 +36,34 @@ void test_pipe ()
     else if (pid > 0)
     {
         close (fd[0]); 
-        write (fd[1], "hello world\n", 12); 
+        ret = write (fd[1], "hello world\n", 12); 
+        //write (STDOUT_FILENO, "write1\n", 7); 
+        printf ("write %d, errno %d\n", ret, errno); 
         sleep (1); 
-        write (fd[1], "hello world\n", 12); 
+        ret = write (fd[1], "hello world\n", 12); 
+        //write (STDOUT_FILENO, "write2\n", 7); 
+        printf ("write %d, errno %d\n", ret, errno); 
         sleep (1); 
-        write (fd[1], "hello world\n", 12); 
+        ret = write (fd[1], "hello world\n", 12); 
+        //write (STDOUT_FILENO, "write3\n", 7); 
+        printf ("write %d, errno %d\n", ret, errno); 
     }
     else 
     {
         close (fd[1]); 
+#if 0
+        // to test whether close pipe works
+        close (fd[2]); 
+        sleep (5); 
+        return; 
+#endif 
         char line [MAXLINE] = { 0 }; 
-        int n = read (fd[0], line, MAXLINE);
-        write (STDOUT_FILENO, line, n); 
-        n = read (fd[0], line, MAXLINE); 
-        write (STDOUT_FILENO, line, n); 
+        ret = read (fd[0], line, MAXLINE);
+        //write (STDOUT_FILENO, line, n); 
+        printf ("read %d, errno %d\n", ret, errno); 
+        ret = read (fd[0], line, MAXLINE); 
+        //write (STDOUT_FILENO, line, n); 
+        printf ("read %d, errno %d\n", ret, errno); 
     }
 }
 
