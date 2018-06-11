@@ -4,20 +4,28 @@
 void sig_eater (int signum)
 {
     printf ("got signal %d\n", signum); 
+    signal(signum, sig_eater); 
 }
 
 void test_abrt ()
 {
+    //signal (SIGABRT, SIG_IGN); 
+    signal (SIGABRT, sig_eater); 
     abort (); 
+    // effect same
+    //kill(0, SIGABRT); 
 }
 
 void test_fpe ()
 {
     int i = 1; 
+    signal (SIGABRT, SIG_IGN); 
+    //signal (SIGFPE, sig_eater); 
     double j = 0.0; 
     float k = i / j; // to see SIG_FPE
     printf ("k = %.2f\n", k); 
     k = i / 0; 
+    //kill (0, SIGFPE); 
     printf ("k = %.2f\n", k); 
 }
 
@@ -25,6 +33,7 @@ void test_fpe ()
 void test_pipe ()
 {
     int ret = 0; 
+    //signal (SIGPIPE, SIG_IGN); 
     signal (SIGPIPE, sig_eater); 
     int fd[2] = { 0 }; 
     if (pipe(fd) < 0)
@@ -67,14 +76,39 @@ void test_pipe ()
     }
 }
 
+void test_wait (int signum)
+{
+    signal (signum, sig_eater); 
+    printf ("this is %d\n", getpid ()); 
+    sleep (10); 
+    printf ("I am not die\n"); 
+}
+
+void test_segv ()
+{
+    int *p = 0; 
+    signal (SIGSEGV, SIG_IGN); 
+    //signal (SIGSEGV, sig_eater); 
+    printf ("this is %d\n", *p); 
+    printf ("pointer 0x%x\n", p); 
+}
+
 int main ()
 {
 #if 0
     test_abrt (); 
-#elif 0 
+#elif 0
     test_fpe (); 
-#else 
+#elif 0
     test_pipe (); 
-#endif 
+#elif 0
+    test_wait (SIGQUIT); 
+#elif 0
+    test_wait (SIGINT); 
+#elif 0
+    test_wait (SIGTERM); 
+#elif 1
+    test_segv (); 
+#endif
     return 0; 
 }
