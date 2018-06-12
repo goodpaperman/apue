@@ -78,9 +78,10 @@ void test_pipe ()
 
 void test_wait (int signum)
 {
-    signal (signum, sig_eater); 
+    //signal (signum, sig_eater); 
+    signal (signum, SIG_IGN); 
     printf ("this is %d\n", getpid ()); 
-    sleep (10); 
+    sleep (20); 
     printf ("I am not die\n"); 
 }
 
@@ -92,6 +93,19 @@ void test_segv ()
     printf ("this is %d\n", *p); 
     printf ("pointer 0x%x\n", p); 
 }
+
+void test_ttin ()
+{
+    // start this process in background
+    signal (SIGTTIN, SIG_IGN); 
+    //signal (SIGTTIN, sig_eater); 
+    sleep (3); 
+
+    char c = 0; 
+    int ret = scanf ("%c", &c); 
+    printf ("got %c, ret %d, error %d\n", c, ret, errno); 
+}
+
 
 int main ()
 {
@@ -107,8 +121,14 @@ int main ()
     test_wait (SIGINT); 
 #elif 0
     test_wait (SIGTERM); 
-#elif 1
+#elif 0
+    test_wait (SIGSTOP); 
+#elif 0
+    test_wait (SIGTSTP); 
+#elif 0
     test_segv (); 
+#elif 1
+    test_ttin (); 
 #endif
     return 0; 
 }
