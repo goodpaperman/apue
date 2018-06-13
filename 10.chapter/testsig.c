@@ -16,6 +16,14 @@ void test_abrt ()
     //kill(0, SIGABRT); 
 }
 
+void test_alrm ()
+{
+    signal (SIGALRM, sig_eater); 
+    alarm (3); 
+    sleep (4); 
+    printf ("i am not die\n"); 
+}
+
 void test_fpe ()
 {
     int i = 1; 
@@ -106,11 +114,25 @@ void test_ttin ()
     printf ("got %c, ret %d, error %d\n", c, ret, errno); 
 }
 
+void test_ttou ()
+{
+    // start this process in background
+    //signal (SIGTTOU, SIG_IGN); 
+    signal (SIGTTOU, sig_eater); 
+    sleep (3); 
+
+    int ret = write (STDOUT_FILENO, "this is me\n", 12); 
+    FILE* f = fopen ("dbg.txt", "w+"); 
+    fprintf (f, "put ret %d, error %d\n", ret, errno); 
+    fclose (f); 
+}
 
 int main ()
 {
 #if 0
     test_abrt (); 
+#elif 0
+    test_alrm (); 
 #elif 0
     test_fpe (); 
 #elif 0
@@ -126,9 +148,15 @@ int main ()
 #elif 0
     test_wait (SIGTSTP); 
 #elif 0
-    test_segv (); 
+    test_wait (SIGUSR1); 
 #elif 1
+    test_wait (SIGUSR2); 
+#elif 0
+    test_segv (); 
+#elif 0
     test_ttin (); 
+#elif 0
+    test_ttou (); 
 #endif
     return 0; 
 }
