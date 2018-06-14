@@ -128,6 +128,13 @@ void test_ttou ()
     fclose (f); 
 }
 
+void test_winch ()
+{
+    signal (SIGWINCH, SIG_IGN); 
+    //signal (SIGWINCH, sig_eater); 
+    sleep (5); 
+}
+
 int main ()
 {
 #if 0
@@ -158,6 +165,8 @@ int main ()
     test_ttin (); 
 #elif 0
     test_ttou (); 
+#elif 1
+    test_winch (); 
 #endif
     return 0; 
 }
