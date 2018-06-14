@@ -9,8 +9,8 @@ void sig_eater (int signum)
 
 void test_abrt ()
 {
-    //signal (SIGABRT, SIG_IGN); 
-    signal (SIGABRT, sig_eater); 
+    signal (SIGABRT, SIG_IGN); 
+    //signal (SIGABRT, sig_eater); 
     abort (); 
     // effect same
     //kill(0, SIGABRT); 
@@ -18,9 +18,10 @@ void test_abrt ()
 
 void test_alrm ()
 {
-    signal (SIGALRM, sig_eater); 
+    signal (SIGALRM, SIG_IGN); 
+    //signal (SIGALRM, sig_eater); 
     alarm (3); 
-    sleep (4); 
+    sleep (10); 
     printf ("i am not die\n"); 
 }
 
@@ -41,8 +42,8 @@ void test_fpe ()
 void test_pipe ()
 {
     int ret = 0; 
-    //signal (SIGPIPE, SIG_IGN); 
-    signal (SIGPIPE, sig_eater); 
+    signal (SIGPIPE, SIG_IGN); 
+    //signal (SIGPIPE, sig_eater); 
     int fd[2] = { 0 }; 
     if (pipe(fd) < 0)
         err_sys ("pipe error");
@@ -117,8 +118,8 @@ void test_ttin ()
 void test_ttou ()
 {
     // start this process in background
-    //signal (SIGTTOU, SIG_IGN); 
-    signal (SIGTTOU, sig_eater); 
+    signal (SIGTTOU, SIG_IGN); 
+    //signal (SIGTTOU, sig_eater); 
     sleep (3); 
 
     int ret = write (STDOUT_FILENO, "this is me\n", 12); 
@@ -149,7 +150,7 @@ int main ()
     test_wait (SIGTSTP); 
 #elif 0
     test_wait (SIGUSR1); 
-#elif 1
+#elif 0
     test_wait (SIGUSR2); 
 #elif 0
     test_segv (); 
