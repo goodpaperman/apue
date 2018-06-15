@@ -1,5 +1,8 @@
 #include "../apue.h" 
 #include <errno.h>
+#include <sys/resource.h> 
+#include <limits.h>
+#include <stdio.h> 
 
 void sig_eater (int signum)
 {
@@ -135,6 +138,54 @@ void test_winch ()
     sleep (5); 
 }
 
+void test_xcpu ()
+{
+    //signal (SIGXCPU, SIG_IGN); 
+    signal (SIGXCPU, sig_eater); 
+
+    struct rlimit rl = { 0 }; 
+    getrlimit (RLIMIT_CPU, &rl); 
+    printf ("cpu limit: %d, %d\n", rl.rlim_cur, rl.rlim_max); 
+    rl.rlim_cur = 1;  // cause SIGXCPU
+#if 0
+    // set hard limit will cause SIGKILL
+    rl.rlim_max = 1; 
+#endif
+    setrlimit (RLIMIT_CPU, &rl); 
+    getrlimit (RLIMIT_CPU, &rl); 
+    printf ("cpu limit: %d, %d\n", rl.rlim_cur, rl.rlim_max); 
+    for (int i=0; i<INT_MAX; ++ i)
+        i = i + 1; 
+
+    printf ("I am not die\n"); 
+}
+
+void test_xfsz ()
+{
+    //signal (SIGXFSZ, SIG_IGN); 
+    signal (SIGXFSZ, sig_eater); 
+
+    struct rlimit rl = { 0 }; 
+    getrlimit (RLIMIT_FSIZE, &rl); 
+    printf ("fsz limit: %d, %d\n", rl.rlim_cur, rl.rlim_max); 
+    rl.rlim_cur = 1;  // cause SIGXFSZ
+#if 0
+    // set hard limit will cause SIGKILL
+    rl.rlim_max = 1; 
+#endif
+    setrlimit (RLIMIT_FSIZE, &rl); 
+    getrlimit (RLIMIT_FSIZE, &rl); 
+    printf ("fsz limit: %d, %d\n", rl.rlim_cur, rl.rlim_max); 
+
+    FILE* f = fopen ("tmp.txt", "w"); 
+    if (f)
+    {
+        fputs ("hello world\n", f); 
+        fclose (f); 
+    }
+
+    printf ("I am not die\n"); 
+}
 int main ()
 {
 #if 0
@@ -165,8 +216,12 @@ int main ()
     test_ttin (); 
 #elif 0
     test_ttou (); 
-#elif 1
+#elif 0
     test_winch (); 
+#elif 0
+    test_xcpu (); 
+#elif 1
+    test_xfsz (); 
 #endif
     return 0; 
 }
