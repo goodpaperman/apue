@@ -1,4 +1,16 @@
-all: coredump testsig
+all: coredump testsig demosig execsig
+
+execsig: execsig.o apue.o
+	gcc -Wall -g $^ -o $@
+
+execsig.o: execsig.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
+demosig: demosig.o apue.o
+	gcc -Wall -g $^ -o $@
+
+demosig.o: demosig.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 testsig: testsig.o apue.o
 	gcc -Wall -g $^ -o $@

@@ -186,6 +186,8 @@ void test_xfsz ()
 
     printf ("I am not die\n"); 
 }
+
+
 int main ()
 {
 #if 0
