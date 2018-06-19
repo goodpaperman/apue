@@ -9,6 +9,7 @@ probe signal.send
   #if (sig_pid == target ())
   #if (execname() == @1 || pid_name == @1)
   #if (sig_name == "SIGTTOU")
+  if (sig != 29 && sig != 14) # SIGIO/SIGALRM
     printf ("%-8d %-16s %-5d %-16s %-6d %-16s\n", pid (), execname (), sig_pid, pid_name, sig, sig_name)
 }
 
