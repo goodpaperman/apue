@@ -1,4 +1,10 @@
-all: coredump testsig demosig execsig lostsig
+all: coredump testsig demosig execsig lostsig interwait
+
+interwait: interwait.o apue.o
+	gcc -Wall -g $^ -o $@
+
+interwait.o: interwait.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 lostsig: lostsig.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -38,7 +44,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig
+	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait
 	@echo "end clean"
 
 .PHONY: clean
