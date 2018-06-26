@@ -1,7 +1,7 @@
 #include "../apue.h" 
 #include <errno.h>
-//#include <sys/types.h>
-//#include <sys/wait.h> 
+#include <sys/types.h>
+#include <sys/wait.h> 
 
 void sig_handler (int signum)
 {
@@ -22,13 +22,36 @@ int main ()
 #if 0
         sleep (5); 
         printf ("wait 5 over, errno = %d\n", errno); 
-#elif 1
+#elif 0
         char buf[512] = { 0 }; 
         int n = read (STDIN_FILENO, buf, sizeof(buf)-1); 
         if (n == 0 || n < 0)
             printf ("read error %d\n", errno); 
         else 
             printf ("read %s\n", buf); 
+#elif 1
+        pid_t pid = fork (); 
+        if (pid < 0)
+            printf ("fork error %d\n", errno); 
+        else if (pid == 0)
+        {
+            int n = 0; 
+            while (n++ < 3)
+            {
+                pause (); 
+                printf ("child wakeup %d\n", n); 
+            }
+
+            printf ("child %u will die\n", getpid ()); 
+            break; 
+        }
+        else 
+        {
+            int status = 0; 
+            pid_t cid = wait(&status); 
+            printf ("wait child %u, status %d, errno %d\n", cid, status, errno); 
+            break; 
+        }
 #endif 
     }
 
