@@ -1,4 +1,10 @@
-all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r
+all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r
+
+localtime_r: localtime_r.o apue.o
+	gcc -Wall -g $^ -o $@
+
+localtime_r.o: localtime_r.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 getpwnam_r: getpwnam_r.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -56,7 +62,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r
+	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r
 	@echo "end clean"
 
 .PHONY: clean
