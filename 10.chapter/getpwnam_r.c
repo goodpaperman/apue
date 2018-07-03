@@ -61,6 +61,7 @@ int main (void)
         else 
             err_sys ("getpwnam error"); 
 
+        usleep (30); 
         //usleep (300000); 
     }
 
