@@ -1,7 +1,7 @@
 #include "../apue.h" 
 #include <sys/wait.h> 
 
-#define USE_SIG 2
+#define USE_SIG 3
 
 static void sig_cld (int); 
 
@@ -36,7 +36,26 @@ int main ()
         perror ("wait error"); 
     printf ("pid = %d\n", pid); 
 #else 
+#  if USE_SIG == 3
+    __sighandler_t ret = signal (SIGCLD, sig_cld);
+    if (ret == SIG_ERR)
+        perror ("signal error"); 
+    else 
+        printf ("old handler %x\n", ret); 
+
     pause (); 
+#  elif USE_SIG == 4
+    __sighandler_t ret = signal (SIGCLD, SIG_IGN);
+    if (ret == SIG_ERR)
+        perror ("signal error"); 
+    else 
+        printf ("old handler %x\n", ret); 
+
+    int status = 0; 
+    if ((pid = wait (&status)) < 0)
+        perror ("wait error"); 
+    printf ("pid = %d\n", pid); 
+#  endif
 #endif
     printf ("parent exit\n"); 
     return 0; 
