@@ -1,6 +1,7 @@
 #include "../apue.h" 
 #include <sys/wait.h> 
 
+#define CLD_NUM 2
 #define USE_SIG 4
 
 static void sig_cld (int); 
@@ -21,13 +22,19 @@ int main ()
     else 
         printf ("old handler %x\n", ret); 
 #endif
-    if ((pid = fork ()) < 0)
-        perror ("fork error"); 
-    else if (pid == 0) 
+
+    for (int i=0; i<CLD_NUM; ++ i)
     {
-        sleep (2); 
-        printf ("child exit\n"); 
-        _exit (0); 
+        if ((pid = fork ()) < 0)
+            perror ("fork error"); 
+        else if (pid == 0) 
+        {
+            sleep (3); 
+            printf ("child %u exit\n", getpid ()); 
+            _exit (0); 
+        }
+
+        sleep (1); 
     }
 
 #if USE_SIG == 2
@@ -36,24 +43,24 @@ int main ()
         perror ("wait error"); 
 
     printf ("pid = %d\n", pid); 
-#else 
+#elif USE_SIG == 3
     sleep (3); 
-#  if USE_SIG == 3
     __sighandler_t ret = signal (SIGCLD, sig_cld);
     if (ret == SIG_ERR)
         perror ("signal error"); 
     else 
         printf ("old handler %x\n", ret); 
 
-#    if 0
-    pause (); 
-#    else
     int status = 0; 
-    if ((pid = wait (&status)) < 0)
-        perror ("wait error"); 
-#    endif
+    for (int i=0; i<CLD_NUM; ++ i)
+    {
+        if ((pid = wait (&status)) < 0)
+            perror ("wait error"); 
 
-#  elif USE_SIG == 4
+        printf ("pid = %d\n", pid); 
+    }
+#elif USE_SIG == 4
+    sleep (4); 
     __sighandler_t ret = signal (SIGCLD, SIG_IGN);
     if (ret == SIG_ERR)
         perror ("signal error"); 
@@ -61,11 +68,19 @@ int main ()
         printf ("old handler %x\n", ret); 
 
     int status = 0; 
-    if ((pid = wait (&status)) < 0)
-        perror ("wait error"); 
+    for (int i=0; i<CLD_NUM; ++ i)
+    {
+        if ((pid = wait (&status)) < 0)
+            perror ("wait error"); 
 
-    printf ("pid = %d\n", pid); 
-#  endif
+        printf ("pid = %d\n", pid); 
+    }
+#else
+    for (int i=0; i<CLD_NUM; ++ i)
+    {
+        pause (); 
+        printf ("wake up by signal %d\n", i); 
+    }
 #endif
     printf ("parent exit\n"); 
     return 0; 
