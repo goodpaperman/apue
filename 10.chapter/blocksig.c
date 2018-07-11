@@ -15,7 +15,11 @@ static void sig_int (int signo)
 int main (int argc, char *argv[])
 {
     sigset_t newmask, oldmask, pendmask; 
+#if 0
+    if (signal (SIGINT, SIG_IGN) == SIG_ERR)
+#else 
     if (signal (SIGINT, sig_int) == SIG_ERR)
+#endif
         err_sys ("can't catch SIGINT"); 
 
     sigemptyset (&newmask); 
@@ -39,6 +43,11 @@ int main (int argc, char *argv[])
 
     printf ("SIGINT unblocked\n"); 
     sleep (5); 
+    if (sigpending (&pendmask) < 0)
+        err_sys ("sigpending error"); 
+    if (sigismember (&pendmask, SIGINT))
+        printf ("SIGINT pending\n"); 
+
     exit (0); 
 }
 
