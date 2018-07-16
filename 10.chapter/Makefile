@@ -1,4 +1,16 @@
-all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig
+all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep
+
+alrmsleep: alrmsleep.o apue.o
+	gcc -Wall -g $^ -o $@
+
+alrmsleep.o: alrmsleep.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
+alrmsig: alrmsig.o apue.o
+	gcc -Wall -g $^ -o $@
+
+alrmsig.o: alrmsig.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 killsig: killsig.o apue.o
 	gcc -Wall -g $^ -o $@
