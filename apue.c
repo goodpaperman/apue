@@ -3,6 +3,7 @@
 #include <limits.h> 
 #include <stdarg.h> 
 #include <sys/wait.h> 
+#include <setjmp.h>
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -201,4 +202,42 @@ void pr_exit (int status)
 #  endif 
   else if (WIFSTOPPED(status))
     printf ("child stopped, signal number = %d\n", WSTOPSIG(status)); 
+}
+
+
+static jmp_buf env_alrm; 
+static void sig_alrm (int signo)
+{
+    printf ("recv signal %d, wakeup from sleep\n", signo); 
+    longjmp (env_alrm, 1); 
+}
+
+unsigned int alrm_sleep (unsigned int sec)
+{
+    __sighandler_t old = signal (SIGALRM, sig_alrm); 
+    if (old == SIG_ERR)
+        return sec; 
+
+    int ret = 0; 
+    if (setjmp (env_alrm) == 0)
+    {
+        ret = alarm (sec); 
+        if (ret < sec)
+        {
+            sec = ret;
+            alarm (sec); 
+        }
+
+#if 0
+        sleep (sec); 
+#endif
+
+        pause (); 
+    }
+
+    signal (SIGALRM, old); 
+
+    int left = ret > sec ? ret - sec : 0; 
+    alarm (left); 
+    return left; 
 }

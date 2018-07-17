@@ -51,4 +51,6 @@ void clr_fl (int fd, int flags);
 void tell_buf (char const* name, FILE* fp); 
 void pr_exit (int status); 
 
+unsigned int alrm_sleep (unsigned int sec); 
+
 #endif 
