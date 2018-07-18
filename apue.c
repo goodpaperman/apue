@@ -4,6 +4,7 @@
 #include <stdarg.h> 
 #include <sys/wait.h> 
 #include <setjmp.h>
+#include <time.h> 
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -205,21 +206,28 @@ void pr_exit (int status)
 }
 
 
+#ifdef USEJMP 
 static jmp_buf env_alrm; 
+#endif 
 static void sig_alrm (int signo)
 {
     printf ("recv signal %d, wakeup from sleep\n", signo); 
+#ifdef USEJMP 
     longjmp (env_alrm, 1); 
+#endif
 }
 
 unsigned int alrm_sleep (unsigned int sec)
 {
+    time_t start = time (NULL); 
     __sighandler_t old = signal (SIGALRM, sig_alrm); 
     if (old == SIG_ERR)
         return sec; 
 
     int ret = 0; 
+#ifdef USEJMP
     if (setjmp (env_alrm) == 0)
+#endif
     {
         ret = alarm (sec); 
         if (ret < sec)
@@ -228,16 +236,19 @@ unsigned int alrm_sleep (unsigned int sec)
             alarm (sec); 
         }
 
-#if 0
+#if 1
         sleep (sec); 
+        printf ("start real wait\n"); 
 #endif
 
         pause (); 
     }
 
     signal (SIGALRM, old); 
-
-    int left = ret > sec ? ret - sec : 0; 
+    time_t end = time (NULL); 
+    int dure = (int)(end - start); 
+    printf ("alarm return %d, sleep %u, start %lu, end %lu\n", ret, dure, start, end); 
+    int left = ret > dure ? ret - dure : 0; 
     alarm (left); 
     return left; 
 }
