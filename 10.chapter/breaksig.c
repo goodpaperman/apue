@@ -1,10 +1,20 @@
 #include "../apue.h" 
 #include <strings.h> 
 #include <signal.h>
+#include <setjmp.h> 
+
+#define USE_JMP
+
+#ifdef USE_JMP
+static jmp_buf env_alrm; 
+#endif 
 
 static void sigalrm (int signo)
 {
     // do nothing, just break read call !
+#ifdef USE_JMP
+    longjmp (env_alrm, 1); 
+#endif
 }
 
 int main (int argc, char *argv[])
@@ -20,6 +30,11 @@ int main (int argc, char *argv[])
     sigemptyset (&sa.sa_mask); 
     sa.sa_handler = sigalrm; 
     sigaction (SIGALRM, &sa, NULL); 
+#endif
+
+#ifdef USE_JMP
+    if (setjmp(env_alrm) != 0)
+        err_quit ("read timeout"); 
 #endif
 
     do 
