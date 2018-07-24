@@ -31,6 +31,8 @@ int main (int argc, char *argv[])
     if (sigprocmask (SIG_BLOCK, &newmask, &oldmask) < 0)
         err_sys ("SIG_BLOCK error"); 
 
+    pr_procset (); 
+
 #ifdef IGNORE2CATCH 
     if (signal (SIGINT, sig_int) == SIG_ERR)
 #else 
@@ -39,10 +41,15 @@ int main (int argc, char *argv[])
         err_sys ("can't catch/ignore SIGINT"); 
 
     sleep (5); 
+
+#if 0
     if (sigpending (&pendmask) < 0)
         err_sys ("sigpending error"); 
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
+#else 
+    pr_pendset (); 
+#endif 
 
 #ifdef IGNORE2CATCH
     if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
@@ -52,10 +59,15 @@ int main (int argc, char *argv[])
 #endif
 
     sleep (5); 
+
+#if 0
     if (sigpending (&pendmask) < 0)
         err_sys ("sigpending error"); 
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
+#else 
+    pr_pendset (); 
+#endif
 
     exit (0); 
 }

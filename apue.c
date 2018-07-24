@@ -252,3 +252,37 @@ unsigned int alrm_sleep (unsigned int sec)
     alarm (left); 
     return left; 
 }
+
+void pr_mask (sigset_t *mask)
+{
+    int i; 
+    for (i=1; i<_NSIG; ++ i)
+        if (sigismember (mask, i))
+            printf ("%d\n", i); 
+
+    printf ("\n"); 
+}
+
+void pr_procset ()
+{
+    sigset_t mask; 
+    if (sigprocmask (0, NULL, &mask) < 0)
+        printf ("sigprocmask failed, errno %d", errno); 
+    else 
+    {
+        printf ("block mask contains: \n"); 
+        pr_mask (&mask); 
+    }
+}
+
+void pr_pendset ()
+{
+    sigset_t mask; 
+    if (sigpending (&mask) < 0)
+        printf ("sigpending failed, errno %d", errno); 
+    else 
+    {
+        printf ("pend mask contains: \n"); 
+        pr_mask (&mask); 
+    }
+}

@@ -18,6 +18,7 @@
 #include <unistd.h> 
 #include <signal.h> 
 #include <fcntl.h> 
+#include <signal.h> 
 
 #define MAXLINE 4096
 
@@ -52,5 +53,9 @@ void tell_buf (char const* name, FILE* fp);
 void pr_exit (int status); 
 
 unsigned int alrm_sleep (unsigned int sec); 
+
+void pr_mask (sigset_t *mask); 
+void pr_procset (); 
+void pr_pendset (); 
 
 #endif 
