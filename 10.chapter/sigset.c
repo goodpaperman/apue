@@ -4,6 +4,16 @@
 
 //#define NSIG 32
 
+struct sigaction g_act; 
+void sigint (int signo)
+{
+    printf ("SIGINT caught\n"); 
+    printf ("mask in sigint\n"); 
+    pr_mask (&g_act.sa_mask); 
+    pr_procset (); 
+    sleep (3); 
+}
+
 int main (int argc, char *argv[])
 {
     int ret; 
@@ -21,5 +31,19 @@ int main (int argc, char *argv[])
             printf ("%d not in set\n", i); 
     }
 
+    sigemptyset(&g_act.sa_mask); 
+    sigaddset(&g_act.sa_mask, SIGQUIT); 
+    g_act.sa_handler = sigint; 
+
+    printf ("mask before call sigaction\n"); 
+    pr_mask (&g_act.sa_mask); 
+    pr_procset (); 
+    if(sigaction (SIGINT, &g_act, NULL) < 0)
+        err_sys ("sigaction failed"); 
+
+    pause (); 
+    printf ("mask after sigint called\n"); 
+    pr_mask (&g_act.sa_mask); 
+    pr_procset (); 
     return 0; 
 }
