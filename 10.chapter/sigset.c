@@ -38,8 +38,13 @@ int main (int argc, char *argv[])
     printf ("mask before call sigaction\n"); 
     pr_mask (&g_act.sa_mask); 
     pr_procset (); 
+#if 1
     if(sigaction (SIGINT, &g_act, NULL) < 0)
         err_sys ("sigaction failed"); 
+#else
+    if (signal (SIGINT, sigint) < 0)
+        err_sys ("signal failed"); 
+#endif
 
     pause (); 
     printf ("mask after sigint called\n"); 
