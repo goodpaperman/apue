@@ -3,17 +3,64 @@
 #include <sys/resource.h> 
 #include <limits.h>
 #include <stdio.h> 
+#include <signal.h> 
 
+#define USE_SIGACT
+
+#ifdef USE_SIGACT
+void sig_eater (int signum, siginfo_t *si, void *cntx)
+{
+    printf ("caught signal %d\n", signum); 
+    printf ("siginfo: \n"
+            "signo: %d\n"
+            "error: %d\n"
+            "code : %d\n"
+            "pid  : %d\n"
+            "uid  : %d\n"
+            "addr : %p\n"
+            "status: %d\n"
+            "overrun: %d\n"
+            "band : %d\n\n", 
+            si->si_signo, 
+            si->si_errno, 
+            si->si_code, 
+            si->si_pid, 
+            si->si_uid, 
+            si->si_addr, 
+            si->si_status, 
+            si->si_overrun,
+            si->si_band); 
+
+    if (signum == SIGFPE || 
+            signum == SIGSEGV)
+        abort (); 
+}
+
+int sigactnal (int signo, void (*sighandler) (int, siginfo_t*, void*))
+{
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_flags = SA_SIGINFO; 
+    act.sa_sigaction = sig_eater; 
+    return sigaction (signo, &act, NULL); 
+}
+#else
 void sig_eater (int signum)
 {
     printf ("got signal %d\n", signum); 
     signal(signum, sig_eater); 
 }
+#endif
 
 void test_abrt ()
 {
+#ifdef USE_SIGACT
+    sigactnal (SIGABRT, sig_eater); 
+#else 
     signal (SIGABRT, SIG_IGN); 
     //signal (SIGABRT, sig_eater); 
+#endif
+
     abort (); 
     // effect same
     //kill(0, SIGABRT); 
@@ -21,8 +68,12 @@ void test_abrt ()
 
 void test_alrm ()
 {
+#ifdef USE_SIGACT
+    sigactnal (SIGALRM, sig_eater); 
+#else 
     signal (SIGALRM, SIG_IGN); 
     //signal (SIGALRM, sig_eater); 
+#endif
     alarm (3); 
     sleep (10); 
     printf ("i am not die\n"); 
@@ -31,9 +82,14 @@ void test_alrm ()
 void test_fpe ()
 {
     int i = 1; 
-    signal (SIGABRT, SIG_IGN); 
+#ifdef USE_SIGACT
+    sigactnal (SIGFPE, sig_eater); 
+#else 
+    signal (SIGFPE, SIG_IGN); 
     //signal (SIGFPE, sig_eater); 
+#endif
     double j = 0.0; 
+    printf ("address of j: %p\n", &j); 
     float k = i / j; // to see SIG_FPE
     printf ("k = %.2f\n", k); 
     k = i / 0; 
@@ -45,8 +101,12 @@ void test_fpe ()
 void test_pipe ()
 {
     int ret = 0; 
+#ifdef USE_SIGACT
+    sigactnal (SIGPIPE, sig_eater); 
+#else 
     signal (SIGPIPE, SIG_IGN); 
     //signal (SIGPIPE, sig_eater); 
+#endif
     int fd[2] = { 0 }; 
     if (pipe(fd) < 0)
         err_sys ("pipe error");
@@ -90,8 +150,12 @@ void test_pipe ()
 
 void test_wait (int signum)
 {
+#ifdef USE_SIGACT
+    sigactnal (signum, sig_eater); 
+#else 
     //signal (signum, sig_eater); 
     signal (signum, SIG_IGN); 
+#endif
     printf ("this is %d\n", getpid ()); 
     sleep (20); 
     printf ("I am not die\n"); 
@@ -100,8 +164,12 @@ void test_wait (int signum)
 void test_segv ()
 {
     int *p = 0; 
+#ifdef USE_SIGACT
+    sigactnal (SIGSEGV, sig_eater); 
+#else 
     signal (SIGSEGV, SIG_IGN); 
     //signal (SIGSEGV, sig_eater); 
+#endif
     printf ("this is %d\n", *p); 
     printf ("pointer 0x%x\n", p); 
 }
@@ -109,8 +177,12 @@ void test_segv ()
 void test_ttin ()
 {
     // start this process in background
+#ifdef USE_SIGACT
+    sigactnal (SIGTTIN, sig_eater); 
+#else 
     signal (SIGTTIN, SIG_IGN); 
     //signal (SIGTTIN, sig_eater); 
+#endif
     sleep (3); 
 
     char c = 0; 
@@ -121,8 +193,12 @@ void test_ttin ()
 void test_ttou ()
 {
     // start this process in background
+#ifdef USE_SIGACT
+    sigactnal (SIGTTOU, sig_eater); 
+#else 
     signal (SIGTTOU, SIG_IGN); 
     //signal (SIGTTOU, sig_eater); 
+#endif
     sleep (3); 
 
     int ret = write (STDOUT_FILENO, "this is me\n", 12); 
@@ -133,15 +209,23 @@ void test_ttou ()
 
 void test_winch ()
 {
+#ifdef USE_SIGACT
+    sigactnal (SIGWINCH, sig_eater); 
+#else 
     signal (SIGWINCH, SIG_IGN); 
     //signal (SIGWINCH, sig_eater); 
+#endif
     sleep (5); 
 }
 
 void test_xcpu ()
 {
+#ifdef USE_SIGACT
+    sigactnal (SIGXCPU, sig_eater); 
+#else 
     //signal (SIGXCPU, SIG_IGN); 
     signal (SIGXCPU, sig_eater); 
+#endif
 
     struct rlimit rl = { 0 }; 
     getrlimit (RLIMIT_CPU, &rl); 
@@ -162,8 +246,12 @@ void test_xcpu ()
 
 void test_xfsz ()
 {
+#ifdef USE_SIGACT
+    sigactnal (SIGXFSZ, sig_eater); 
+#else 
     //signal (SIGXFSZ, SIG_IGN); 
     signal (SIGXFSZ, sig_eater); 
+#endif
 
     struct rlimit rl = { 0 }; 
     getrlimit (RLIMIT_FSIZE, &rl); 
