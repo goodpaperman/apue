@@ -5,9 +5,27 @@
 #include <stdio.h> 
 #include <signal.h> 
 
-#define USE_SIGACT
+#define USE_SIGACT 1
 
-#ifdef USE_SIGACT
+#if USE_SIGACT == 0
+
+void sig_eater (int signum)
+{
+    printf ("got signal %d\n", signum); 
+    signal(signum, sig_eater); 
+}
+
+#elif USE_SIGACT == 1
+
+void sig_eater (int signum)
+{
+    printf ("got signal %d\n", signum); 
+}
+
+#  define signal apue_signal
+
+#else
+
 void sig_eater (int signum, siginfo_t *si, void *cntx)
 {
     printf ("caught signal %d\n", signum); 
@@ -44,21 +62,16 @@ int sigactnal (int signo, void (*sighandler) (int, siginfo_t*, void*))
     act.sa_sigaction = sig_eater; 
     return sigaction (signo, &act, NULL); 
 }
-#else
-void sig_eater (int signum)
-{
-    printf ("got signal %d\n", signum); 
-    signal(signum, sig_eater); 
-}
+
 #endif
 
 void test_abrt ()
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGABRT, sig_eater); 
 #else 
-    signal (SIGABRT, SIG_IGN); 
-    //signal (SIGABRT, sig_eater); 
+    //signal (SIGABRT, SIG_IGN); 
+    signal (SIGABRT, sig_eater); 
 #endif
 
     abort (); 
@@ -68,11 +81,11 @@ void test_abrt ()
 
 void test_alrm ()
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGALRM, sig_eater); 
 #else 
-    signal (SIGALRM, SIG_IGN); 
-    //signal (SIGALRM, sig_eater); 
+    //signal (SIGALRM, SIG_IGN); 
+    signal (SIGALRM, sig_eater); 
 #endif
     alarm (3); 
     sleep (10); 
@@ -82,11 +95,11 @@ void test_alrm ()
 void test_fpe ()
 {
     int i = 1; 
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGFPE, sig_eater); 
 #else 
-    signal (SIGFPE, SIG_IGN); 
-    //signal (SIGFPE, sig_eater); 
+    //signal (SIGFPE, SIG_IGN); 
+    signal (SIGFPE, sig_eater); 
 #endif
     double j = 0.0; 
     printf ("address of j: %p\n", &j); 
@@ -101,11 +114,11 @@ void test_fpe ()
 void test_pipe ()
 {
     int ret = 0; 
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGPIPE, sig_eater); 
 #else 
-    signal (SIGPIPE, SIG_IGN); 
-    //signal (SIGPIPE, sig_eater); 
+    //signal (SIGPIPE, SIG_IGN); 
+    signal (SIGPIPE, sig_eater); 
 #endif
     int fd[2] = { 0 }; 
     if (pipe(fd) < 0)
@@ -150,11 +163,11 @@ void test_pipe ()
 
 void test_wait (int signum)
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (signum, sig_eater); 
 #else 
-    //signal (signum, sig_eater); 
-    signal (signum, SIG_IGN); 
+    signal (signum, sig_eater); 
+    //signal (signum, SIG_IGN); 
 #endif
     printf ("this is %d\n", getpid ()); 
     sleep (20); 
@@ -164,11 +177,11 @@ void test_wait (int signum)
 void test_segv ()
 {
     int *p = 0; 
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGSEGV, sig_eater); 
 #else 
-    signal (SIGSEGV, SIG_IGN); 
-    //signal (SIGSEGV, sig_eater); 
+    //signal (SIGSEGV, SIG_IGN); 
+    signal (SIGSEGV, sig_eater); 
 #endif
     printf ("this is %d\n", *p); 
     printf ("pointer 0x%x\n", p); 
@@ -177,11 +190,11 @@ void test_segv ()
 void test_ttin ()
 {
     // start this process in background
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGTTIN, sig_eater); 
 #else 
-    signal (SIGTTIN, SIG_IGN); 
-    //signal (SIGTTIN, sig_eater); 
+    //signal (SIGTTIN, SIG_IGN); 
+    signal (SIGTTIN, sig_eater); 
 #endif
     sleep (3); 
 
@@ -193,11 +206,11 @@ void test_ttin ()
 void test_ttou ()
 {
     // start this process in background
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGTTOU, sig_eater); 
 #else 
-    signal (SIGTTOU, SIG_IGN); 
-    //signal (SIGTTOU, sig_eater); 
+    //signal (SIGTTOU, SIG_IGN); 
+    signal (SIGTTOU, sig_eater); 
 #endif
     sleep (3); 
 
@@ -209,7 +222,7 @@ void test_ttou ()
 
 void test_winch ()
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGWINCH, sig_eater); 
 #else 
     signal (SIGWINCH, SIG_IGN); 
@@ -220,7 +233,7 @@ void test_winch ()
 
 void test_xcpu ()
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGXCPU, sig_eater); 
 #else 
     //signal (SIGXCPU, SIG_IGN); 
@@ -246,7 +259,7 @@ void test_xcpu ()
 
 void test_xfsz ()
 {
-#ifdef USE_SIGACT
+#if USE_SIGACT == 2
     sigactnal (SIGXFSZ, sig_eater); 
 #else 
     //signal (SIGXFSZ, SIG_IGN); 
@@ -266,12 +279,12 @@ void test_xfsz ()
     printf ("fsz limit: %d, %d\n", rl.rlim_cur, rl.rlim_max); 
 
     FILE* f = fopen ("tmp.txt", "w"); 
-    if (f)
+    while (f)
     {
         fputs ("hello world\n", f); 
-        fclose (f); 
     }
 
+    fclose (f); 
     printf ("I am not die\n"); 
 }
 

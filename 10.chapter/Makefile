@@ -104,7 +104,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig sigset
+	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep breaksig sigset
 	@echo "end clean"
 
 .PHONY: clean

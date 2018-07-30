@@ -58,4 +58,7 @@ void pr_mask (sigset_t *mask);
 void pr_procset (); 
 void pr_pendset (); 
 
+//typedef void (*Sigfunc) (int signo); 
+Sigfunc* apue_sinal (int signo, Sigfunc *func); 
+
 #endif 
