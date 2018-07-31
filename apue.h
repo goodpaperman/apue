@@ -55,8 +55,8 @@ void pr_exit (int status);
 unsigned int alrm_sleep (unsigned int sec); 
 
 void pr_mask (sigset_t *mask); 
-void pr_procset (); 
-void pr_pendset (); 
+void pr_procmask (char const* tip); 
+void pr_pendmask (char const* tip); 
 
 //typedef void (*Sigfunc) (int signo); 
 Sigfunc* apue_sinal (int signo, Sigfunc *func); 

@@ -14,8 +14,7 @@ static jmp_buf env_alrm;
 
 static void sigalrm (int signo)
 {
-    printf ("mask in sigalrm:\n"); 
-    pr_procset (); 
+    pr_procmask ("mask in sigalrm:"); 
 
     // do nothing, just break read call !
 #if USE_JMP==1
@@ -49,21 +48,18 @@ int main (int argc, char *argv[])
     if (sigsetjmp(env_alrm, 1) != 0)
 #endif
     {
-        printf ("mask after jmp:\n"); 
-        pr_procset (); 
+        pr_procmask ("mask after jmp:"); 
         err_quit ("read timeout"); 
     }
 
     do 
     {
         alarm (10); 
-        printf ("mask before read:\n"); 
-        pr_procset (); 
+        pr_procmask ("mask before read:"); 
         if ((n = read (STDIN_FILENO, line, MAXLINE)) < 0)
             err_sys ("read error"); 
 
-        printf ("mask after read:\n"); 
-        pr_procset (); 
+        pr_procmask ("mask after read:"); 
         if (strcasecmp (line, "exit") == 0)
             break; 
 

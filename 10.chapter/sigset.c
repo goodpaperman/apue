@@ -10,7 +10,7 @@ void sigint (int signo)
     printf ("SIGINT caught\n"); 
     printf ("mask in sigint\n"); 
     pr_mask (&g_act.sa_mask); 
-    pr_procset (); 
+    pr_procmask ("proc mask:"); 
     sleep (3); 
 }
 
@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
 
     printf ("mask before call sigaction\n"); 
     pr_mask (&g_act.sa_mask); 
-    pr_procset (); 
+    pr_procmask ("proc mask"); 
 #if 1
     if(sigaction (SIGINT, &g_act, NULL) < 0)
         err_sys ("sigaction failed"); 
@@ -49,6 +49,6 @@ int main (int argc, char *argv[])
     pause (); 
     printf ("mask after sigint called\n"); 
     pr_mask (&g_act.sa_mask); 
-    pr_procset (); 
+    pr_procmask ("proc mask"); 
     return 0; 
 }

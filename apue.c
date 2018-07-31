@@ -264,26 +264,28 @@ void pr_mask (sigset_t *mask)
     printf ("\n"); 
 }
 
-void pr_procset ()
+void pr_procmask (char const* tip)
 {
     sigset_t mask; 
     if (sigprocmask (0, NULL, &mask) < 0)
         printf ("sigprocmask failed, errno %d", errno); 
     else 
     {
-        printf ("block mask contains: \n"); 
+        //printf ("block mask contains: \n"); 
+        puts (tip); 
         pr_mask (&mask); 
     }
 }
 
-void pr_pendset ()
+void pr_pendmask (char const* tip)
 {
     sigset_t mask; 
     if (sigpending (&mask) < 0)
         printf ("sigpending failed, errno %d", errno); 
     else 
     {
-        printf ("pend mask contains: \n"); 
+        //printf ("pend mask contains: \n"); 
+        puts (tip); 
         pr_mask (&mask); 
     }
 }

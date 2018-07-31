@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
     if (sigprocmask (SIG_BLOCK, &newmask, &oldmask) < 0)
         err_sys ("SIG_BLOCK error"); 
 
-    pr_procset (); 
+    pr_procmask ("after set mask"); 
 
 #ifdef IGNORE2CATCH 
     if (signal (SIGINT, sig_int) == SIG_ERR)
@@ -48,7 +48,7 @@ int main (int argc, char *argv[])
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
 #else 
-    pr_pendset (); 
+    pr_pendmask ("after got signal:"); 
 #endif 
 
 #ifdef IGNORE2CATCH
@@ -66,7 +66,7 @@ int main (int argc, char *argv[])
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
 #else 
-    pr_pendset (); 
+    pr_pendmask ("after set mask"); 
 #endif
 
     exit (0); 
