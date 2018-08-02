@@ -1,7 +1,10 @@
 #include "../apue.h" 
 #include <signal.h>
+#include <assert.h> 
+#include <errno.h>
 
 #define IGNORE2CATCH
+#define USE_SUSPEND
 
 static void sig_int (int signo)
 {
@@ -43,6 +46,7 @@ int main (int argc, char *argv[])
     sleep (5); 
 
 #if 0
+    sigemptyset (&pendmask); 
     if (sigpending (&pendmask) < 0)
         err_sys ("sigpending error"); 
     if (sigismember (&pendmask, SIGINT))
@@ -52,13 +56,19 @@ int main (int argc, char *argv[])
 #endif 
 
 #ifdef IGNORE2CATCH
+#  ifdef USE_SUSPEND
+    assert(sigsuspend (&oldmask) < 0); 
+    assert(errno == EINTR); 
+    printf ("SIGINT unblocked\n"); 
+#  else
     if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
         err_sys ("SIG_SETMASK error"); 
 
     printf ("SIGINT unblocked\n"); 
+    pause (); 
+    //sleep (5); 
+#  endif
 #endif
-
-    sleep (5); 
 
 #if 0
     if (sigpending (&pendmask) < 0)
