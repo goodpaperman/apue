@@ -8,7 +8,8 @@
 
 static void sig_int (int signo)
 {
-    printf ("caught SIGINT\n"); 
+    //printf ("caught SIGINT\n"); 
+    pr_procmask ("in sig_int"); 
 #if 0
     if (signal (SIGINT, SIG_DFL) == SIG_ERR)
 #elif 0 
@@ -53,6 +54,7 @@ int main (int argc, char *argv[])
         printf ("SIGINT pending\n"); 
 #else 
     pr_pendmask ("after got signal:"); 
+    pr_procmask ("now proc mask: "); 
 #endif 
 
 #ifdef IGNORE2CATCH
