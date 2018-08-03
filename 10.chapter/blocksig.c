@@ -6,18 +6,18 @@
 #define IGNORE2CATCH
 #define USE_SUSPEND
 
-static void sig_int (int signo)
+static void sig_eater (int signo)
 {
-    //printf ("caught SIGINT\n"); 
-    pr_procmask ("in sig_int"); 
+    printf ("caught %d\n", signo); 
+    pr_procmask ("in sig_eater"); 
 #if 0
-    if (signal (SIGINT, SIG_DFL) == SIG_ERR)
+    if (signal (signo, SIG_DFL) == SIG_ERR)
 #elif 0 
-    if (signal (SIGINT, SIG_IGN) == SIG_ERR)
+    if (signal (signo, SIG_IGN) == SIG_ERR)
 #else
-    if (signal (SIGINT, sig_int) == SIG_ERR)
+    if (signal (signo, sig_eater) == SIG_ERR)
 #endif
-        err_sys ("can't reset SIGINT"); 
+        err_sys ("can't reset %d", signo); 
 }
 
 int main (int argc, char *argv[])
@@ -26,23 +26,38 @@ int main (int argc, char *argv[])
 #ifdef IGNORE2CATCH
     if (signal (SIGINT, SIG_IGN) == SIG_ERR)
 #else 
-    if (signal (SIGINT, sig_int) == SIG_ERR)
+    if (signal (SIGINT, sig_eater) == SIG_ERR)
 #endif
         err_sys ("can't catch/ignore SIGINT"); 
 
+#ifdef IGNORE2CATCH
+    if (signal (SIGQUIT, SIG_IGN) == SIG_ERR)
+#else 
+    if (signal (SIGQUIT, sig_eater) == SIG_ERR)
+#endif
+        err_sys ("can't catch/ignore SIGQUIT"); 
+
     sigemptyset (&newmask); 
     sigaddset (&newmask, SIGINT); 
+    sigaddset (&newmask, SIGQUIT); 
     if (sigprocmask (SIG_BLOCK, &newmask, &oldmask) < 0)
         err_sys ("SIG_BLOCK error"); 
 
     pr_procmask ("after set mask"); 
 
 #ifdef IGNORE2CATCH 
-    if (signal (SIGINT, sig_int) == SIG_ERR)
+    if (signal (SIGINT, sig_eater) == SIG_ERR)
 #else 
     if (signal (SIGINT, SIG_IGN) == SIG_ERR)
 #endif
         err_sys ("can't catch/ignore SIGINT"); 
+
+#ifdef IGNORE2CATCH 
+    if (signal (SIGQUIT, sig_eater) == SIG_ERR)
+#else 
+    if (signal (SIGQUIT, SIG_IGN) == SIG_ERR)
+#endif
+        err_sys ("can't catch/ignore SIGQUIT"); 
 
     sleep (5); 
 
@@ -52,6 +67,8 @@ int main (int argc, char *argv[])
         err_sys ("sigpending error"); 
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
+    if (sigismember (&pendmask, SIGQUIT))
+        printf ("SIGQUIT pending\n"); 
 #else 
     pr_pendmask ("after got signal:"); 
     pr_procmask ("now proc mask: "); 
@@ -59,14 +76,15 @@ int main (int argc, char *argv[])
 
 #ifdef IGNORE2CATCH
 #  ifdef USE_SUSPEND
+    sigaddset (&oldmask, SIGABRT); 
     assert(sigsuspend (&oldmask) < 0); 
     assert(errno == EINTR); 
-    printf ("SIGINT unblocked\n"); 
+    printf ("SIGINT/QUIT unblocked\n"); 
 #  else
     if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
         err_sys ("SIG_SETMASK error"); 
 
-    printf ("SIGINT unblocked\n"); 
+    printf ("SIGINT/QUIT unblocked\n"); 
     pause (); 
     //sleep (5); 
 #  endif
@@ -77,8 +95,11 @@ int main (int argc, char *argv[])
         err_sys ("sigpending error"); 
     if (sigismember (&pendmask, SIGINT))
         printf ("SIGINT pending\n"); 
+    if (sigismember (&pendmask, SIGQUIT))
+        printf ("SIGQUIT pending\n"); 
 #else 
-    pr_pendmask ("after set mask"); 
+    pr_pendmask ("now pend mask"); 
+    pr_procmask ("now proc mask"); 
 #endif
 
     exit (0); 
