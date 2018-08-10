@@ -311,3 +311,33 @@ Sigfunc* apue_signal (int signo, Sigfunc *func)
 
     return oact.sa_handler; 
 }
+
+void apue_abort ()
+{
+    sigset_t mask; 
+    struct sigaction action; 
+    sigaction (SIGABRT, NULL, &action); 
+    if (action.sa_handler == SIG_IGN)
+    {
+        printf ("change ignore to default\n"); 
+        action.sa_handler = SIG_DFL; 
+        sigaction (SIGABRT, &action, NULL); 
+    }
+
+    if (action.sa_handler == SIG_DFL)
+        fflush (NULL); 
+
+    sigfillset (&mask); 
+    sigdelset (&mask, SIGABRT); 
+    sigprocmask (SIG_SETMASK, &mask, NULL); 
+    kill (getpid (), SIGABRT); 
+
+    printf ("after execute user handler\n"); 
+    fflush (NULL); 
+    action.sa_handler = SIG_DFL; 
+    sigaction (SIGABRT, &action, NULL); 
+    sigprocmask (SIG_SETMASK, &mask, NULL); 
+    kill (getpid (), SIGABRT); 
+    printf ("never get here!"); 
+    exit (1); 
+}
