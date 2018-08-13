@@ -209,6 +209,7 @@ int apue_system (const char *cmdstring)
     }
     else 
     {
+        //sleep (1); 
         while (waitpid (pid, &status, 0) < 0)
         {
             if (errno != EINTR)

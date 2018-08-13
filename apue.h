@@ -60,7 +60,7 @@ void pr_procmask (char const* tip);
 void pr_pendmask (char const* tip); 
 
 //typedef void (*Sigfunc) (int signo); 
-Sigfunc* apue_sinal (int signo, Sigfunc *func); 
+Sigfunc* apue_signal (int signo, Sigfunc *func); 
 void apue_abort (); 
 
 #endif 
