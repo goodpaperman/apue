@@ -52,6 +52,7 @@ void clr_fl (int fd, int flags);
 void tell_buf (char const* name, FILE* fp); 
 void pr_exit (int status); 
 
+int apue_system (const char *cmdstring);
 unsigned int alrm_sleep (unsigned int sec); 
 
 void pr_mask (sigset_t *mask); 
