@@ -1,6 +1,12 @@
 #include "../apue.h"
 #include <sys/wait.h>
 
+#if 1
+#  define SYSTEM system
+#else
+#  define SYSTEM apue_system
+#endif 
+
 static void sig_int (int signo)
 {
     printf ("caught SIGINT\n"); 
@@ -24,9 +30,11 @@ int main (int argc, char *argv[])
         err_sys ("signal (SIGINT) error"); 
     if (apue_signal (SIGCHLD, sig_chld) == SIG_ERR)
         err_sys ("signal (SIGCHLD) error"); 
-    int status = apue_system (argc > 1 ? argv[1] : "/bin/ed"); 
+    int status = SYSTEM (argc > 1 ? argv[1] : "/bin/ed"); 
     if (status < 0)
         err_sys ("system () error"); 
+    else 
+        printf ("system return %d (0x%08x)\n", status, status); 
 
     pr_exit (status); 
     //exit (0); 

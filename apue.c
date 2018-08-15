@@ -274,7 +274,6 @@ int apue_system (const char *cmdstring)
                 break; 
             }
         }
-        printf ("wait cmd, status = %d (0x%08x)\n", status, status); 
     }
 
     if (sigaction (SIGINT, &saveintr, NULL) < 0)
