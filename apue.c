@@ -220,7 +220,7 @@ int apue_system (const char *cmdstring)
                 break; 
             }
         }
-        printf ("wait cmd, status = %d\n", status); 
+        printf ("wait cmd, status = %d (0x%08x)\n", status, status); 
     }
 
     return (status); 
@@ -274,7 +274,7 @@ int apue_system (const char *cmdstring)
                 break; 
             }
         }
-        printf ("wait cmd, status = %d\n", status); 
+        printf ("wait cmd, status = %d (0x%08x)\n", status, status); 
     }
 
     if (sigaction (SIGINT, &saveintr, NULL) < 0)
@@ -302,6 +302,8 @@ void pr_exit (int status)
 #  endif 
   else if (WIFSTOPPED(status))
     printf ("child stopped, signal number = %d\n", WSTOPSIG(status)); 
+  else 
+    printf ("unkown status 0x%x\n", status); 
 }
 
 
