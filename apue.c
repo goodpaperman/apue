@@ -306,18 +306,19 @@ void pr_exit (int status)
 }
 
 
-#ifdef USEJMP 
+#if 0
+#  ifdef USEJMP 
 static jmp_buf env_alrm; 
-#endif 
+#  endif 
 static void sig_alrm (int signo)
 {
     printf ("recv signal %d, wakeup from sleep\n", signo); 
-#ifdef USEJMP 
+#  ifdef USEJMP 
     longjmp (env_alrm, 1); 
-#endif
+#  endif
 }
 
-unsigned int alrm_sleep (unsigned int sec)
+unsigned int apue_sleep (unsigned int sec)
 {
     time_t start = time (NULL); 
     __sighandler_t old = signal (SIGALRM, sig_alrm); 
@@ -325,9 +326,9 @@ unsigned int alrm_sleep (unsigned int sec)
         return sec; 
 
     int ret = 0; 
-#ifdef USEJMP
+#  ifdef USEJMP
     if (setjmp (env_alrm) == 0)
-#endif
+#  endif
     {
         ret = alarm (sec); 
         if (ret < sec)
@@ -336,10 +337,10 @@ unsigned int alrm_sleep (unsigned int sec)
             alarm (sec); 
         }
 
-#if 1
+#  if 1
         sleep (sec); 
         printf ("start real wait\n"); 
-#endif
+#  endif
 
         pause (); 
     }
@@ -352,6 +353,71 @@ unsigned int alrm_sleep (unsigned int sec)
     alarm (left); 
     return left; 
 }
+#else
+static void sig_alrm (int signo)
+{
+    printf ("sig alrm caught\n"); 
+}
+
+unsigned int apue_sleep (unsigned int nsecs)
+{
+    time_t start = time (NULL); 
+    struct sigaction newact, oldact; 
+    sigset_t newmask, oldmask, suspmask; 
+    unsigned int unslept; 
+
+    newact.sa_handler = sig_alrm; 
+    sigemptyset (&newact.sa_mask); 
+    newact.sa_flags = 0; 
+    sigaction (SIGALRM, &newact, &oldact); 
+
+    sigemptyset (&newmask); 
+    sigaddset (&newmask, SIGALRM); 
+    sigprocmask (SIG_BLOCK, &newmask, &oldmask); 
+
+#  if 0
+    alarm (nsecs); 
+#  else 
+    int ret = alarm (nsecs); 
+    if (ret < nsecs)
+    {
+        //nsecs = ret;
+        alarm (ret); 
+    }
+#  endif 
+
+    if (oldact.sa_handler != SIG_IGN && 
+        oldact.sa_handler != SIG_DFL)
+    {
+        // before suspend on SIGALRM, restore old action.
+        // to call user's handler when SIGALRM called
+        sigaction (SIGALRM, &oldact, NULL); 
+    }
+
+    suspmask = oldmask; 
+    sigdelset (&suspmask, SIGALRM); 
+    sigsuspend (&suspmask); 
+
+    time_t end = time (NULL); 
+    int dure = (int)(end - start); 
+    printf ("want %u, real %u, sleep %u, start %lu, end %lu\n", nsecs, ret, dure, start, end); 
+#  if 0
+    unslept = alarm (0); 
+#  else 
+    unslept = ret > dure ? ret - dure : 0; 
+    alarm (unslept); 
+#  endif
+
+    printf ("alarm return %d\n", unslept); 
+
+    // a patch
+    //if (oldact.sa_handler == SIG_IGN)
+    sigaction (SIGALRM, &oldact, NULL); 
+
+    sigprocmask (SIG_SETMASK, &oldmask, NULL); 
+    return unslept; 
+}
+#endif 
 
 void pr_mask (sigset_t *mask)
 {

@@ -53,7 +53,7 @@ void tell_buf (char const* name, FILE* fp);
 void pr_exit (int status); 
 
 int apue_system (const char *cmdstring);
-unsigned int alrm_sleep (unsigned int sec); 
+unsigned int apue_sleep (unsigned int sec); 
 
 void pr_mask (sigset_t *mask); 
 void pr_procmask (char const* tip); 

@@ -10,8 +10,8 @@ void sigint (int signo)
     int i, j; 
     volatile int k; 
     printf ("sigint starting\n"); 
-    for (i=0; i<300000; i++)
-        for (j=0; j<4000; j++)
+    for (i=0; i<400000; i++)
+        for (j=0; j<3000; j++)
             k += i * j; 
 
     printf ("sigint finished\n"); 
@@ -25,14 +25,14 @@ int main (int argc, char *argv[])
     signal (SIGALRM, sigalrm); 
 #endif
 
-#if 0
+#if 1
     ret = alarm(10); 
 #else 
     ret = alarm(3); 
 #endif
 
     printf ("alarm(n) return %d\n", ret); 
-    alrm_sleep (5); 
+    apue_sleep (5); 
 
 #if 0
     ret = alarm (10);

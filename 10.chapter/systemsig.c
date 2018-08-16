@@ -1,7 +1,7 @@
 #include "../apue.h"
 #include <sys/wait.h>
 
-#if 1
+#if 0
 #  define SYSTEM system
 #else
 #  define SYSTEM apue_system
