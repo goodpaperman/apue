@@ -387,7 +387,8 @@ unsigned int apue_sleep (unsigned int nsecs)
 #  endif 
 
     if (oldact.sa_handler != SIG_IGN && 
-        oldact.sa_handler != SIG_DFL)
+        oldact.sa_handler != SIG_DFL && 
+        ret > nsecs)
     {
         // before suspend on SIGALRM, restore old action.
         // to call user's handler when SIGALRM called
