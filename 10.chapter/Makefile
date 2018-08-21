@@ -1,4 +1,10 @@
-all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep breaksig sigset sigjmp suspendsig waitsig syncsig sigabrt systemsig jobsig stpsig
+all: coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep breaksig sigset sigjmp suspendsig waitsig syncsig sigabrt systemsig jobsig stpsig signame
+
+signame: signame.o apue.o
+	gcc -Wall -g $^ -o $@
+
+signame.o: signame.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_GNU_SOURCE
 
 stpsig: stpsig.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -152,7 +158,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep breaksig sigset sigjmp suspendsig waitsig syncsig sigabrt systemsig jobsig stpsig
+	-rm -f *.o core.* *.log *~ *.swp coredump testsig demosig execsig lostsig interwait errnomt getpwnam_r localtime_r cldsig blocksig killsig alrmsig alrmsleep breaksig sigset sigjmp suspendsig waitsig syncsig sigabrt systemsig jobsig stpsig signame
 	@echo "end clean"
 
 .PHONY: clean
