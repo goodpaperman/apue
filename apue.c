@@ -6,6 +6,7 @@
 #include <setjmp.h>
 #include <time.h> 
 #include <signal.h>
+#include <strings.h>
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -506,4 +507,109 @@ void apue_abort ()
     kill (getpid (), SIGABRT); 
     printf ("never get here!"); 
     exit (1); 
+}
+
+
+struct key_value
+{
+    int key; 
+    char value[SIG2STR_MAX]; 
+}; 
+
+//#define UNKNOWN 0
+#define SIGDEF(name) {name, #name}
+
+static struct key_value signames[_NSIG]=
+{
+    SIGDEF(0), 
+    SIGDEF(SIGHUP), 
+    SIGDEF(SIGINT), 
+    SIGDEF(SIGQUIT), 
+    SIGDEF(SIGILL), 
+    SIGDEF(SIGTRAP), 
+    SIGDEF(SIGABRT), 
+    SIGDEF(SIGBUS), 
+    SIGDEF(SIGFPE), 
+    SIGDEF(SIGKILL), 
+    SIGDEF(SIGUSR1), 
+    SIGDEF(SIGSEGV), 
+    SIGDEF(SIGUSR2), 
+    SIGDEF(SIGPIPE), 
+    SIGDEF(SIGALRM), 
+    SIGDEF(SIGTERM), 
+    SIGDEF(SIGSTKFLT), 
+    SIGDEF(SIGCHLD), 
+    SIGDEF(SIGCONT), 
+    SIGDEF(SIGSTOP), 
+    SIGDEF(SIGTSTP), 
+    SIGDEF(SIGTTIN), 
+    SIGDEF(SIGTTOU), 
+    SIGDEF(SIGURG), 
+    SIGDEF(SIGXCPU), 
+    SIGDEF(SIGXFSZ), 
+    SIGDEF(SIGVTALRM), 
+    SIGDEF(SIGPROF), 
+    SIGDEF(SIGWINCH), 
+    SIGDEF(SIGIO), 
+    SIGDEF(SIGPWR), 
+    SIGDEF(SIGSYS), 
+    SIGDEF(32), 
+    SIGDEF(33), 
+    SIGDEF(34), 
+    SIGDEF(35), 
+    SIGDEF(36), 
+    SIGDEF(37), 
+    SIGDEF(38), 
+    SIGDEF(39), 
+    SIGDEF(40), 
+    SIGDEF(41), 
+    SIGDEF(42), 
+    SIGDEF(43), 
+    SIGDEF(44), 
+    SIGDEF(45), 
+    SIGDEF(46), 
+    SIGDEF(47), 
+    SIGDEF(48), 
+    SIGDEF(49), 
+    SIGDEF(50), 
+    SIGDEF(51), 
+    SIGDEF(52), 
+    SIGDEF(53), 
+    SIGDEF(54), 
+    SIGDEF(55), 
+    SIGDEF(56), 
+    SIGDEF(57), 
+    SIGDEF(58), 
+    SIGDEF(59), 
+    SIGDEF(60), 
+    SIGDEF(61), 
+    SIGDEF(62), 
+    SIGDEF(63), 
+    SIGDEF(64), 
+}; 
+
+int sig2str (int signo, char *str)
+{
+    if (signo < 0 || signo >= _NSIG)
+    {
+        return -1; 
+    }
+
+    strcpy (str, signames[signo].value); 
+    return 0; 
+}
+
+int str2sig (const char *str, int *signop)
+{
+    int i = 0; 
+    for (; i<_NSIG; ++ i)
+    {
+        if (strcasecmp (str, signames[i].value) == 0)
+        {
+            *signop = signames[i].key; 
+            return 0; 
+        }
+    }
+
+    return -1; 
 }

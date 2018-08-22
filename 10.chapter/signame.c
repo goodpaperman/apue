@@ -35,7 +35,7 @@ void test_strsig ()
     printf ("\n"); 
 }
 
-#ifdef SOLARIS
+#if defined(SOLARIS) || defined(APUE_SIG2STR)
 void test_conv ()
 {
     int signo; 
@@ -54,7 +54,7 @@ int main ()
     test_siglist (); 
     test_psig (); 
     test_strsig (); 
-#ifdef SOLARIS
+#if defined(SOLARIS) || defined(APUE_SIG2STR)
     test_conv (); 
 #endif
     return 0; 

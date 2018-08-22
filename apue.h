@@ -63,4 +63,9 @@ void pr_pendmask (char const* tip);
 Sigfunc* apue_signal (int signo, Sigfunc *func); 
 void apue_abort (); 
 
+#define SIG2STR_MAX 10
+#define APUE_SIG2STR
+int sig2str (int signo, char *str);
+int str2sig (const char *str, int *signop);
+
 #endif 
