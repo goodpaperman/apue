@@ -424,9 +424,19 @@ unsigned int apue_sleep (unsigned int nsecs)
 void pr_mask (sigset_t *mask)
 {
     int i; 
+    char text[SIG2STR_MAX]; 
     for (i=1; i<_NSIG; ++ i)
+    {
         if (sigismember (mask, i))
+        {
+#if 0
             printf ("%d\n", i); 
+#else 
+            sig2str (i, text); 
+            printf ("%s ", text); 
+#endif
+        }
+    }
 
     printf ("\n"); 
 }
