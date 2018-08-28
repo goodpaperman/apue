@@ -2,7 +2,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-#define USE_FGETS
+#define USE_FSTREAM 2
 static volatile sig_atomic_t sigflag; 
 static sigset_t newmask, oldmask, zeromask; 
 
@@ -47,7 +47,7 @@ int read_increase_write ()
 {
     char *ptr = NULL; 
     int n = 0, ret = 0, err = 0; 
-#ifdef USE_FGETS
+#ifdef USE_FSTREAM
     FILE* fp = fopen ("sync.txt", "r"); 
     if (fp)
 #else
@@ -56,30 +56,31 @@ int read_increase_write ()
 #endif
     {
         char buf[64] = { 0 }; 
-        //fread (buf, sizeof(buf)-1, 1, fp); 
         do
         {
             errno = 0; 
-#ifdef USE_FGETS
-            //ptr = fgets (buf, sizeof(buf), fp); 
+#if USE_FSTREAM==1
             ret = fread (buf, 1, sizeof(buf), fp); 
-        //    err = errno; 
-        //    printf ("read %s, errno %d\n", ptr, err); 
-        //} while (ptr == NULL && err == EINTR); 
-#else 
-            ret = read (fd, buf, sizeof(buf)); 
-#endif
             err = errno; 
             printf ("read %d, errno %d\n", ret, err); 
         } while (ret == -1 && err == EINTR); 
+#elif USE_FSTREAM==2
+            ptr = fgets (buf, sizeof(buf), fp); 
+            err = errno; 
+            printf ("read %s, errno %d\n", ptr, err); 
+        } while (ptr == NULL && err == EINTR); 
+#else 
+            ret = read (fd, buf, sizeof(buf)); 
+            err = errno; 
+            printf ("read %d, errno %d\n", ret, err); 
+        } while (ret == -1 && err == EINTR); 
+#endif
 
         n = atoi (buf); 
         memset (buf, 0, sizeof(buf)); 
         sprintf (buf, "%d", ++n); 
-        ////printf ("write %s\n", buf); 
-        //fwrite (buf, strlen (buf), 1, fp); 
         
-#ifdef USE_FGETS
+#ifdef USE_FSTREAM
         fp = freopen ("sync.txt", "w", fp); 
         if (!fp)
             err_sys ("freopen"); 
@@ -88,17 +89,17 @@ int read_increase_write ()
         do 
         {
             errno = 0; 
-#ifdef USE_FGETS
+#if USE_FSTREAM==1
             //if (fseek (fp, 0, SEEK_SET) == -1)
             //    err_sys ("fseek"); 
-
-            //ret = fputs (buf, fp); 
-            ret = fwrite (buf, 1, sizeof(buf), fp); 
+            ret = fwrite (buf, strlen(buf)+1, 1, fp); 
+#elif USE_FSTREAM==2
+            ret = fputs (buf, fp); 
 #else 
             if (lseek (fd, 0, SEEK_SET) == -1)
                 err_sys ("lseek"); 
 
-            ret = write (fd, buf, sizeof(buf)); 
+            ret = write (fd, buf, strlen(buf)+1); 
 #endif
             err = errno; 
             printf ("write %d, errno %d\n", ret, err); 
@@ -112,7 +113,7 @@ int read_increase_write ()
         return -1; 
     }
 
-#ifdef USE_FGETS
+#ifdef USE_FSTREAM
     fclose (fp); 
 #else
     close (fd); 
