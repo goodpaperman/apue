@@ -1,10 +1,10 @@
-all: coredump 
+all: threadid 
 
-coredump: coredump.o apue.o
-	gcc -Wall -g $^ -o $@
+threadid: threadid.o apue.o 
+	g++ -Wall -g $^ -o $@ -pthread
 
-coredump.o: coredump.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+threadid.o: threadid.c ../apue.h concurrent_queue.hpp
+	g++ -Wall -g -c $< -o $@  -std=c++11 
 
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@
@@ -14,7 +14,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp coredump 
+	-rm -f *.o core.* *.log *~ *.swp threadid 
 	@echo "end clean"
 
 .PHONY: clean
