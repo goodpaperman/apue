@@ -19,12 +19,12 @@ void* thread_proc (void *arg)
         if (pthread_equal (data.key, pthread_self ()) != 0)
         {
             // equal !
-            printf ("[%lu] eat item %s\n", pthread_self (), data.value.c_str ()); 
+            printf ("[%lu] eat item %s, left %u\n", pthread_self (), data.value.c_str (), que->size ()); 
         }
         else 
         {
             que->push(data); 
-            printf ("[%lu] not my cake (%lu), push it back\n", pthread_self (), data.key); 
+            printf ("[%lu] not my cake (%lu), push it back, left %u\n", pthread_self (), data.key, que->size ()); 
             usleep (10000); 
         }
     }
@@ -56,7 +56,7 @@ int main ()
         //printf ("add item for %lu\n", td.key); 
     }
 
-    printf ("setup queue with %d nodes\n", 1000); 
+    printf ("setup queue with %u nodes\n", que.size ()); 
     void* status = NULL; 
     printf ("prepare to join\n"); 
 
