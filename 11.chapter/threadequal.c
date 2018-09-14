@@ -19,17 +19,17 @@ void* thread_proc (void *arg)
         if (pthread_equal (data.key, pthread_self ()) != 0)
         {
             // equal !
-            printf ("[%lu] eat item %s, left %u\n", pthread_self (), data.value.c_str (), que->size ()); 
+            printf ("[0x%x] eat item %s, left %u\n", pthread_self (), data.value.c_str (), que->size ()); 
         }
         else 
         {
             que->push(data); 
-            printf ("[%lu] not my cake (%lu), push it back, left %u\n", pthread_self (), data.key, que->size ()); 
-            usleep (10000); 
+            printf ("[0x%x] %s is not my cake (0x%x), push it back, left %u\n", pthread_self (), data.value.c_str (), data.key, que->size ()); 
+            //usleep (10000); 
         }
     }
 
-    printf ("[%lu] thread exit\n", pthread_self ()); 
+    printf ("[0x%x] thread exit\n", pthread_self ()); 
     return (void *)1; 
 
 }
@@ -43,7 +43,7 @@ int main ()
     for (i=0; i<MAX_THREADS; i++)
     {
         ret = pthread_create(&tid[i], NULL, &thread_proc, (void *)&que); 
-        printf ("create thread %lu return %d\n", tid[i], ret); 
+        printf ("create thread 0x%x return %d\n", tid[i], ret); 
     }
 
     for (i=0; i<1000; ++ i)
@@ -53,7 +53,7 @@ int main ()
         td.key = tid[i % MAX_THREADS]; 
         td.value = std::to_string (i); 
         que.push (td); 
-        //printf ("add item for %lu\n", td.key); 
+        //printf ("add item for 0x%x\n", td.key); 
     }
 
     printf ("setup queue with %u nodes\n", que.size ()); 
@@ -64,12 +64,12 @@ int main ()
     for (i=0; i<MAX_THREADS; ++ i)
     {
         ret = pthread_join (tid[i], &status); 
-        printf ("wait thread [%lu] ret %d, exit code [%p]\n", tid[i], ret, status); 
+        printf ("wait thread [0x%x] ret %d, exit code [%p]\n", tid[i], ret, status); 
     }
 #else
     sleep (10); 
 #endif
 
-    printf ("main exit\n"); 
+    printf ("main exit, queue item left %d\n", que.size ()); 
     return 0; 
 }
