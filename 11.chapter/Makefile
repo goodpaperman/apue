@@ -1,4 +1,10 @@
-all: threadequal threadid
+all: threadequal threadid threadexit
+
+threadexit: threadexit.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+threadexit.o: threadexit.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
 
 threadid: threadid.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -20,7 +26,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp threadequal threadid
+	-rm -f *.o core.* *.log *~ *.swp threadequal threadid threadexit
 	@echo "end clean"
 
 .PHONY: clean
