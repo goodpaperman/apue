@@ -17,9 +17,18 @@ void printfoo (const char* s, struct foo const* fp)
 
 void* thr_fn1 (void *arg)
 {
-    struct foo f = { 1, 2, 3, 4 }; 
-    printfoo ("thread 1: \n", &f); 
-    pthread_exit ((void *)&f); 
+#ifdef USE_STACK 
+    struct foo fp = { 1, 2, 3, 4 }; 
+    struct foo* f = &fp; 
+#else 
+    struct foo *f = (struct foo*) malloc (sizeof (struct foo)); 
+    f->a = 1; 
+    f->b = 2; 
+    f->c = 3; 
+    f->d = 4; 
+#endif 
+    printfoo ("thread 1: \n", f); 
+    pthread_exit ((void *)f); 
 }
 
 void* thr_fn2 (void *arg)
@@ -53,5 +62,9 @@ int main (void)
 #endif 
 
     printfoo ("parent: \n", fp); 
+#ifndef USE_STACK
+    free (fp); 
+#endif
+
     exit (0); 
 }
