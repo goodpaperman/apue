@@ -20,8 +20,11 @@ int main ()
 {
     int err = 0; 
     pthread_t tid; 
+    pthread_attr_t *pattr = NULL; 
+
+#ifdef STARTUP_DETACH
     pthread_attr_t att; 
-    
+    pattr = &att; 
     err = pthread_attr_init (&att); 
     if (err != 0)
         err_quit ("attr init failed\n"); 
@@ -29,14 +32,23 @@ int main ()
     err = pthread_attr_setdetachstate (&att, 1); 
     if (err != 0)
         err_quit ("set detach state failed\n"); 
+#endif
 
-    err = pthread_create (&tid, &att, thr_fun, NULL); 
+    err = pthread_create (&tid, pattr, thr_fun, NULL); 
     if (err != 0)
         err_quit ("can't create thread: %s\n", strerror(err)); 
 
+#ifdef STARTUP_DETACH
     err = pthread_attr_destroy (&att); 
     if (err != 0)
         err_quit ("attr destroy failed\n"); 
+#else 
+    err = pthread_detach (tid); 
+    if (err != 0)
+        err_quit ("can't detach thread: %s\n", strerror (err)); 
+
+    printf ("thread detached OK\n"); 
+#endif 
 
     sleep (1); 
 
@@ -56,5 +68,7 @@ int main ()
         printf ("wait child, status = 0x%x\n", status); 
 
     printf ("main thread exit..\n"); 
+    sleep (1); 
     return 42; 
 }
+
