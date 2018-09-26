@@ -21,6 +21,7 @@ void* thr_fn1 (void *arg)
         return ((void *)1); 
 #endif 
 
+    //__clframe = 1; 
     pthread_cleanup_pop (0); 
     pthread_cleanup_pop (0); 
     return ((void *)3); 
@@ -39,6 +40,7 @@ void* thr_fn2 (void *arg)
         pthread_exit ((void *)2); 
 #endif 
 
+    //__clframe = 0; 
     pthread_cleanup_pop (0); 
     pthread_cleanup_pop (0); 
     pthread_exit ((void *)4); 

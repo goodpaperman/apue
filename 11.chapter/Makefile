@@ -1,4 +1,10 @@
-all: threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup
+all: threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadcleanup.i threadcleanup.ii
+
+threadcleanup.ii: threadcleanup.c 
+	g++ -Wall -g -E $^ -o $@
+
+threadcleanup.i: threadcleanup.c 
+	gcc -Wall -g -E $^ -o $@
 
 threadcleanup: threadcleanup.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
