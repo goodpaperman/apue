@@ -40,7 +40,7 @@ vacct: vacct.o apue.o
 	gcc -Wall -g $^ -o $@
 
 vacct.o: vacct.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 checkin: checkin.o apue.o
 	gcc -Wall -g -L. -lhack -Wl,-rpath,./ $^ -o $@
@@ -60,14 +60,14 @@ login: login.o apue.o
 login.o: login.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99
 
-system: system.o apue.o #system_api.o
+system: system.o apue.o system_api.o
 	gcc -Wall -g $^ -o $@
 
 system.o: system.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99
 
-#system_api.o: system_api.c ../apue.h
-#	gcc -Wall -g -c $< -o $@ -std=c99
+system_api.o: system_api.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
 
 pti: pti.o apue.o
 	gcc -Wall -g $^ -o $@

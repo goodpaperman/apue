@@ -18,7 +18,6 @@
 #include <unistd.h> 
 #include <signal.h> 
 #include <fcntl.h> 
-#include <signal.h> 
 
 #define MAXLINE 4096
 
