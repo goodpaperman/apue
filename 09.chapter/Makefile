@@ -46,7 +46,7 @@ sigcatch: sigcatch.o apue.o
 	gcc -Wall -g $^ -o $@
 
 sigcatch.o: sigcatch.c 
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 telnetc: telnetc.o apue.o
 	gcc -Wall -g $^ -o $@
