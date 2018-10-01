@@ -24,13 +24,13 @@ pid: pid.o apue.o
 pid.o: pid.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-shell_s: shell.c ../apue.c 
+shell_s: shell.c ../apue.c  ../log.c
 	gcc -Wall -g $^ -static -o $@ -std=c99
 
-shell: shell.o apue.o
+shell: shell.o apue.o log.o
 	gcc -Wall -g $^ -o $@
 
-shell.o: shell.c ../apue.h
+shell.o: shell.c ../apue.h ../log.h
 	gcc -Wall -g -c $< -o $@ -std=c99
 
 error: error.o apue.o
@@ -76,6 +76,9 @@ limit.o: limit.c
 	gcc -Wall -g -c $< -o $@
 
 apue.o: ../apue.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
+
+log.o: ../log.c ../log.h 
 	gcc -Wall -g -c $< -o $@
 
 clock: clock.o

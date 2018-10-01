@@ -88,25 +88,25 @@ getgrps: getgrps.o apue.o
 	gcc -Wall -g $^ -o $@
 
 getgrps.o: getgrps.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 setgrps: setgrps.o apue.o
 	gcc -Wall -g $^ -o $@
 
 setgrps.o: setgrps.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 getgrnam_ent: getgrnam_ent.o apue.o
 	gcc -Wall -g $^ -o $@
 
 getgrnam_ent.o: getgrnam_ent.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 getgrnam: getgrnam.o apue.o
 	gcc -Wall -g $^ -o $@
 
 getgrnam.o: getgrnam.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 getspnam_ent: getspnam_ent.o apue.o
 	gcc -Wall -g $^ -o $@
