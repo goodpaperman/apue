@@ -1,4 +1,10 @@
-all: threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadcleanup.i threadcleanup.ii threadmutex threaddeadlock threadmutex2
+all: threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadcleanup.i threadcleanup.ii threadmutex threaddeadlock threadmutex2 threadmutex3
+
+threadmutex3: threadmutex3.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+threadmutex3.o: threadmutex3.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
 
 threadmutex2: threadmutex2.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -74,7 +80,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadmutex threaddeadlock threadmutex2
+	-rm -f *.o core.* *.log *~ *.swp threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadmutex threaddeadlock threadmutex2 threadmutex3
 	@echo "end clean"
 
 .PHONY: clean

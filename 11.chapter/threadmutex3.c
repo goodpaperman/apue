@@ -42,10 +42,10 @@ struct foo* foo_alloc (int id)
 
 void foo_hold (struct foo *fp)
 {
-    pthread_mutex_lock (&hashlock); 
+    pthread_mutex_lock (&fp->f_lock); 
     fp->f_count ++; 
     printf ("thread %lu hold me, ref count %d\n", pthread_self (), fp->f_count); 
-    pthread_mutex_unlock (&hashlock); 
+    pthread_mutex_unlock (&fp->f_lock); 
 }
 
 struct foo* foo_find (int id)
@@ -57,8 +57,7 @@ struct foo* foo_find (int id)
     for (fp = fh[idx]; fp != NULL; fp = fp->f_next) { 
         if (fp->f_id == id)
         {
-            //foo_hold (fp); 
-            fp->f_count ++; 
+            foo_hold (fp); 
             break; 
         }
     }
@@ -71,10 +70,22 @@ struct foo* foo_find (int id)
 
 void foo_rele (struct foo *fp)
 {
-    int idx; 
     struct foo *tfp; 
-    pthread_mutex_lock (&hashlock); 
-    if (-- fp->f_count == 0) { 
+    int idx; 
+
+    pthread_mutex_lock (&fp->f_lock); 
+    if (fp->f_count == 1) { 
+        pthread_mutex_unlock (&fp->f_lock); 
+        pthread_mutex_lock (&hashlock); 
+        pthread_mutex_lock (&fp->f_lock); 
+
+        if (fp->f_count != 1)
+        {
+            fp->f_count --; 
+            pthread_mutex_unlock (&fp->f_lock); 
+            pthread_mutex_unlock (&hashlock); 
+            return; 
+        }
 
         idx = HASH(fp->f_id); 
         tfp = fh[idx]; 
@@ -89,12 +100,16 @@ void foo_rele (struct foo *fp)
         }
 
         printf ("thread %lu destroy me, ref count %d\n", pthread_self (), fp->f_count); 
+        pthread_mutex_unlock (&hashlock); 
+        pthread_mutex_unlock (&fp->f_lock); 
         pthread_mutex_destroy (&fp->f_lock); 
         free (fp); 
     }
-
-    printf ("thread %lu release me, ref count %d\n", pthread_self (), fp->f_count); 
-    pthread_mutex_unlock (&hashlock); 
+    else {
+        fp->f_count --; 
+        printf ("thread %lu release me, ref count %d\n", pthread_self (), fp->f_count); 
+        pthread_mutex_unlock (&fp->f_lock); 
+    }
 }
 
 void* thr_fn (void *arg)
