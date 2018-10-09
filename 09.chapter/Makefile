@@ -155,7 +155,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback
+	-rm -f *.o core.* *.log *~ *.swp grpid grpmaster grpslave grpmaste grpmast grpslav grpmas grpsla session tty pty telnetd telnets telnety telnetl telnetc sigcatch crypt shell tsh tcsetpgrp placetaker returnback orphan
 	@echo "end clean"
 
 .PHONY: clean
