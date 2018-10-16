@@ -1,8 +1,8 @@
 #include "../apue.h" 
 #include <pthread.h> 
 
-#define THR_MAX 3
-//#define STATIC_INIT
+#define THR_MAX 30
+#define STATIC_INIT
 
 #define PASSERT(ret) \
     if ((ret) != 0) \
@@ -66,3 +66,4 @@ int main (void)
 
     return 0; 
 }
+
