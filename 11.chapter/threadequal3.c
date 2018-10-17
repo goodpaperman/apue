@@ -23,14 +23,19 @@ void process_msg (void)
         {
             if (g_exit)
             {
-                pthread_mutex_unlock (&qlock); 
                 break; 
             }
 
             if (workq)
-                printf ("[0x%x] %s is not my cake (0x%x), fatal error!\n", pthread_self (), workq->value, workq->m_id); 
+                printf ("[0x%x] %s is not my cake (0x%x)\n", pthread_self (), workq->value, workq->m_id); 
             
             pthread_cond_wait (&qready, &qlock); 
+        }
+
+        if (g_exit)
+        {
+            pthread_mutex_unlock (&qlock); 
+            break; 
         }
 
         mp = workq; 
@@ -50,7 +55,10 @@ void enqueue_msg (struct msg *mp)
     mp->m_next = workq; 
     workq = mp; 
     pthread_mutex_unlock (&qlock); 
-    pthread_cond_signal (&qready); 
+    //pthread_cond_signal (&qready); 
+    // use broadcast to notify all thread up 
+    // and give the right thread a chance to take item out
+    pthread_cond_broadcast (&qready); 
 }
 
 void dump_queue ()
@@ -108,7 +116,7 @@ int main ()
         m->m_id = tid[i % MAX_THREADS]; 
         sprintf (m->value, "%d", i); 
         enqueue_msg (m); 
-        usleep (10000); 
+        usleep (5000); 
         printf ("add item %s\n", m->value); 
     }
 
@@ -117,7 +125,7 @@ int main ()
     void* status = NULL; 
     printf ("prepare to join\n"); 
     pthread_cond_broadcast (&qready); 
-    printf ("after boradcast"); 
+    printf ("after boradcast\n"); 
 
 #if 1
     for (i=0; i<MAX_THREADS; ++ i)
@@ -134,3 +142,4 @@ int main ()
     queue_destroy (); 
     return 0; 
 }
+
