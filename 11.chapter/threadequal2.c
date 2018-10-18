@@ -2,6 +2,8 @@
 #include "../apue.h"
 #include <pthread.h> 
 
+#define USE_CONDITION
+
 struct job { 
     struct job *j_next; 
     struct job *j_prev; 
@@ -10,16 +12,29 @@ struct job {
 }; 
 
 struct queue { 
+    volatile int exit; 
     struct job *q_head; 
     struct job *q_tail; 
+
+#ifdef USE_CONDITION
+    pthread_mutex_t q_lock; 
+    pthread_cond_t q_cond; 
+#else 
     pthread_rwlock_t q_lock; 
+#endif
 }; 
 
 int queue_init (struct queue *qp)
 {
     int err = 0; 
+    qp->exit = 0; 
     qp->q_head = qp->q_tail = NULL; 
+#ifdef USE_CONDITION
+    err = pthread_mutex_init (&qp->q_lock, NULL); 
+    err |= pthread_cond_init (&qp->q_cond, NULL); 
+#else
     err = pthread_rwlock_init (&qp->q_lock, NULL); 
+#endif
     if (err != 0)
         return err; 
 
@@ -54,12 +69,22 @@ void queue_destroy (struct queue *qp)
 
     printf ("queue destroy, free %d nodes\n", n); 
     qp->q_head = qp->q_tail = NULL; 
+#ifdef USE_CONDITION
+    pthread_mutex_destroy (&qp->q_lock); 
+    pthread_cond_destroy (&qp->q_cond); 
+#else
     pthread_rwlock_destroy (&qp->q_lock); 
+#endif 
 }
 
 void job_insert (struct queue *qp, struct job *jp)
 {
+#ifdef USE_CONDITION
+    pthread_mutex_lock (&qp->q_lock); 
+#else
     pthread_rwlock_wrlock (&qp->q_lock); 
+#endif
+
     jp->j_next = qp->q_head; 
     jp->j_prev = NULL; 
     if (qp->q_head != NULL)
@@ -68,12 +93,22 @@ void job_insert (struct queue *qp, struct job *jp)
         qp->q_tail = jp; 
 
     qp->q_head = jp; 
+#ifdef USE_CONDITION
+    pthread_mutex_unlock (&qp->q_lock); 
+    pthread_cond_signal (&qp->q_cond); 
+#else
     pthread_rwlock_unlock (&qp->q_lock); 
+#endif
 }
 
 void job_append (struct queue *qp, struct job *jp)
 {
+#ifdef USE_CONDITION
+    pthread_mutex_lock (&qp->q_lock); 
+#else
     pthread_rwlock_wrlock (&qp->q_lock); 
+#endif 
+
     jp->j_next = NULL; 
     jp->j_prev = qp->q_tail; 
     if (qp->q_tail != NULL)
@@ -82,12 +117,23 @@ void job_append (struct queue *qp, struct job *jp)
         qp->q_head = jp; 
 
     qp->q_tail = jp; 
+#ifdef USE_CONDITION
+    pthread_mutex_unlock (&qp->q_lock); 
+    pthread_cond_signal (&qp->q_cond); 
+    //usleep (1000); 
+#else
     pthread_rwlock_unlock (&qp->q_lock); 
+#endif
 }
 
 void job_remove (struct queue *qp, struct job *jp)
 {
+#ifdef USE_CONDITION
+    pthread_mutex_lock (&qp->q_lock); 
+#else 
     pthread_rwlock_wrlock (&qp->q_lock); 
+#endif
+
     if (jp == qp->q_head)
     {
         dump_queue (qp); 
@@ -118,20 +164,37 @@ void job_remove (struct queue *qp, struct job *jp)
         jp->j_next->j_prev = jp->j_prev; 
     }
 
+#ifdef USE_CONDITION
+    pthread_mutex_unlock (&qp->q_lock); 
+#else
     pthread_rwlock_unlock (&qp->q_lock); 
+#endif
 }
 
 struct job* job_find (struct queue *qp, pthread_t id)
 {
     struct job *jp = NULL; 
+#ifdef USE_CONDITION
+    pthread_mutex_lock (&qp->q_lock); 
+    while (qp->q_head == NULL && !qp->exit)
+    {
+        printf ("[0x%x] no item in queue, start wait..\n", pthread_self ()); 
+        pthread_cond_wait (&qp->q_cond, &qp->q_lock); 
+    }
+#else
     if (pthread_rwlock_rdlock (&qp->q_lock) != 0)
         return NULL; 
+#endif
 
     for (jp=qp->q_head; jp != NULL; jp=jp->j_next)
         if (pthread_equal (jp->j_id, id))
             break; 
 
+#ifdef USE_CONDITION
+    pthread_mutex_unlock (&qp->q_lock); 
+#else
     pthread_rwlock_unlock (&qp->q_lock); 
+#endif
     return jp; 
 }
 
@@ -142,9 +205,24 @@ void* thread_proc (void *arg)
 {
     struct job *jp = NULL; 
     struct queue *que = (struct queue *)arg; 
-    sleep (1); 
-    while ((jp = job_find (que, pthread_self ())) != NULL)
+    //sleep (1); 
+    while (1)
     {
+        jp = job_find (que, pthread_self ()); 
+        if (jp == NULL)
+        {
+            if (que->exit)
+            {
+                printf ("no item find and exit detected!\n"); 
+                break; 
+            }
+            else 
+            {
+                printf ("no item find but no exit flag, continue try..\n"); 
+                continue; 
+            }
+        }
+
         if (pthread_equal (jp->j_id, pthread_self ()))
         {
             // equal !
@@ -182,7 +260,7 @@ int main ()
     {
         // put 1000 tasks
         struct job *jp = (struct job *)malloc (sizeof (struct job)); 
-        jp->j_id = tid[i % MAX_THREADS]; 
+        jp->j_id = tid[rand() % MAX_THREADS]; 
         sprintf (jp->value, "%d", i); 
         job_append (&que, jp); 
         //printf ("add item for 0x%x\n", jp->j_id); 
@@ -191,6 +269,8 @@ int main ()
     printf ("setup queue with %u nodes\n", i); 
     void* status = NULL; 
     printf ("prepare to join\n"); 
+    que.exit = 1; 
+    pthread_cond_broadcast (&que.q_cond); 
 
 #if 1
     for (i=0; i<MAX_THREADS; ++ i)
