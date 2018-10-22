@@ -77,7 +77,8 @@ void job_insert (struct queue *qp, struct job *jp)
 
     qp->q_head = jp; 
     pthread_mutex_unlock (&qp->q_lock); 
-    pthread_cond_signal (&qp->q_cond); 
+    //pthread_cond_signal (&qp->q_cond); 
+    pthread_cond_broadcast (&qp->q_cond); 
 }
 
 void job_append (struct queue *qp, struct job *jp)
@@ -93,7 +94,8 @@ void job_append (struct queue *qp, struct job *jp)
 
     qp->q_tail = jp; 
     pthread_mutex_unlock (&qp->q_lock); 
-    pthread_cond_signal (&qp->q_cond); 
+    //pthread_cond_signal (&qp->q_cond); 
+    pthread_cond_broadcast (&qp->q_cond); 
     //usleep (1000); 
 }
 
@@ -101,50 +103,55 @@ struct job* job_find_and_remove (struct queue *qp, pthread_t id)
 {
     struct job *jp = NULL; 
     pthread_mutex_lock (&qp->q_lock); 
-    while (qp->q_head == NULL && !qp->exit)
+    do
     {
-        printf ("[0x%x] no item in queue, start wait..\n", pthread_self ()); 
-        pthread_cond_wait (&qp->q_cond, &qp->q_lock); 
-    }
-
-    for (jp=qp->q_head; jp != NULL; jp=jp->j_next)
-    {
-        if (pthread_equal (jp->j_id, id))
+        for (jp=qp->q_head; jp != NULL; jp=jp->j_next)
         {
-            if (jp == qp->q_head)
+            if (pthread_equal (jp->j_id, id))
             {
-                dump_queue (qp); 
-                qp->q_head = jp->j_next; 
-                if (qp->q_head)
-                    qp->q_head->j_prev = NULL; 
-                //if (qp->q_tail == jp)
-                else
-                    qp->q_tail = NULL; 
+                if (jp == qp->q_head)
+                {
+                    dump_queue (qp); 
+                    qp->q_head = jp->j_next; 
+                    if (qp->q_head)
+                        qp->q_head->j_prev = NULL; 
+                    //if (qp->q_tail == jp)
+                    else
+                        qp->q_tail = NULL; 
 
-                dump_queue (qp); 
-            }
-            else if (jp == qp->q_tail)
-            {
-                dump_queue (qp); 
-                qp->q_tail = jp->j_prev; 
-                if (qp->q_tail)
-                    qp->q_tail->j_next = NULL; 
-                //if (qp->q_head == jp)
-                else
-                    qp->q_head = NULL; 
+                    dump_queue (qp); 
+                }
+                else if (jp == qp->q_tail)
+                {
+                    dump_queue (qp); 
+                    qp->q_tail = jp->j_prev; 
+                    if (qp->q_tail)
+                        qp->q_tail->j_next = NULL; 
+                    //if (qp->q_head == jp)
+                    else
+                        qp->q_head = NULL; 
 
-                dump_queue (qp); 
-            }
-            else 
-            {
-                jp->j_prev->j_next = jp->j_next; 
-                jp->j_next->j_prev = jp->j_prev; 
-            }
+                    dump_queue (qp); 
+                }
+                else 
+                {
+                    jp->j_prev->j_next = jp->j_next; 
+                    jp->j_next->j_prev = jp->j_prev; 
+                }
 
-            break; 
+                break; 
+            }
         }
-    }
 
+        if (qp->exit)
+            break; 
+
+        if (jp == NULL)
+        {
+            printf ("[0x%x] no item in queue, start wait..\n", pthread_self ()); 
+            pthread_cond_wait (&qp->q_cond, &qp->q_lock); 
+        }
+    } while (jp == NULL);
     pthread_mutex_unlock (&qp->q_lock); 
     return jp; 
 }
@@ -164,12 +171,12 @@ void* thread_proc (void *arg)
         {
             if (que->exit)
             {
-                printf ("no item find and exit detected!\n"); 
+                printf ("[0x%x] no item find and exit detected!\n", pthread_self ()); 
                 break; 
             }
             else 
             {
-                printf ("no item find but no exit flag, continue try..\n"); 
+                printf ("[0x%x] no item find but no exit flag, continue try..\n", pthread_self ()); 
                 continue; 
             }
         }
@@ -215,7 +222,7 @@ int main ()
         jp->j_id = tid[rand() % MAX_THREADS]; 
         sprintf (jp->value, "%d", i); 
         job_append (&que, jp); 
-        //printf ("add item for 0x%x\n", jp->j_id); 
+        printf ("add item %s for 0x%x\n", jp->value, jp->j_id); 
     }
 
     printf ("setup queue with %u nodes\n", i); 
