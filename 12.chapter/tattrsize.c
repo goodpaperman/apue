@@ -15,7 +15,8 @@ void* thr_fun (void *arg)
     return thr_fun (arg); 
 }
 
-//#define USE_MIN_STACK
+#define USE_MIN_STACK
+#define USE_GUARD_SIZE
 
 int main ()
 {
@@ -36,6 +37,23 @@ int main ()
 #endif
     if (err != 0)
         err_sys ("pthread_attr_setstacksize failed\n"); 
+
+    size_t gs = 0; 
+    err = pthread_attr_getguardsize (&attr, &gs); 
+    if (err == 0)
+        printf ("old guardsize %u\n", gs); 
+
+#ifdef USE_GUARD_SIZE
+    err = pthread_attr_setguardsize (&attr, 4096); 
+#else
+    err = pthread_attr_setguardsize (&attr, 0); 
+#endif 
+    if (err != 0)
+        err_sys ("pthread_attr_setguardsize failed\n"); 
+
+    err = pthread_attr_getguardsize (&attr, &gs); 
+    if (err == 0)
+        printf ("new guardsize %u\n", gs); 
 
     err = pthread_create (&tid, &attr, thr_fun, NULL); 
     if (err != 0)

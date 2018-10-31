@@ -1,4 +1,10 @@
-all: tattrsize 
+all: tattrsize tconcurr
+
+tconcurr: tconcurr.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+tconcurr.o: tconcurr.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 tattrsize: tattrsize.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize 
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr
 	@echo "end clean"
 
 .PHONY: clean
