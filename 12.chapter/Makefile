@@ -1,9 +1,9 @@
-all: tattrsize tconcurr tattrshare
+all: tattrsize tconcurr mattrshare
 
-tattrshare: tattrshare.o apue.o 
+mattrshare: mattrshare.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
 
-tattrshare.o: tattrshare.c ../apue.h
+mattrshare.o: mattrshare.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 tconcurr: tconcurr.o apue.o 
@@ -26,7 +26,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr tattrshare
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare
 	@echo "end clean"
 
 .PHONY: clean
