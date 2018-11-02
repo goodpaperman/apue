@@ -40,9 +40,9 @@ int main ()
         printf ("mutex share ? %d\n", share); 
 
 #if 0
-    share = 0; 
+    share = PTHREAD_PROCESS_PRIVATE; 
 #else
-    share = 1; 
+    share = PTHREAD_PROCESS_SHARED; 
 #endif
     err = pthread_mutexattr_setpshared (&attr, share); 
     if (err != 0)

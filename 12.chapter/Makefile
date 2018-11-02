@@ -1,4 +1,10 @@
-all: tattrsize tconcurr mattrshare
+all: tattrsize tconcurr mattrshare mattrtype
+
+mattrtype: mattrtype.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+mattrtype.o: mattrtype.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 mattrshare: mattrshare.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -26,7 +32,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype
 	@echo "end clean"
 
 .PHONY: clean
