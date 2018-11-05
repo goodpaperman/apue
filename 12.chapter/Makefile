@@ -4,7 +4,7 @@ mattrtype: mattrtype.o apue.o
 	gcc -Wall -g $^ -o $@ -pthread
 
 mattrtype.o: mattrtype.c ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE
 
 mattrshare: mattrshare.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread

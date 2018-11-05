@@ -2,11 +2,24 @@
 #include <pthread.h> 
 #include <limits.h>
 
-#define MUTEX_TYPE 1
+//#define STATIC_INIT
+#define MUTEX_TYPE 2
 #define TEST_TWICE_LOCK
 
+#ifdef STATIC_INIT
+#  if MUTEX_TYPE==0
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
+#  elif MUTEX_TYPE==1
+pthread_mutex_t mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; 
+#  elif MUTEX_TYPE==2
+pthread_mutex_t mutex = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP; 
+#  else
+pthread_mutex_t mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP; 
+#  endif
+#else
 pthread_mutex_t mutex; 
 pthread_mutexattr_t attr; 
+#endif
 
 void* thr_fun (void *arg)
 {
@@ -22,11 +35,14 @@ void* thr_fun (void *arg)
     if (err != 0)
         printf ("second lock failed, error %d\n", err); 
 #endif
+
+#ifndef STATIC_INIT
     err = pthread_mutexattr_gettype (&attr, &type); 
     if (err != 0)
         err_sys ("pthread_mutexattr_gettype failed\n"); 
     else 
         printf ("mutex type ? %d\n", type); 
+#endif
 
     pthread_mutex_unlock (&mutex); 
 #ifdef TEST_TWICE_LOCK
@@ -44,6 +60,7 @@ int main ()
     int type = 0; 
     pthread_t tid; 
 
+#ifndef STATIC_INIT
     err = pthread_mutexattr_init (&attr); 
     if (err != 0)
         err_sys ("pthread_mutexattr_init failed\n"); 
@@ -54,19 +71,19 @@ int main ()
     else 
         printf ("mutex type ? %d\n", type); 
 
-#if MUTEX_TYPE == 0
+#  if MUTEX_TYPE == 0
     type = PTHREAD_MUTEX_NORMAL; 
     printf ("normal mutex\n"); 
-#elif MUTEX_TYPE == 1
+#  elif MUTEX_TYPE == 1
     type = PTHREAD_MUTEX_RECURSIVE;
     printf ("recursive mutex\n"); 
-#elif MUTEX_TYPE == 2
+#  elif MUTEX_TYPE == 2
     type = PTHREAD_MUTEX_ERRORCHECK; 
     printf ("error-check mutex\n"); 
-#else 
+#  else 
     type = PTHREAD_MUTEX_DEFAULT; 
     printf ("default mutex\n"); 
-#endif
+#  endif
     err = pthread_mutexattr_settype (&attr, type); 
     if (err != 0)
         err_sys ("pthread_mutexattr_settype failed\n"); 
@@ -80,6 +97,7 @@ int main ()
     err = pthread_mutex_init (&mutex, &attr); 
     if (err != 0)
         printf ("pthread_mutex_init failed\n"); 
+#endif
 
     pthread_mutex_lock (&mutex); 
 #ifdef TEST_TWICE_LOCK
@@ -103,6 +121,7 @@ int main ()
     err = pthread_join (tid, NULL); 
     printf ("main thread exit\n"); 
 
+#ifndef STATIC_INIT
     err = pthread_mutex_destroy (&mutex); 
     if (err != 0)
         printf ("pthread_mutex_destroy failed\n"); 
@@ -110,6 +129,7 @@ int main ()
     err = pthread_mutexattr_destroy (&attr); 
     if (err != 0)
         err_sys ("pthread_mutexattr_destroy failed\n"); 
+#endif
 
     return 0; 
 }
