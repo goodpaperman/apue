@@ -1,6 +1,7 @@
 #include "../apue.h" 
 #include <pthread.h> 
 
+//#define USE_LOCK
 #define MAX_THREADS 3
 #define PASSERT(ret) \
     if ((ret) != 0) \
@@ -21,7 +22,11 @@ void* thr_fun (void *arg)
     for (n=0; n<100; ++ n)
     {
         sprintf(buf, "%lu\t%d\n", pthread_self (), n); 
+#ifdef USE_LOCK
+        m = fputs (buf, fp); 
+#else
         m = fputs_unlocked (buf, fp);
+#endif
         printf ("%lu puts %d\n", pthread_self (), m); 
     }
 
@@ -56,3 +61,4 @@ int main (void)
     fclose (fp); 
     return 0; 
 }
+
