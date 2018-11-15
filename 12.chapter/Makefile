@@ -1,4 +1,10 @@
-all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare
+all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock
+
+flock: flock.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+flock.o: flock.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE
 
 cattrshare: cattrshare.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -50,7 +56,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock
 	@echo "end clean"
 
 .PHONY: clean
