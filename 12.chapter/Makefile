@@ -1,4 +1,10 @@
-all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv_r
+all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv_r static
+
+static: static.o apue.o 
+	g++ -Wall -g $^ -o $@ -pthread
+
+static.o: static.c ../apue.h
+	g++ -Wall -g -c $< -o $@
 
 getenv_r: getenv_r.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -62,7 +68,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv_r
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv_r static
 	@echo "end clean"
 
 .PHONY: clean
