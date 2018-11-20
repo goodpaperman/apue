@@ -81,9 +81,30 @@ static pthread_key_t key;
 static pthread_once_t init_done = PTHREAD_ONCE_INIT; 
 pthread_mutex_t env_mutex = PTHREAD_MUTEX_INITIALIZER; 
 
+void my_free (void *arg)
+{
+    printf ("[%lu] freeing 0x%x: %s\n", pthread_self (), arg, arg); 
+    int n = atoi (arg); 
+    free (arg); 
+#if 1
+    arg = malloc(ARG_MAX); 
+    if (arg == NULL) {
+        return; 
+    }
+
+    sprintf (arg, "%d", ++n); 
+    PASSERT(pthread_setspecific(key, arg)); 
+    printf ("reset key to 0x%x: %s\n", arg, arg); 
+#endif
+}
+
 static void thread_init (void)
 {
+#if 0
     PASSERT(pthread_key_create (&key, free)); 
+#else
+    PASSERT(pthread_key_create (&key, my_free)); 
+#endif
     printf ("thread init called in %lu\n", pthread_self ()); 
 }
 
