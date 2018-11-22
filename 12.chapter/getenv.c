@@ -86,7 +86,7 @@ void my_free (void *arg)
     printf ("[%lu] freeing 0x%x: %s\n", pthread_self (), arg, arg); 
     int n = atoi (arg); 
     free (arg); 
-#if 1
+#if 0
     arg = malloc(ARG_MAX); 
     if (arg == NULL) {
         return; 
@@ -182,6 +182,11 @@ int main (int argc, char *argv[])
     pthread_t tid[THR_MAX] = { 0 }; 
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_create (&tid[i], NULL, thr_fun, NULL)); 
+
+#if 0 //USE_REENT==2
+    usleep (1000); 
+    exit (0); 
+#endif
 
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_join (tid[i], NULL)); 
