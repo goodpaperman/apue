@@ -33,11 +33,7 @@ static void thread_init (void)
     int i; 
     for (i=0; i<KEY_MAX; ++ i)
     {
-#if 0
-        PASSERT(pthread_key_create (&key[i], free)); 
-#else
         PASSERT(pthread_key_create (&key[i], my_free)); 
-#endif
     }
 
     printf ("thread init called in %lu\n", pthread_self ()); 
@@ -88,6 +84,14 @@ void* thr_fun (void *arg)
     return 0; 
 }
 
+void delete_key()
+{
+    int i; 
+    for (i=0; i<KEY_MAX; ++ i)
+    {
+        PASSERT(pthread_key_delete (key[i])); 
+    } 
+}
 
 int main (int argc, char *argv[])
 {
@@ -97,14 +101,17 @@ int main (int argc, char *argv[])
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_create (&tid[i], NULL, thr_fun, NULL)); 
 
-#if 0 //USE_REENT==2
-    usleep (1000); 
-    exit (0); 
+#if 0
+    usleep (299999);  // no auto delete
+    //usleep (311111);  // has auto delete
+    delete_key (); 
 #endif
+
 
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_join (tid[i], NULL)); 
 
+    delete_key (); 
     return 0; 
 }
 
