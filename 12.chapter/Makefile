@@ -1,4 +1,10 @@
-all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key
+all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel
+
+cancel: cancel.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+cancel.o: cancel.c 
+	gcc -Wall -g -c $< -o $@
 
 key: key.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -74,7 +80,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel
 	@echo "end clean"
 
 .PHONY: clean
