@@ -17,7 +17,7 @@
 
 
 extern char **environ; 
-static pthread_key_t key[KEY_MAX]; 
+static pthread_key_t key[KEY_MAX+1]; 
 static pthread_once_t init_done = PTHREAD_ONCE_INIT; 
 pthread_mutex_t env_mutex = PTHREAD_MUTEX_INITIALIZER; 
 
@@ -25,11 +25,11 @@ void my_free (void *arg)
 {
     printf ("[%lu] freeing 0x%x: %s\n", pthread_self (), arg, (char *)arg); 
     int n = atoi ((char *)arg); 
-    int m = (n+1)%KEY_MAX; 
+    int m = (n+KEY_MAX)%(KEY_MAX+1);  // to the empty slot
     int p = atoi (((char *)arg)+2);
     free (arg); 
 
-#if 0
+#if 1
     arg = malloc(ARG_MAX); 
     if (arg == NULL) {
         return; 
@@ -44,7 +44,7 @@ void my_free (void *arg)
 static void thread_init (void)
 {
     int i; 
-    for (i=0; i<KEY_MAX; ++ i)
+    for (i=0; i<KEY_MAX+1; ++ i)
     {
         PASSERT(pthread_key_create (&key[i], my_free)); 
     }
@@ -100,7 +100,7 @@ void* thr_fun (void *arg)
 void delete_key()
 {
     int i; 
-    for (i=0; i<KEY_MAX; ++ i)
+    for (i=0; i<KEY_MAX+1; ++ i)
     {
         PASSERT(pthread_key_delete (key[i])); 
     } 
