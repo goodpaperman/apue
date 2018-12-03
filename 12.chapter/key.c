@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <pthread.h> 
 
-#define THR_MAX 3
+#define THR_MAX 1
 #define KEY_MAX 3
 
 #define PASSERT(ret) \
@@ -25,7 +25,20 @@ void my_free (void *arg)
 {
     printf ("[%lu] freeing 0x%x: %s\n", pthread_self (), arg, (char *)arg); 
     int n = atoi ((char *)arg); 
+    int m = (n+1)%KEY_MAX; 
+    int p = atoi (((char *)arg)+2);
     free (arg); 
+
+#if 0
+    arg = malloc(ARG_MAX); 
+    if (arg == NULL) {
+        return; 
+    }
+
+    sprintf (arg, "%d %d", m, p); 
+    PASSERT(pthread_setspecific(key[m], arg)); 
+    printf ("reset key[%d] to 0x%x: %s\n", n, arg, arg); 
+#endif
 }
 
 static void thread_init (void)
@@ -56,7 +69,7 @@ char* my_getenv (int i)
         
         printf ("%lu create 0x%x\n", pthread_self (), envbuf); 
         PASSERT(pthread_setspecific(key[i], envbuf)); 
-        sprintf (envbuf, "%d", rand () % 100); 
+        sprintf (envbuf, "%d %d", i, rand () % 100); 
     }
 
     PASSERT(pthread_mutex_unlock (&env_mutex)); 
@@ -73,7 +86,7 @@ void* thr_fun (void *arg)
             int ret = 0; 
             char const* envstr = my_getenv (i); 
             if (envstr)
-                printf ("[%lu] %d %s\n", pthread_self (), i, envstr); 
+                printf ("[%lu] %s\n", pthread_self (), envstr); 
             else 
                 printf ("[%lu] %d not found, ret %d\n", pthread_self (), i, ret); 
         }
