@@ -120,9 +120,12 @@ int main (int argc, char *argv[])
     delete_key (); 
 #endif
 
-
+    void* status; 
     for (i=0; i<THR_MAX; ++ i)
-        PASSERT(pthread_join (tid[i], NULL)); 
+    {
+        PASSERT(pthread_join (tid[i], &status)); 
+        printf ("join thread %lu with status 0x%x\n", tid[i], status); 
+    }
 
     delete_key (); 
     return 0; 

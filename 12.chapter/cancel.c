@@ -69,8 +69,12 @@ int main (int argc, char *argv[])
 
     usleep (10000); 
     printf ("cancel all threads\n"); 
+    void* status; 
     for (i=0; i<THR_MAX; ++ i)
-        PASSERT(pthread_join (tid[i], NULL)); 
+    {
+        PASSERT(pthread_join (tid[i], &status)); 
+        printf ("join thread %lu with status 0x%x\n", tid[i], status); 
+    }
 
     printf ("join all threads\n"); 
     return 0; 
