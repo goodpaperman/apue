@@ -42,10 +42,10 @@ void* thr_fun (void *arg)
     PASSERT(pthread_setspecific (key, value)); 
 
     PASSERT(pthread_setcancelstate (nstate, &ostate)); 
-    printf ("[%lu] start, old cancel state %u\n", pthread_self (), ostate); 
+    printf ("[%lu] old cancel state %u\n", pthread_self (), ostate); 
 
     PASSERT(pthread_setcanceltype (ntype, &otype)); 
-    printf ("old cancel type %u\n", otype); 
+    printf ("[%lu] old cancel type %u\n", pthread_self (), otype); 
 
 #if 0
     for (n=0; n<3; ++ n)
@@ -76,6 +76,13 @@ void* thr_fun (void *arg)
 
         //printf ("[%lu] loop %d\n", pthread_self (), n); 
     }
+#endif
+
+#if 0
+    //PASSERT(pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, &ostate)); 
+    // to avoid PASSERT call printf and cancelled
+    pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, &ostate); 
+    //printf ("[%lu] old cancel state %u\n", pthread_self (), ostate); 
 #endif
 
     //printf ("[%lu] exit with n=%d\n", pthread_self (), n);
