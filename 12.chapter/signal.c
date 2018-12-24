@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <pthread.h> 
 
-#define THR_MAX 1
+#define THR_MAX 2
 
 #define PASSERT(ret) \
 {\
@@ -50,21 +50,27 @@ void* thr_fun (void *arg)
 
 int main (int argc, char *argv[])
 {
+    int i; 
     sigset_t oldmask; 
-    pthread_t tid; 
+    pthread_t tid[THR_MAX]; 
 
     sigemptyset (&mask); 
     sigaddset (&mask, SIGINT); 
     sigaddset (&mask, SIGQUIT); 
     PASSERT(pthread_sigmask (SIG_BLOCK, &mask, &oldmask)); 
-    PASSERT(pthread_create (&tid, NULL, thr_fun, 0)); 
+    for (i=0; i<THR_MAX; ++ i)
+        PASSERT(pthread_create (&tid[i], NULL, thr_fun, 0)); 
+
     PASSERT(pthread_mutex_lock (&lock)); 
     while (quitflag == 0)
         PASSERT(pthread_cond_wait (&wait, &lock)); 
 
     PASSERT(pthread_mutex_unlock (&lock)); 
-    quitflag = 0; 
     
+    for (i=0; i<THR_MAX; ++ i)
+        PASSERT(pthread_join (tid[i], NULL)); 
+
+    quitflag = 0; 
     PASSERT(sigprocmask (SIG_SETMASK, &oldmask, NULL)); 
     return 0; 
 }
