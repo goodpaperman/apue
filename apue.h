@@ -56,6 +56,7 @@ unsigned int apue_sleep (unsigned int sec);
 
 void pr_mask (sigset_t *mask); 
 void pr_procmask (char const* tip); 
+void pr_threadmask (char const* tip); 
 void pr_pendmask (char const* tip); 
 
 //typedef void (*Sigfunc) (int signo); 

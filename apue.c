@@ -7,6 +7,7 @@
 #include <time.h> 
 #include <signal.h>
 #include <strings.h>
+#include <pthread.h> 
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -454,6 +455,18 @@ void pr_procmask (char const* tip)
     }
 }
 
+void pr_threadmask (char const* tip)
+{
+    sigset_t mask; 
+    if (pthread_sigmask (0, NULL, &mask) < 0)
+        printf ("pthread_sigmask failed, errno %d", errno); 
+    else 
+    {
+        //printf ("block mask contains: \n"); 
+        puts (tip); 
+        pr_mask (&mask); 
+    }
+}
 void pr_pendmask (char const* tip)
 {
     sigset_t mask; 

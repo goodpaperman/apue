@@ -1,9 +1,9 @@
 all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel signal
 
-signal: signal.o 
+signal: signal.o apue.o
 	gcc -Wall -g $^ -o $@ -pthread
 
-signal.o: signal.c 
+signal.o: signal.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 cancel: cancel.o 
