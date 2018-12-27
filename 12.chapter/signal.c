@@ -13,7 +13,7 @@
         exit (__ret); \
     }\
     else \
-        printf ("[%lu] %s\n", pthread_self(),  #ret); \
+        printf ("[%lu %lu] %s\n", pthread_self(),  #ret); \
 }
 
 int quitflag; 
