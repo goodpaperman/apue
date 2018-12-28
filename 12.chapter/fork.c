@@ -17,6 +17,7 @@
         printf ("[%lu %lu] %s\n", getpid (), pthread_self(),  #ret); \
 }
 
+pthread_mutex_t lock; 
 
 void* thr_fun (void *arg)
 {
@@ -51,8 +52,10 @@ void* thr_fun (void *arg)
     {
         for (i=0; i<LOOP; ++ i)
         {
+            PASSERT(pthread_mutex_lock (&lock)); 
             printf ("[%lu %lu] running %d\n", getpid (), pthread_self (), i); 
             sleep (1); 
+            PASSERT(pthread_mutex_unlock (&lock)); 
         }
     }
 
