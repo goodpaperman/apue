@@ -62,10 +62,29 @@ void* thr_fun (void *arg)
     return NULL; 
 }
 
+void prepare (void)
+{
+    printf ("[%lu %lu] preparing locks...\n", getpid (), pthread_self ()); 
+    PASSERT(pthread_mutex_lock (&lock)); 
+}
+
+void parent (void)
+{
+    printf ("[%lu %lu] parent unlocking...\n", getpid (), pthread_self ()); 
+    PASSERT(pthread_mutex_unlock (&lock)); 
+}
+
+void child (void)
+{
+    printf ("[%lu %lu] child unlocking...\n", getpid (), pthread_self ()); 
+    PASSERT(pthread_mutex_unlock (&lock)); 
+}
+
 int main (int argc, char *argv[])
 {
     int i; 
     pthread_t tid[THR_MAX]; 
+    PASSERT(pthread_atfork (prepare, parent, child)); 
 
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_create (&tid[i], NULL, thr_fun, (void*)i)); 
