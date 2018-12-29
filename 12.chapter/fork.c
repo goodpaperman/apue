@@ -17,7 +17,24 @@
         printf ("[%lu %lu] %s\n", getpid (), pthread_self(),  #ret); \
 }
 
-pthread_mutex_t lock; 
+pthread_mutex_t foo_lock; 
+pthread_mutex_t bar_lock; 
+
+void call_bar (int i)
+{
+    PASSERT(pthread_mutex_lock (&bar_lock)); 
+    printf ("[%lu %lu] call bar %d\n", getpid (), pthread_self (), i); 
+    sleep (i); 
+    PASSERT(pthread_mutex_unlock (&bar_lock)); 
+}
+
+void call_foo (int i)
+{
+    PASSERT(pthread_mutex_lock (&foo_lock)); 
+    printf ("[%lu %lu] call foo %d\n", getpid (), pthread_self (), i); 
+    call_bar (i); 
+    PASSERT(pthread_mutex_unlock (&foo_lock)); 
+}
 
 void* thr_fun (void *arg)
 {
@@ -52,10 +69,7 @@ void* thr_fun (void *arg)
     {
         for (i=0; i<LOOP; ++ i)
         {
-            PASSERT(pthread_mutex_lock (&lock)); 
-            printf ("[%lu %lu] running %d\n", getpid (), pthread_self (), i); 
-            sleep (1); 
-            PASSERT(pthread_mutex_unlock (&lock)); 
+            call_foo (i); 
         }
     }
 
@@ -65,19 +79,22 @@ void* thr_fun (void *arg)
 void prepare (void)
 {
     printf ("[%lu %lu] preparing locks...\n", getpid (), pthread_self ()); 
-    PASSERT(pthread_mutex_lock (&lock)); 
+    PASSERT(pthread_mutex_lock (&foo_lock)); 
+    PASSERT(pthread_mutex_lock (&bar_lock)); 
 }
 
 void parent (void)
 {
     printf ("[%lu %lu] parent unlocking...\n", getpid (), pthread_self ()); 
-    PASSERT(pthread_mutex_unlock (&lock)); 
+    PASSERT(pthread_mutex_unlock (&bar_lock)); 
+    PASSERT(pthread_mutex_unlock (&foo_lock)); 
 }
 
 void child (void)
 {
     printf ("[%lu %lu] child unlocking...\n", getpid (), pthread_self ()); 
-    PASSERT(pthread_mutex_unlock (&lock)); 
+    PASSERT(pthread_mutex_unlock (&bar_lock)); 
+    PASSERT(pthread_mutex_unlock (&foo_lock)); 
 }
 
 int main (int argc, char *argv[])
