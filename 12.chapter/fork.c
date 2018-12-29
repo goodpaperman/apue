@@ -4,7 +4,7 @@
 #include <pthread.h> 
 
 #define THR_MAX 2
-#define LOOP 3
+#define LOOP 5
 
 #define PASSERT(ret) \
 {\
@@ -78,37 +78,37 @@ void* thr_fun (void *arg)
 
 void prepare_foo (void)
 {
-    printf ("[%lu %lu] preparing foo locks...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] preparing locks...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_lock (&foo_lock)); 
 }
 
 void prepare_bar (void)
 {
-    printf ("[%lu %lu] preparing bar locks...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] preparing locks...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_lock (&bar_lock)); 
 }
 
 void parent_foo (void)
 {
-    printf ("[%lu %lu] parent foo unlocking...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] parent unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&foo_lock)); 
 }
 
 void parent_bar (void)
 {
-    printf ("[%lu %lu] parent bar unlocking...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] parent unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&bar_lock)); 
 }
 
 void child_foo (void)
 {
-    printf ("[%lu %lu] child foo unlocking...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] child unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&foo_lock)); 
 }
 
 void child_bar (void)
 {
-    printf ("[%lu %lu] child bar unlocking...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] child unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&bar_lock)); 
 }
 
