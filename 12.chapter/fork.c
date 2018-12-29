@@ -76,32 +76,49 @@ void* thr_fun (void *arg)
     return NULL; 
 }
 
-void prepare (void)
+void prepare_foo (void)
 {
-    printf ("[%lu %lu] preparing locks...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] preparing foo locks...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_lock (&foo_lock)); 
+}
+
+void prepare_bar (void)
+{
+    printf ("[%lu %lu] preparing bar locks...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_lock (&bar_lock)); 
 }
 
-void parent (void)
+void parent_foo (void)
 {
-    printf ("[%lu %lu] parent unlocking...\n", getpid (), pthread_self ()); 
-    PASSERT(pthread_mutex_unlock (&bar_lock)); 
+    printf ("[%lu %lu] parent foo unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&foo_lock)); 
 }
 
-void child (void)
+void parent_bar (void)
 {
-    printf ("[%lu %lu] child unlocking...\n", getpid (), pthread_self ()); 
+    printf ("[%lu %lu] parent bar unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&bar_lock)); 
+}
+
+void child_foo (void)
+{
+    printf ("[%lu %lu] child foo unlocking...\n", getpid (), pthread_self ()); 
     PASSERT(pthread_mutex_unlock (&foo_lock)); 
+}
+
+void child_bar (void)
+{
+    printf ("[%lu %lu] child bar unlocking...\n", getpid (), pthread_self ()); 
+    PASSERT(pthread_mutex_unlock (&bar_lock)); 
 }
 
 int main (int argc, char *argv[])
 {
     int i; 
     pthread_t tid[THR_MAX]; 
-    PASSERT(pthread_atfork (prepare, parent, child)); 
+    // inner lock should go first
+    PASSERT(pthread_atfork (prepare_bar, parent_bar, child_bar)); 
+    PASSERT(pthread_atfork (prepare_foo, parent_foo, child_foo)); 
 
     for (i=0; i<THR_MAX; ++ i)
         PASSERT(pthread_create (&tid[i], NULL, thr_fun, (void*)i)); 
