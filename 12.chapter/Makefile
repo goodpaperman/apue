@@ -1,4 +1,10 @@
-all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel signal fork
+all: tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel signal fork pread
+
+pread: pread.o apue.o
+	gcc -Wall -g $^ -o $@ -pthread
+
+pread.o: pread.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 fork: fork.o apue.o
 	gcc -Wall -g $^ -o $@ -pthread
@@ -92,7 +98,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel signal fork
+	-rm -f *.o core.* *.log *~ *.swp tattrsize tconcurr mattrshare mattrtype tattrtimeout rwattrshare cattrshare flock getenv static key cancel signal fork pread
 	@echo "end clean"
 
 .PHONY: clean
