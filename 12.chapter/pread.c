@@ -3,8 +3,8 @@
 #include <errno.h>
 #include <pthread.h> 
 
-#define THR_MAX 2
-#define LOOP 50
+#define THR_MAX 5
+#define LOOP 10
 
 #define PASSERT(ret) \
 {\
