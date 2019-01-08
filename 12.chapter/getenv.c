@@ -2,6 +2,7 @@
 #include <linux/limits.h> 
 #include <errno.h>
 #include <pthread.h> 
+#include <stdlib.h> 
 
 #define USE_REENT 2
 #define THR_MAX 3
@@ -108,6 +109,7 @@ static void thread_init (void)
     printf ("thread init called in %lu\n", pthread_self ()); 
 }
 
+#  if 1
 char* my_getenv (char const* name)
 {
     int i, len;
@@ -137,6 +139,9 @@ char* my_getenv (char const* name)
     PASSERT(pthread_mutex_unlock (&env_mutex)); 
     return NULL; 
 }
+#  else 
+#define my_getenv getenv
+#  endif
 
 #endif
 
