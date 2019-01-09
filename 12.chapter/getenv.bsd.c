@@ -11,6 +11,7 @@
 #include <string.h> 
 
 #define THR_MAX 3
+//#define NO_MALLOC
 
 #define PASSERT(ret) \
     if ((ret) != 0) \
@@ -26,7 +27,11 @@ pthread_mutex_t env_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void thread_init (void)
 {
+#ifdef NO_MALLOC
+  PASSERT(pthread_key_create(&key, NULL)); 
+#else
   PASSERT(pthread_key_create(&key, free)); 
+#endif
   printf ("thread init called in %lu\n", pthread_self ()); 
 }
 
@@ -51,9 +56,7 @@ char* MY_GETENV (char const* name/*, int dummy*/)
     envbuf = (char *)pthread_getspecific(key); 
     if (envbuf == NULL) { 
  
-#if 1
-        envbuf = malloc (ARG_MAX); 
-#else   
+#ifdef NO_MALLOC
         static int o = 0; 
         static char buf[THR_MAX][128] = { 0 }; 
         static struct KEY arr[THR_MAX] = { 0 }; 
@@ -74,6 +77,8 @@ char* MY_GETENV (char const* name/*, int dummy*/)
 
         envbuf = arr[i].buf; 
         printf ("got %d slot as memory\n", i); 
+#else   
+        envbuf = malloc (ARG_MAX); 
 #endif
         if (envbuf == NULL) {
             PASSERT(pthread_mutex_unlock (&env_mutex));
