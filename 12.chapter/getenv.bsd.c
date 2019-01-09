@@ -2,7 +2,13 @@
 #include <pthread.h> 
 #include <stdlib.h> 
 #include <errno.h> 
+#if 1
 #include <linux/limits.h> 
+#else
+// on freebsd
+#include <sys/syslimits.h> 
+#endif
+#include <string.h> 
 
 #define THR_MAX 3
 
@@ -24,8 +30,19 @@ static void thread_init (void)
   printf ("thread init called in %lu\n", pthread_self ()); 
 }
 
-#  if 0
-char* my_getenv (char const* name)
+struct KEY
+{
+  pthread_t key; 
+  char* buf; 
+}; 
+
+#if 1
+#define MY_GETENV getenv
+#else 
+#define MY_GETENV my_getenv
+#endif 
+
+char* MY_GETENV (char const* name/*, int dummy*/)
 {
     int i, len;
     char *envbuf; 
@@ -33,7 +50,31 @@ char* my_getenv (char const* name)
     PASSERT(pthread_mutex_lock (&env_mutex)); 
     envbuf = (char *)pthread_getspecific(key); 
     if (envbuf == NULL) { 
-        envbuf = malloc(ARG_MAX); 
+ 
+#if 1
+        envbuf = malloc (ARG_MAX); 
+#else   
+        static int o = 0; 
+        static char buf[THR_MAX][128] = { 0 }; 
+        static struct KEY arr[THR_MAX] = { 0 }; 
+        for (i=0; i<THR_MAX; i ++)
+        {
+          if (arr[i].key == pthread_self ())
+            break; 
+          if (arr[i].key == 0)
+            break; 
+        }
+
+        if (arr[i].key == 0)
+        {
+          arr[i].key = pthread_self (); 
+          printf ("allocate %p(%d) to %lu\n", buf[o], o, pthread_self ()); 
+          arr[i].buf = buf[o++]; 
+        }
+
+        envbuf = arr[i].buf; 
+        printf ("got %d slot as memory\n", i); 
+#endif
         if (envbuf == NULL) {
             PASSERT(pthread_mutex_unlock (&env_mutex));
             return NULL; 
@@ -54,16 +95,26 @@ char* my_getenv (char const* name)
     PASSERT(pthread_mutex_unlock (&env_mutex)); 
     return NULL; 
 }
-#  else 
-#  define my_getenv getenv
-#  endif 
+
+#if 1
+int unsetenv (char const* name)
+{
+    return 0; 
+}
+#endif
 
 void* thr_fun (void *arg)
 {
-  int i; 
+  int i, m; 
+  for (i=0; environ[i] != NULL; ++ i)
+    ; 
+
+  m = i; 
+  printf ("total environment %d\n", m);
   for (i=0; i<3; ++ i)
   {
-    int n = rand () % 20; 
+    int n = rand () % m; 
+    printf ("got random %d\n", n);
     char *ptr = strchr (environ[n], '='); 
     char key[128] = { 0 }; 
     if (ptr)
@@ -73,7 +124,7 @@ void* thr_fun (void *arg)
 
     printf ("[%lu] test key %s\n", pthread_self (), key); 
     int ret = 0; 
-    char const* envstr = my_getenv(key); 
+    char const* envstr = MY_GETENV(key/*, 0*/); 
     if (envstr)
       printf ("[%lu] %s:%s\n", pthread_self (), key, envstr); 
     else 
