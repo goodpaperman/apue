@@ -1,9 +1,9 @@
-all: tattrsize 
+all: daemon 
 
-tattrsize: tattrsize.o apue.o 
+daemon: daemon.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
 
-tattrsize.o: tattrsize.c ../apue.h
+daemon.o: daemon.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 log.o: ../log.c ../log.h
@@ -14,7 +14,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp tattrsize 
+	-rm -f *.o core.* *.log *~ *.swp daemon 
 	@echo "end clean"
 
 .PHONY: clean

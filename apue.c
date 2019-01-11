@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <strings.h>
 #include <pthread.h> 
+#include <syslog.h>
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -635,4 +636,10 @@ int str2sig (const char *str, int *signop)
     }
 
     return -1; 
+}
+
+void printids (char const* prompt)
+{
+    printf ("%s: pid %6d, ppid %6d, pgid %6d, sid %6d, tcgrp %6d\n", prompt, getpid (), getppid (), getpgrp (), getsid (getpid ()), tcgetpgrp (STDIN_FILENO)); 
+    syslog (LOG_INFO, "%s: pid %6d, ppid %6d, pgid %6d, sid %6d, tcgrp %6d\n", prompt, getpid (), getppid (), getpgrp (), getsid (getpid ()), tcgetpgrp (STDIN_FILENO)); 
 }

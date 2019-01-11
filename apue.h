@@ -68,4 +68,6 @@ void apue_abort ();
 int sig2str (int signo, char *str);
 int str2sig (const char *str, int *signop);
 
+void printids (char const* prompt);
+
 #endif 
