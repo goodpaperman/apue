@@ -2,6 +2,7 @@
 #include <syslog.h> 
 #include <fcntl.h> 
 #include <sys/resource.h> 
+#include <limits.h> 
 
 
 void daemonize (char const* cmd)
@@ -56,9 +57,11 @@ void daemonize (char const* cmd)
         err_quit ("%s: can't change directory to /"); 
 
     // 7th
+    syslog (LOG_INFO, "rlimit max files: %ld\n", rl.rlim_max); 
     if (rl.rlim_max == RLIM_INFINITY)
         rl.rlim_max = 1024; 
 
+    syslog (LOG_INFO, "rlimit max files: %ld\n", rl.rlim_max); 
     for (i=0; i<rl.rlim_max; ++ i)
         close (i); 
 
@@ -69,12 +72,13 @@ void daemonize (char const* cmd)
     fd2 = dup(0); 
 
     // 9th
-    openlog (cmd, LOG_CONS, LOG_DAEMON); 
+    openlog (cmd, LOG_CONS /*| LOG_PID*/, LOG_DAEMON); 
     if (fd0 != 0 || fd1 != 1 || fd2 != 2)
     {
         syslog (LOG_ERR, "unexpected file descriptors %d %d %d", fd0, fd1, fd2); 
         exit (1); 
     }
+
 }
 
 int main (void)
@@ -82,5 +86,17 @@ int main (void)
     printids ("before daemonize "); 
     daemonize ("yunhai"); 
     printids ("after daemonize  "); 
+
+#if 0
+    int mask = setlogmask (LOG_MASK(LOG_NOTICE)); 
+    syslog (LOG_NOTICE, "test %m, old mask 0x%x\n", mask); 
+#endif 
+    syslog (LOG_INFO, "umask: 0x%x\n", umask (0)); 
+
+    char dir[PATH_MAX] = { 0 }; 
+    getwd (dir); 
+
+    syslog (LOG_INFO, "working dir: %s\n", dir); 
+    closelog (); 
     return 0; 
 }
