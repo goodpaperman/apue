@@ -3,6 +3,7 @@
 #include <fcntl.h> 
 #include <sys/resource.h> 
 #include <limits.h> 
+#include <stdarg.h>
 
 
 void daemonize (char const* cmd)
@@ -78,17 +79,40 @@ void daemonize (char const* cmd)
         syslog (LOG_ERR, "unexpected file descriptors %d %d %d", fd0, fd1, fd2); 
         exit (1); 
     }
-
 }
 
-int main (void)
+void dump (char *format, ...)
+{
+    va_list st; 
+    va_start (st, format); 
+    vsyslog (LOG_INFO, format, st); 
+    va_end (st); 
+}
+
+int main (int argc, char *argv[])
 {
     printids ("before daemonize "); 
     daemonize ("yunhai"); 
     printids ("after daemonize  "); 
 
+    int n = 0; 
+    for (; n < 10; ++ n)
+    {
+#if 1
+#  if 0
+        dump ("%s %s %s", "hello", "123", "nihao"); 
+#  else
+        dump ("%d: %s %s %s", n, "hello", "123", "nihao"); 
+#  endif 
+#else 
+        syslog (LOG_INFO, "how are you?"); 
+#endif 
+    }
+
 #if 0
     int mask = setlogmask (LOG_MASK(LOG_NOTICE)); 
+    // use 0 as log nothing seems not work !
+    //int mask = setlogmask (0); 
     syslog (LOG_NOTICE, "test %m, old mask 0x%x\n", mask); 
 #endif 
     syslog (LOG_INFO, "umask: 0x%x\n", umask (0)); 
