@@ -4,6 +4,49 @@
 #include <sys/resource.h> 
 #include <limits.h> 
 #include <stdarg.h>
+#include <errno.h>
+#include <fcntl.h> 
+
+#define LOCKFILE "/var/run/daemon.pid"
+#define LOCKMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+
+int lockfile (int fd)
+{
+    struct flock fl; 
+    fl.l_type = F_WRLCK; 
+    fl.l_start = 0; 
+    fl.l_whence = SEEK_SET; 
+    fl.l_len = 0; 
+    return (fcntl (fd, F_SETLK, &fl)); 
+}
+
+int already_running (void)
+{
+    int fd; 
+    char buf[16]; 
+    fd = open (LOCKFILE, O_RDWR | O_CREAT, LOCKMODE); 
+    if (fd < 0) { 
+        syslog (LOG_ERR, "can't open %s: %m", LOCKFILE); 
+        exit (1); 
+    }
+
+    if (lockfile (fd) < 0) {
+        if (errno == EACCES || errno == EAGAIN) { 
+            syslog (LOG_INFO, "%ld has running instance, (%m), exiting..", (long)getpid ()); 
+            close (fd); 
+            return 1; 
+        }
+
+        syslog (LOG_ERR, "can't lock %s: %m", LOCKFILE); 
+        exit (1); 
+    }
+
+    ftruncate (fd, 0); 
+    sprintf (buf, "%ld", (long)getpid ()); 
+    write (fd, buf, strlen (buf) + 1); 
+    syslog (LOG_INFO, "first instance of daemon, allow running!"); 
+    return 0; 
+}
 
 
 void daemonize (char const* cmd)
@@ -94,6 +137,8 @@ int main (int argc, char *argv[])
     printids ("before daemonize "); 
     daemonize ("yunhai"); 
     printids ("after daemonize  "); 
+    if(already_running ())
+        return 1; 
 
     int n = 0; 
     for (; n < 10; ++ n)
@@ -121,6 +166,8 @@ int main (int argc, char *argv[])
     getwd (dir); 
 
     syslog (LOG_INFO, "working dir: %s\n", dir); 
+
+    sleep (20); 
     closelog (); 
     return 0; 
 }
