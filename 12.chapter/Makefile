@@ -34,7 +34,7 @@ signal: signal.o apue.o
 	gcc -Wall -g $^ -o $@ -pthread
 
 signal.o: signal.c ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -DUSE_PTHREAD
 
 cancel: cancel.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -112,7 +112,7 @@ log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@
 
 apue.o: ../apue.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -D__USE_BSD
+	gcc -Wall -g -c $< -o $@ -D__USE_BSD -DUSE_PTHREAD
 
 clean: 
 	@echo "start clean..."

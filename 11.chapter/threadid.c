@@ -3,6 +3,7 @@
 
 pthread_t ntid; 
 
+#if 0
 void printids (const char *s)
 {
     pid_t pid; 
@@ -11,6 +12,7 @@ void printids (const char *s)
     tid = pthread_self (); 
     printf ("%s pid %u tid %u (0x%x)\n", s, (unsigned int)pid, (unsigned int)tid, (unsigned int)tid); 
 }
+#endif
 
 void* thr_fn (void *arg)
 {

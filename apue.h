@@ -69,5 +69,7 @@ int sig2str (int signo, char *str);
 int str2sig (const char *str, int *signop);
 
 void printids (char const* prompt);
+void daemonize (char const* cmd);
+int already_running (void);
 
 #endif 
