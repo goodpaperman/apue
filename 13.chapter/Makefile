@@ -1,4 +1,10 @@
-all: daemon 
+all: daemon sighup
+
+sighup: sighup.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+sighup.o: sighup.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 daemon: daemon.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp daemon 
+	-rm -f *.o core.* *.log *~ *.swp daemon sighup
 	@echo "end clean"
 
 .PHONY: clean
