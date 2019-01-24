@@ -9,7 +9,25 @@ sigset_t mask;
 
 void reread (void)
 {
+    char const* file = "/etc/daemon.conf"; 
     syslog (LOG_INFO, "re-reading..."); 
+    FILE* fp = fopen (file, "r"); 
+    if (fp)
+    {
+        char line[4096] = { 0 }; 
+        //int ret = fread (line, sizeof(line)-1, 1, fp); 
+        char *ptr = fgets (line, sizeof(line)-1, fp); 
+        if (ptr == NULL)
+            syslog (LOG_ERR, "read conf file %s error %m", file); 
+        else 
+            syslog (LOG_INFO, "read: %s", line); 
+
+        fclose (fp); 
+    }
+    else 
+        syslog (LOG_ERR, "open conf file %s error %m", file); 
+
+    syslog (LOG_INFO, "re-reading end"); 
 }
 
 void dump (char *format, ...)
@@ -84,7 +102,7 @@ int main (int argc, char *argv[])
     if (err != 0)
         err_exit (err, "can't create thread"); 
 
-    sleep (20); 
+    sleep (200); 
     syslog (LOG_INFO, "wakeup and start join thread"); 
     pthread_kill (tid, SIGTERM); 
     pthread_join (tid, NULL); 
