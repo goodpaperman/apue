@@ -1,4 +1,10 @@
-all: daemon sighup
+all: daemon sighup sigterm
+
+sigterm: sigterm.o apue.o 
+	gcc -Wall -g $^ -o $@ -pthread
+
+sigterm.o: sigterm.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 sighup: sighup.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -20,7 +26,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp daemon sighup
+	-rm -f *.o core.* *.log *~ *.swp daemon sighup sigterm
 	@echo "end clean"
 
 .PHONY: clean
