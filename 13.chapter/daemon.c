@@ -59,6 +59,9 @@ int main (int argc, char *argv[])
     syslog (LOG_INFO, "working dir: %s\n", dir); 
 #endif
 
+    char *user = getlogin (); 
+    syslog (LOG_INFO, "login user: %s\n", user); 
+
     sleep (20); 
     closelog (); 
     return 0; 
