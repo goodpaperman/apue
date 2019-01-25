@@ -43,10 +43,21 @@ int main (int argc, char *argv[])
 #endif 
     syslog (LOG_INFO, "umask: 0x%x\n", umask (0)); 
 
+    int ret = 0; 
     char dir[PATH_MAX] = { 0 }; 
     getwd (dir); 
-
     syslog (LOG_INFO, "working dir: %s\n", dir); 
+
+#if 0
+    ret = chroot ("/home/yunhai/code/apue"); 
+    if (ret == -1)
+        syslog (LOG_ERR, "chroot failed"); 
+    else 
+        syslog (LOG_INFO, "chroot to .."); 
+
+    getwd (dir); 
+    syslog (LOG_INFO, "working dir: %s\n", dir); 
+#endif
 
     sleep (20); 
     closelog (); 

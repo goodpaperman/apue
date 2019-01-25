@@ -10,6 +10,8 @@ all:
 	$(MAKE) -C 09.chapter 
 	$(MAKE) -C 10.chapter 
 	$(MAKE) -C 11.chapter 
+	$(MAKE) -C 12.chapter 
+	$(MAKE) -C 13.chapter 
 
 
 clean:
@@ -24,5 +26,7 @@ clean:
 	$(MAKE) -C 09.chapter clean 
 	$(MAKE) -C 10.chapter clean 
 	$(MAKE) -C 11.chapter clean 
+	$(MAKE) -C 12.chapter clean 
+	$(MAKE) -C 13.chapter clean 
 
 .PHONY: clean

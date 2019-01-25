@@ -743,15 +743,24 @@ void daemonize (char const* cmd)
     if (chdir ("/") < 0)
         err_quit ("%s: can't change directory to /"); 
 
+#if 0
+    // to see chroot make openlog failure (can not find /dev/log)
+    int ret = chroot ("/home/yunhai/code/apue"); 
+    if (ret == -1)
+        syslog (LOG_ERR, "chroot failed"); 
+    else 
+        syslog (LOG_INFO, "chroot to .."); 
+#endif
+
     // 7th
     syslog (LOG_INFO, "rlimit max files: %ld\n", rl.rlim_max); 
     if (rl.rlim_max == RLIM_INFINITY)
         rl.rlim_max = 1024; 
 
     syslog (LOG_INFO, "rlimit max files: %ld\n", rl.rlim_max); 
+#if 1
     for (i=0; i<rl.rlim_max; ++ i)
         close (i); 
-
 
     // 8th
     fd0 = open ("/dev/null", O_RDWR); 
@@ -765,5 +774,10 @@ void daemonize (char const* cmd)
         syslog (LOG_ERR, "unexpected file descriptors %d %d %d", fd0, fd1, fd2); 
         exit (1); 
     }
+#else
+    closelog (); 
+    openlog (cmd, LOG_CONS /*| LOG_PID*/, LOG_DAEMON); 
+    syslog (LOG_INFO, "after open log"); 
+#endif
 }
 
