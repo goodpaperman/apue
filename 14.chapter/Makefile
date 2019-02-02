@@ -1,4 +1,10 @@
-all: nonblock 
+all: nonblock filelock
+
+filelock: filelock.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+filelock.o: filelock.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 nonblock: nonblock.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp nonblock 
+	-rm -f *.o core.* *.log *~ *.swp nonblock filelock
 	@echo "end clean"
 
 .PHONY: clean
