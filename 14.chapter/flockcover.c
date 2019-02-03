@@ -7,7 +7,7 @@ void usage ()
 {
     printf (
       "Usage:\n"
-      "flocksplit path len\n"
+      "flockcover path len\n"
       ); 
     exit (-1); 
 }
@@ -56,59 +56,20 @@ int main (int argc, char *argv[])
   if (ret == -1)
     err_sys ("fcntl failed, errno %d", errno); 
 
-  printf ("[%lu] got lock\n", getpid ()); 
-  // note: GETLK can NOT test lock hold by process itself !
-#if 0
-  lock.l_type = F_RDLCK; 
-  lock.l_start = 0; 
-  lock.l_whence = SEEK_SET; 
-  lock.l_len = len; 
-  dump_lock ("TESTLOCK", &lock); 
-  ret = fcntl (fd, F_GETLK, &lock); 
-  if (ret == -1)
-    err_sys ("fcntl failed, errno %d", errno); 
-
-  if (lock.l_type == F_UNLCK)
-    printf ("no lock in destination found\n"); 
-  else 
-  {
-    printf ("find a lock owning by %lu\n", getpid()); 
-    dump_lock ("GETLOCK", &lock); 
-  }
-#else
+  printf ("[%lu] got read lock\n", getpid ()); 
   sleep (2); 
-#endif
 
-  lock.l_type = F_UNLCK; 
-  lock.l_start = len/2; 
+  lock.l_type = F_WRLCK; 
+  lock.l_start = len/4; 
   lock.l_whence = SEEK_SET; 
-  lock.l_len = 1; 
-  dump_lock ("UNLOCK", &lock); 
+  lock.l_len = len/2; 
+  dump_lock ("LOCK", &lock); 
   ret = fcntl (fd, F_SETLK, &lock); 
   if (ret == -1)
     err_sys ("fcntl failed, errno %d", errno); 
 
-  printf ("[%lu] release lock\n", getpid ()); 
-#if 0
-  lock.l_type = F_RDLCK; 
-  lock.l_start = 0; 
-  lock.l_whence = SEEK_SET; 
-  lock.l_len = len; 
-  dump_lock ("TESTLOCK", &lock); 
-  ret = fcntl (fd, F_GETLK, &lock); 
-  if (ret == -1)
-    err_sys ("fcntl failed, errno %d", errno); 
-
-  if (lock.l_type == F_UNLCK)
-    printf ("no lock in destination found\n"); 
-  else 
-  {
-    printf ("find a lock owning by %lu\n", getpid()); 
-    dump_lock ("GETLOCK", &lock); 
-  }
-#else
+  printf ("[%lu] got write lock\n", getpid ()); 
   sleep (2); 
-#endif
 
   lock.l_type = F_RDLCK; 
   lock.l_start = len/2; 
@@ -119,27 +80,8 @@ int main (int argc, char *argv[])
   if (ret == -1)
     err_sys ("fcntl failed, errno %d", errno); 
 
-  printf ("[%lu] got lock again\n", getpid ()); 
-#if 0
-  lock.l_type = F_RDLCK; 
-  lock.l_start = 0; 
-  lock.l_whence = SEEK_SET; 
-  lock.l_len = len; 
-  dump_lock ("TESTLOCK", &lock); 
-  ret = fcntl (fd, F_GETLK, &lock); 
-  if (ret == -1)
-    err_sys ("fcntl failed, errno %d", errno); 
-
-  if (lock.l_type == F_UNLCK)
-    printf ("no lock in destination found\n"); 
-  else 
-  {
-    printf ("find a lock owning by %lu\n", getpid()); 
-    dump_lock ("GETLOCK", &lock); 
-  }
-#else
+  printf ("[%lu] got read lock again\n", getpid ()); 
   sleep (2); 
-#endif
 
   printf ("%lu exit\n", getpid ()); 
 }

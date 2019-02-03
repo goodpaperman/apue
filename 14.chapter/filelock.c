@@ -17,7 +17,25 @@ void usage ()
 
 void dump_lock (char const* act, struct flock *lck)
 {
-  printf ("[%lu] %s %s (%u, %u) @ %s\n", getpid (), act, lck->l_type == F_RDLCK ? "rdlock" : (lck->l_type == F_WRLCK ? "wrlock" : "unlock"), lck->l_len > 0 ? lck->l_start : lck->l_start + lck->l_len, lck->l_len > 0 ? lck->l_start + lck->l_len : lck->l_start - 1, lck->l_whence == SEEK_SET ? "beg" : (lck->l_whence == SEEK_CUR ? "cur" : "end")); 
+  printf ("[%lu] %s %s (%d, %d) @ %s\n", 
+      getpid (), 
+      act, 
+      lck->l_type == F_RDLCK 
+        ? "rdlock" 
+        : (lck->l_type == F_WRLCK 
+          ? "wrlock" 
+          : "unlock"), 
+      lck->l_len > 0 
+        ? lck->l_start 
+        : lck->l_start + lck->l_len, 
+      lck->l_len > 0 
+        ? lck->l_start + lck->l_len 
+        : lck->l_start, 
+      lck->l_whence == SEEK_SET 
+        ? "beg" 
+        : (lck->l_whence == SEEK_CUR 
+          ? "cur" 
+          : "end")); 
 }
 
 int main (int argc, char *argv[])
