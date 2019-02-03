@@ -15,13 +15,9 @@ void usage ()
     exit (-1); 
 }
 
-void dump_lock (struct flock *lck)
+void dump_lock (char const* act, struct flock *lck)
 {
-  printf ("lock detail:\n"); 
-  printf ("type %s\n", lck->l_type == F_RDLCK ? "rdlock" : (lck->l_type == F_WRLCK ? "wrlock" : "unlock") ); 
-  printf ("offset %u\n", lck->l_start); 
-  printf ("whence %s\n", lck->l_whence == SEEK_SET ? "set" : (lck->l_whence == SEEK_CUR ? "curr" : "end")); 
-  printf ("len %u\n", lck->l_len); 
+  printf ("[%lu] %s %s (%u, %u) @ %s\n", getpid (), act, lck->l_type == F_RDLCK ? "rdlock" : (lck->l_type == F_WRLCK ? "wrlock" : "unlock"), lck->l_len > 0 ? lck->l_start : lck->l_start + lck->l_len, lck->l_len > 0 ? lck->l_start + lck->l_len : lck->l_start - 1, lck->l_whence == SEEK_SET ? "beg" : (lck->l_whence == SEEK_CUR ? "cur" : "end")); 
 }
 
 int main (int argc, char *argv[])
@@ -68,13 +64,13 @@ int main (int argc, char *argv[])
   else 
     usage (); 
 
-  printf ("%lu start, action %s\n", getpid (), argv[2]); 
+  //printf ("%lu start\n", getpid ()); 
   struct flock lock; 
   lock.l_type = type; 
   lock.l_start = offset; 
   lock.l_whence = whence; 
   lock.l_len = len; 
-  dump_lock (&lock); 
+  dump_lock (argv[2], &lock); 
   int ret = fcntl (fd, action, &lock); 
   if (ret == -1)
     err_sys ("fcntl failed, errno %d", errno); 
@@ -86,12 +82,15 @@ int main (int argc, char *argv[])
       printf ("no lock in destination found\n"); 
     else 
     {
-      printf ("find a lock owning by %lu\n", getpid()); 
-      dump_lock (&lock); 
+      printf ("find a lock owning by %lu\n", lock.l_pid); 
+      dump_lock ("FINDLOCK", &lock); 
     }
   }
   else 
-    sleep (100); 
+  {
+    printf ("[%lu] got lock\n", getpid ()); 
+    sleep (10); 
+  }
 
   printf ("%lu exit\n", getpid ()); 
 }
