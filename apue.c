@@ -809,3 +809,44 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len)
   *len = lock.l_len; 
   return lock.l_pid; 
 }
+
+static volatile sig_atomic_t sigflag; 
+static sigset_t newmask, oldmask, zeromask; 
+
+static void sig_usr (int signo)
+{
+    sigflag = 1; 
+    printf ("SIGUSR1/2 called\n"); 
+}
+
+void SYNC_INIT (void)
+{
+    if (apue_signal (SIGUSR1, sig_usr) == SIG_ERR)
+        err_sys ("signal (SIGUSR1) error"); 
+    if (apue_signal (SIGUSR2, sig_usr) == SIG_ERR)
+        err_sys ("signal (SIGUSR2) error"); 
+
+    sigemptyset (&zeromask); 
+    sigemptyset (&newmask); 
+    sigaddset (&newmask, SIGUSR1); 
+    sigaddset (&newmask, SIGUSR2); 
+
+    if (sigprocmask (SIG_BLOCK, &newmask, &oldmask) < 0)
+        err_sys ("SIG_BLOCK error"); 
+}
+
+void SYNC_TELL (pid_t pid, int child)
+{
+    kill (pid, child ? SIGUSR1 : SIGUSR2); 
+}
+
+void SYNC_WAIT (void)
+{
+    while (sigflag == 0)
+        sigsuspend (&zeromask); 
+
+    sigflag = 0; 
+    if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
+        err_sys ("SIG_SETMASK error"); 
+}
+

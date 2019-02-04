@@ -3,52 +3,12 @@
 #include <errno.h>
 
 #define USE_FSTREAM 2
-static volatile sig_atomic_t sigflag; 
-static sigset_t newmask, oldmask, zeromask; 
-
-static void sig_usr (int signo)
-{
-    sigflag = 1; 
-    printf ("SIGUSR1/2 called\n"); 
-}
-
-void SYNC_INIT (void)
-{
-    if (apue_signal (SIGUSR1, sig_usr) == SIG_ERR)
-        err_sys ("signal (SIGUSR1) error"); 
-    if (apue_signal (SIGUSR2, sig_usr) == SIG_ERR)
-        err_sys ("signal (SIGUSR2) error"); 
-
-    sigemptyset (&zeromask); 
-    sigemptyset (&newmask); 
-    sigaddset (&newmask, SIGUSR1); 
-    sigaddset (&newmask, SIGUSR2); 
-
-    if (sigprocmask (SIG_BLOCK, &newmask, &oldmask) < 0)
-        err_sys ("SIG_BLOCK error"); 
-}
-
-void SYNC_TELL (pid_t pid, int child)
-{
-    kill (pid, child ? SIGUSR1 : SIGUSR2); 
-}
-
-void SYNC_WAIT (void)
-{
-    while (sigflag == 0)
-        sigsuspend (&zeromask); 
-
-    sigflag = 0; 
-    if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
-        err_sys ("SIG_SETMASK error"); 
-}
-
 int read_increase_write ()
 {
     char *ptr = NULL; 
     int n = 0, ret = 0, err = 0; 
 #ifdef USE_FSTREAM
-    FILE* fp = fopen ("sync.txt", "r"); 
+    FILE* fp = fopen ("sync.txt", "r+"); 
     if (fp)
 #else
     int fd = open ("sync.txt", O_CREAT | O_RDWR, 0622); 
@@ -109,7 +69,7 @@ int read_increase_write ()
     }
     else 
     {
-        printf ("open file failed\n"); 
+        printf ("open file failed, errno %d\n", errno); 
         return -1; 
     }
 
