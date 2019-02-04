@@ -6,7 +6,7 @@
 static void lockabyte (char const* name, int fd, off_t offset)
 {
   if (writew_lock (fd, offset, SEEK_SET, 1) < 0)
-    err_sys ("%s: writew_lock error", name); 
+    err_sys ("%s: writew_lock error %d", name, errno); 
 
   printf ("%s: got the lock, byte %ld\n", name, offset); 
 }
