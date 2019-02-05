@@ -14,30 +14,29 @@ static void lockabyte (char const* name, int fd, off_t offset)
 int main (int argc, char *argv[])
 {
   int fd; 
-  pid_t pid; 
+  if (argc != 3)
+  {
+    printf ("Usage: flockdeadpair path child(0|1)\n"); 
+    exit (-1); 
+  }
 
-  if ((fd = creat ("templock", FILE_MODE)) < 0)
-    err_sys ("creat error"); 
+  if ((fd = open (argv[1], O_RDWR)) < 0)
+    err_sys ("open error"); 
 
-  if (write (fd, "ab", 2) != 2)
-    err_sys ("writer error"); 
+  //if (write (fd, "ab", 2) != 2)
+  //  err_sys ("writer error"); 
 
-  SYNC_INIT (); 
-  if ((pid = fork ()) < 0)
-    err_sys ("fork error"); 
-  else if (pid == 0) {
+  if (atoi(argv[2]) == 1) {
     lockabyte ("child", fd, 0); 
-    SYNC_TELL (getppid (), 0); 
-    SYNC_WAIT (); 
+    sleep (1); 
     lockabyte ("child", fd, 1); 
   }
   else { 
     lockabyte ("parent", fd, 1); 
-    SYNC_WAIT (); 
-    SYNC_TELL(pid, 1); 
+    sleep (1); 
     lockabyte ("parent", fd, 0); 
   }
 
-  sleep (2); 
+  sleep (1); 
   return 0; 
 }
