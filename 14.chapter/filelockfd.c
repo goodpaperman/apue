@@ -13,7 +13,8 @@ void usage ()
       "action: LOCK/LOCKWAIT/UNLOCK/TESTLOCK\n"
       "type: READ/WRITE\n"
       "whence: SET/CUR/END\n"
-      "filelock path action type offset whence len\n"
+      "mode: CLOSE/DUP/REOPEN\n"
+      "filelock path action type offset whence len mode\n"
       ); 
     exit (-1); 
 }
@@ -43,7 +44,7 @@ void dump_lock (char const* act, struct flock *lck)
 
 int main (int argc, char *argv[])
 {
-  if (argc != 7)
+  if (argc != 8)
     usage (); 
 
   off_t offset = atoi(argv[4]); 
@@ -63,6 +64,16 @@ int main (int argc, char *argv[])
     type = F_RDLCK; 
   else if (strcasecmp (argv[3], "WRITE") == 0)
     type = F_WRLCK; 
+  else 
+    usage (); 
+
+  int mode = 0; 
+  if (strcasecmp (argv[7], "CLOSE") == 0)
+    mode = 0; 
+  else if (strcasecmp (argv[7], "DUP") == 0)
+    mode = 1; 
+  else if (strcasecmp (argv[7], "REOPEN") == 0)
+    mode = 2; 
   else 
     usage (); 
 
@@ -111,22 +122,25 @@ int main (int argc, char *argv[])
   {
     printf ("[%lu] got lock\n", getpid ()); 
     sleep (2); 
-#ifdef USE_DUP
-    int fd2 = dup (fd); 
-    close (fd2); 
-    printf ("[%lu] dup handler %d (from %d) and closed\n", getpid (), fd2, fd); 
-#elif defined(USE_REOPEN)
-    int fd2= open (argv[1], type == F_RDLCK ? O_RDONLY : O_WRONLY); 
-    if (fd2== -1)
-      err_sys ("reopen %s failed", argv[1]); 
-    else {
+
+    if (mode == 0) {
+      close (fd); 
+      printf ("[%lu] close handler %d\n", getpid (), fd); 
+    } 
+    else if (mode == 1) { 
+      int fd2 = dup (fd); 
       close (fd2); 
-      printf ("[%lu] reopen handler %d (original %d) and closed\n", getpid (), fd2, fd); 
+      printf ("[%lu] dup handler %d (from %d) and closed\n", getpid (), fd2, fd); 
+    } 
+    else if (mode == 2) { 
+      int fd2= open (argv[1], type == F_RDLCK ? O_RDONLY : O_WRONLY); 
+      if (fd2== -1)
+        err_sys ("reopen %s failed", argv[1]); 
+      else {
+        close (fd2); 
+        printf ("[%lu] reopen handler %d (original %d) and closed\n", getpid (), fd2, fd); 
+      }
     }
-#else 
-    close (fd); 
-    printf ("[%lu] close handler %d\n", getpid (), fd); 
-#endif
     sleep (8); 
   }
 
