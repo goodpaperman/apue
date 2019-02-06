@@ -2,6 +2,7 @@
 #include <fcntl.h> 
 #include <strings.h> 
 #include <errno.h> 
+#include <limits.h>
 
 //#define USE_DUP
 #define USE_REOPEN
@@ -34,7 +35,9 @@ void dump_lock (char const* act, struct flock *lck)
         : lck->l_start + lck->l_len, 
       lck->l_len > 0 
         ? lck->l_start + lck->l_len 
-        : lck->l_start, 
+        : lck->l_len == 0 
+          ? INT_MAX 
+          : lck->l_start, 
       lck->l_whence == SEEK_SET 
         ? "beg" 
         : (lck->l_whence == SEEK_CUR 
