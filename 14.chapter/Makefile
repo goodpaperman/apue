@@ -1,4 +1,10 @@
-all: nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend
+all: nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory
+
+flockmandatory: flockmandatory.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+flockmandatory.o: flockmandatory.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 flockend: flockend.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -56,7 +62,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend
+	-rm -f *.o core.* *.log *~ *.swp nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory
 	@echo "end clean"
 
 .PHONY: clean
