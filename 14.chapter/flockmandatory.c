@@ -20,10 +20,12 @@ int main (int argc, char *argv[])
   if (write (fd, "abcdef", 6) != 6)
     err_sys ("write error"); 
 
+#if 1
   if (fstat (fd, &statbuf) < 0)
     err_sys ("fstat error"); 
   if (fchmod (fd, (statbuf.st_mode & ~S_IXGRP) | S_ISGID) < 0)
     err_sys ("fchmod error"); 
+#endif
 
   SYNC_INIT (); 
   pid = fork (); 
@@ -38,7 +40,9 @@ int main (int argc, char *argv[])
       err_sys ("waitpid error"); 
   } else { 
     SYNC_WAIT (); 
+#if 1
     set_fl (fd, O_NONBLOCK); 
+#endif
     if (read_lock (fd, 0, SEEK_SET, 0) != -1)
       err_sys ("child: read_lock succeeded!"); 
 
