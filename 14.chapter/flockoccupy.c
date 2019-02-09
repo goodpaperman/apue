@@ -35,8 +35,13 @@ int main (int argc, char *argv[])
     if (fchmod (fd, (statbuf.st_mode & ~S_IXGRP) | S_ISGID) < 0)
       err_sys ("fchmod error"); 
 
+#if 0
     if (write_lock (fd, 0, SEEK_SET, 0) < 0)
       err_sys ("write_lock error"); 
+#else
+    if (read_lock (fd, 0, SEEK_SET, 0) < 0)
+      err_sys ("read_lock error"); 
+#endif
 
     printf ("occupy file %s\n", argv[1]); 
     sleep (60); 
