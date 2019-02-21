@@ -1,0 +1,14 @@
+all: stream
+
+stream: stream.o 
+	gcc -Wall -g $^ -o $@
+
+stream.o: stream.c 
+	gcc -Wall -g -c $< -o $@
+
+clean: 
+	@echo "start clean..."
+	-rm -f *.o core.* *.log *~ *.swp stream
+	@echo "end clean"
+
+.PHONY: clean

@@ -1,5 +1,9 @@
-#include "../apue.h" 
 #include <errno.h> 
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stropts.h>
 
 int main (int argc, char *argv[])
 {
@@ -7,14 +11,14 @@ int main (int argc, char *argv[])
     for (i=1; i<argc; i++) { 
         fd = open (argv[i], O_RDONLY); 
         if (fd < 0) { 
-            err_ret ("%s: can't open", argv[i]); 
+            printf ("%s: can't open", argv[i]); 
             continue; 
         }
 
         if (isastream (fd) == 0)
-            err_ret ("%s: not a stream, errno %d", argv[i], errno); 
+            printf ("%s: not a stream, errno %d", argv[i], errno); 
         else 
-            err_msg ("%s: stream device", argv[i]); 
+            printf ("%s: stream device", argv[i]); 
     }
 
     return 0; 
