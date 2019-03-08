@@ -11,14 +11,14 @@ int main (int argc, char *argv[])
     for (i=1; i<argc; i++) { 
         fd = open (argv[i], O_RDONLY); 
         if (fd < 0) { 
-            printf ("%s: can't open", argv[i]); 
+            printf ("%s: can't open\n", argv[i]); 
             continue; 
         }
 
         if (isastream (fd) == 0)
-            printf ("%s: not a stream, errno %d", argv[i], errno); 
+            printf ("%s: not a stream, errno %d\n", argv[i], errno); 
         else 
-            printf ("%s: stream device", argv[i]); 
+            printf ("%s: stream device\n", argv[i]); 
     }
 
     return 0; 
