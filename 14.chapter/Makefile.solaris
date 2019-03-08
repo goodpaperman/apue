@@ -1,14 +1,14 @@
-all: stream
+all: icanput
 
-stream: stream.o 
+icanput: icanput.o 
 	gcc -Wall -g $^ -o $@
 
-stream.o: stream.c 
+icanput.o: icanput.c 
 	gcc -Wall -g -c $< -o $@
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp stream
+	-rm -f *.o core.* *.log *~ *.swp icanput
 	@echo "end clean"
 
 .PHONY: clean
