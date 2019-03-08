@@ -1,4 +1,10 @@
-all: icanput
+all: icanput ilist
+
+ilist: ilist.o 
+	gcc -Wall -g $^ -o $@
+
+ilist.o: ilist.c 
+	gcc -Wall -g -c $< -o $@
 
 icanput: icanput.o 
 	gcc -Wall -g $^ -o $@
@@ -8,7 +14,7 @@ icanput.o: icanput.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp icanput
+	-rm -f *.o core.* *.log *~ *.swp icanput ilist
 	@echo "end clean"
 
 .PHONY: clean
