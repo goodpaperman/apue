@@ -5,7 +5,11 @@
 #include <stdlib.h> 
 #include <string.h>
 
-#define BUFFSIZE 4096
+#if 1
+#  define BUFFSIZE 4096
+#else
+#  define BUFFSIZE 4
+#endif
 
 int main (void)
 {
@@ -18,11 +22,17 @@ int main (void)
 	dat.maxlen = BUFFSIZE; 
 	for (;;) { 
 		flag = 0; 
+#if 0
+		// dead loop !
+		dat.maxlen = -1; 
+#endif
 		if ((n = getmsg(STDIN_FILENO, &ctl, &dat, &flag)) < 0) {
 			printf ("getmsg error %d, %s\n", errno, strerror(errno)); 
 			exit(-1); 
 		}
-		fprintf (stderr, "flag = %d, ctl.len = %d, dat.len = %d\n", flag, ctl.len, dat.len); 
+
+		fprintf (stderr, "	flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", flag, ctl.len, dat.len, n); 
+
 		if (dat.len == 0)
 			exit (0); 
 		else if (dat.len > 0) {
