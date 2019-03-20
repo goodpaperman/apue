@@ -34,7 +34,10 @@ int main (void)
 		fprintf (stderr, "	flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", flag, ctl.len, dat.len, n); 
 
 		if (dat.len == 0)
+		{
+			fprintf (stderr, "get an empty message, exit..\n"); 
 			exit (0); 
+		}
 		else if (dat.len > 0) {
 			if (write (STDOUT_FILENO, dat.buf, dat.len) != dat.len){ 
 				printf ("write error %d, %s\n", errno, strerror(errno)); 

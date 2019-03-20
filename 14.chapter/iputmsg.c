@@ -13,7 +13,13 @@ void set_wr_mode (int fd)
 	ioctl (fd, I_GWROPT, &mode); 
 	fprintf (stderr, "old write mode: %d\n", mode); 
 
+#if 1
+	// not work, use 0 has the same effect.
 	mode = SNDZERO | SNDPIPE;
+#else 
+	mode = 0; 
+#endif 
+
 	ioctl (fd, I_SWROPT, mode); 
 	fprintf (stderr, "new write mode: %d\n", mode); 
 }
@@ -31,7 +37,7 @@ int main (void)
 	for (;;) { 
 		flag = 0; 
 		if ((n = getmsg(STDIN_FILENO, &ctl, &dat, &flag)) < 0) {
-			printf ("getmsg error %d, %s\n", errno, strerror(errno)); 
+			fprintf (stderr, "getmsg error %d, %s\n", errno, strerror(errno)); 
 			exit(-1); 
 		}
 
@@ -72,7 +78,7 @@ int main (void)
 			flag = RS_HIPRI; 
 #endif 
 			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
-				printf ("putmsg error %d, %s\n", errno, strerror(errno)); 
+				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
 			}
 
