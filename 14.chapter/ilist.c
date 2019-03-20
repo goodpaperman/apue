@@ -29,7 +29,7 @@ int main (int argc, char *argv[])
 		exit (1); 
 	}
 
-	printf ("#modules = %d\n", nmods); 
+	printf ("%s : #%d\n", argv[1], nmods); 
 	list.sl_modlist = calloc (nmods, sizeof (struct str_mlist)); 
 	if (list.sl_modlist == NULL) { 
 		printf ("calloc error\n"); 
