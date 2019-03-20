@@ -1,4 +1,10 @@
-all: icanput ilist igetmsg
+all: icanput ilist igetmsg iputmsg
+
+iputmsg: iputmsg.o 
+	gcc -Wall -g $^ -o $@
+
+iputmsg.o: iputmsg.c 
+	gcc -Wall -g -c $< -o $@
 
 igetmsg: igetmsg.o 
 	gcc -Wall -g $^ -o $@
@@ -20,7 +26,7 @@ icanput.o: icanput.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp icanput ilist igetmsg
+	-rm -f *.o core.* *.log *~ *.swp icanput ilist igetmsg iputmsg
 	@echo "end clean"
 
 .PHONY: clean
