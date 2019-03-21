@@ -43,7 +43,8 @@ int main (void)
 
 		fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d\n", getpid (), flag, ctl.len, dat.len); 
 
-		if (dat.len == 0)
+		// from stdin input, ctl.len always -1, so skip check it ... 
+		if (dat.len <= 0)
 			exit (0); 
 		else if (dat.len > 0) {
 			//ctl.len = -1; 
