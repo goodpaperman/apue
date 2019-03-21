@@ -33,12 +33,23 @@ int main (void)
 
 		fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", getpid (), flag, ctl.len, dat.len, n); 
 
-		if (dat.len == 0)
+		if (ctl.len <= 0 && dat.len <= 0)
 		{
 			fprintf (stderr, "get an empty message, exit..\n"); 
 			exit (0); 
 		}
-		else if (dat.len > 0) {
+		else if (ctl.len > 0) { 
+			fprintf (stderr, "get an control message\n"); 
+			if (write(STDOUT_FILENO, ctl.buf, ctl.len) != ctl.len) { 
+				fprintf (stderr, "write error %d, %s\n", errno, strerror(errno));
+				exit (-1); 
+			}
+		}
+
+		if (dat.len > 0) {
+			if (ctl.len <= 0)
+				fprintf (stderr, "get an data message\n"); 
+
 			// on pipe broken, write will exit (1) directly ? don't known why
 			//fprintf (stderr, "prepare to write %d\n", dat.len); 
 			if (write (STDOUT_FILENO, dat.buf, dat.len) != dat.len){ 

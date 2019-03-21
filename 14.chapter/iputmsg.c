@@ -76,6 +76,12 @@ int main (void)
 			ctl.len = strlen(ctl.buf); 
 			dat.len = -1; 
 			flag = RS_HIPRI; 
+#elif 1 
+			if (dat.len % 2 == 0) { 
+				// add some random
+				strcpy (ctl.buf, dat.buf); 
+				ctl.len = dat.len; 
+			}
 #endif 
 			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
 				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
