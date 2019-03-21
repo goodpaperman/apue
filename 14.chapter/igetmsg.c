@@ -27,7 +27,7 @@ int main (void)
 		dat.maxlen = -1; 
 #endif
 		if ((n = getmsg(STDIN_FILENO, &ctl, &dat, &flag)) < 0) {
-			printf ("getmsg error %d, %s\n", errno, strerror(errno)); 
+			fprintf (stderr, "getmsg error %d, %s\n", errno, strerror(errno)); 
 			exit(-1); 
 		}
 
@@ -39,10 +39,14 @@ int main (void)
 			exit (0); 
 		}
 		else if (dat.len > 0) {
+			// on pipe broken, write will exit (1) directly ? don't known why
+			//fprintf (stderr, "prepare to write %d\n", dat.len); 
 			if (write (STDOUT_FILENO, dat.buf, dat.len) != dat.len){ 
-				printf ("write error %d, %s\n", errno, strerror(errno)); 
+				fprintf (stderr, "write error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
 			}
+
+			//fprintf (stderr, "write %d\n", dat.len); 
 		}
 	}
 	return 0; 
