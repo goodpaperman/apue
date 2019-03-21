@@ -31,7 +31,7 @@ int main (void)
 			exit(-1); 
 		}
 
-		fprintf (stderr, "	flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", flag, ctl.len, dat.len, n); 
+		fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", getpid (), flag, ctl.len, dat.len, n); 
 
 		if (dat.len == 0)
 		{

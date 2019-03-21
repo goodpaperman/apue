@@ -13,7 +13,7 @@ void set_wr_mode (int fd)
 	ioctl (fd, I_GWROPT, &mode); 
 	fprintf (stderr, "old write mode: %d\n", mode); 
 
-#if 1
+#if 0
 	// not work, use 0 has the same effect.
 	mode = SNDZERO | SNDPIPE;
 #else 
@@ -41,7 +41,7 @@ int main (void)
 			exit(-1); 
 		}
 
-		fprintf (stderr, "flag = %d, ctl.len = %d, dat.len = %d\n", flag, ctl.len, dat.len); 
+		fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d\n", getpid (), flag, ctl.len, dat.len); 
 
 		if (dat.len == 0)
 			exit (0); 
@@ -82,7 +82,7 @@ int main (void)
 				exit (-1); 
 			}
 
-			fprintf (stderr, "flag = %d, ctl.len = %d, dat.len = %d\n", flag, ctl.len, dat.len); 
+			fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d\n", getpid (), flag, ctl.len, dat.len); 
 		}
 	}
 
