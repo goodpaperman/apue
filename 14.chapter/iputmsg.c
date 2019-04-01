@@ -26,7 +26,7 @@ void set_wr_mode (int fd)
 
 int main (void)
 {
-	int n, flag; 
+	int n, flag, band; 
 	char ctlbuf[BUFFSIZE], datbuf[BUFFSIZE]; 
 	struct strbuf ctl, dat; 
 	ctl.buf = ctlbuf; 
@@ -83,13 +83,43 @@ int main (void)
 				strcpy (ctl.buf, dat.buf); 
 				ctl.len = dat.len; 
 			}
+#elif 0
+			band = 128; 
+			flag = MSG_BAND; 
+#elif 0
+			strcpy (ctl.buf, "hello world!"); 
+			ctl.len = strlen(ctl.buf); 
+			band = 127; 
+			flag = MSG_BAND; 
+#elif 0
+			strcpy (ctl.buf, "hello world!"); 
+			ctl.len = strlen(ctl.buf); 
+			dat.len = -1; 
+			band = 127; 
+			flag = MSG_BAND; 
+#elif 0
+			if (dat.len % 2 == 0) { 
+				// add some random
+				strcpy (ctl.buf, dat.buf); 
+				ctl.len = dat.len; 
+			}
+			band = 127; 
+			flag = MSG_BAND; 
 #endif 
+
+#if 1
 			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
 				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
 			}
+#else 
+			if (putpmsg (STDOUT_FILENO, &ctl, &dat, band, flag) < 0){ 
+				fprintf (stderr, "putpmsg error %d, %s\n", errno, strerror(errno)); 
+				exit (-1); 
+			}
+#endif 
 
-			fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d\n", getpid (), flag, ctl.len, dat.len); 
+			fprintf (stderr, "[%08x] flag = %d, band = %d, ctl.len = %d, dat.len = %d\n", getpid (), flag, band, ctl.len, dat.len); 
 		}
 	}
 

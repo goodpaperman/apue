@@ -64,7 +64,7 @@ int main (int argc, char *argv[])
 	int ret = 0, has_error = 0; 
 	struct pollfd pfd[PFD_MAX] = { 0 }; 
 	pfd[0].fd = STDIN_FILENO; 
-	pfd[0].events = POLLIN; 
+	pfd[0].events = POLLIN | POLLPRI; 
 
 	while (!has_error) 
 	{
