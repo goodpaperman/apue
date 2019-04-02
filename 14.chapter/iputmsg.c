@@ -26,7 +26,7 @@ void set_wr_mode (int fd)
 
 int main (void)
 {
-	int n, flag, band; 
+	int n, flag, band = 0; 
 	char ctlbuf[BUFFSIZE], datbuf[BUFFSIZE]; 
 	struct strbuf ctl, dat; 
 	ctl.buf = ctlbuf; 
@@ -77,7 +77,7 @@ int main (void)
 			ctl.len = strlen(ctl.buf); 
 			dat.len = -1; 
 			flag = RS_HIPRI; 
-#elif 1 
+#elif 0 
 			if (dat.len % 2 == 0) { 
 				// add some random
 				strcpy (ctl.buf, dat.buf); 
@@ -97,7 +97,7 @@ int main (void)
 			dat.len = -1; 
 			band = 127; 
 			flag = MSG_BAND; 
-#elif 0
+#elif 1
 			if (dat.len % 2 == 0) { 
 				// add some random
 				strcpy (ctl.buf, dat.buf); 
@@ -107,7 +107,7 @@ int main (void)
 			flag = MSG_BAND; 
 #endif 
 
-#if 1
+#if 0
 			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
 				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
