@@ -6,6 +6,8 @@
 #include <stdlib.h> 
 #include <string.h> 
 
+#define POLL_STDOUT
+
 #ifdef POLL_STDOUT
 #  define PFD_MAX 2 
 #else 
@@ -40,7 +42,7 @@ void readmsg (int fd)
         if (ctl.buf[ctl.len-1] != '\n')
         ctl.buf[ctl.len++] = '\n';
 
-        if (write(STDOUT_FILENO, ctl.buf, ctl.len) != ctl.len) {
+        if (write(STDERR_FILENO, ctl.buf, ctl.len) != ctl.len) {
             fprintf (stderr, "write error %d, %s\n", errno, strerror(errno)); 
             exit (-1);
         }
@@ -55,7 +57,7 @@ void readmsg (int fd)
 
         // on pipe broken, write will exit (1) directly ? don't known why
         //fprintf (stderr, "prepare to write %d\n", dat.len);
-        if (write (STDOUT_FILENO, dat.buf, dat.len) != dat.len){
+        if (write (STDERR_FILENO, dat.buf, dat.len) != dat.len){
             fprintf (stderr, "write error %d, %s\n", errno, strerror(errno)); 
             exit (-1);
         }
@@ -90,7 +92,7 @@ void readpmsg (int fd)
         if (ctl.buf[ctl.len-1] != '\n')
         ctl.buf[ctl.len++] = '\n';
 
-        if (write(STDOUT_FILENO, ctl.buf, ctl.len) != ctl.len) {
+        if (write(STDERR_FILENO, ctl.buf, ctl.len) != ctl.len) {
             fprintf (stderr, "write error %d, %s\n", errno, strerror(errno)); 
             exit (-1);
         }
@@ -105,13 +107,146 @@ void readpmsg (int fd)
 
         // on pipe broken, write will exit (1) directly ? don't known why
         //fprintf (stderr, "prepare to write %d\n", dat.len);
-        if (write (STDOUT_FILENO, dat.buf, dat.len) != dat.len){
+        if (write (STDERR_FILENO, dat.buf, dat.len) != dat.len){
             fprintf (stderr, "write error %d, %s\n", errno, strerror(errno)); 
             exit (-1);
         }
 
         //fprintf (stderr, "write %d\n", dat.len);
     }
+}
+
+void writemsg (int fd)
+{
+	int flag = 0, n = 0; 
+	char ctlbuf[BUFFSIZE+1], datbuf[BUFFSIZE+1];
+    struct strbuf ctl, dat;
+    ctl.buf = ctlbuf;
+    ctl.maxlen = BUFFSIZE;
+    dat.buf = datbuf;
+    dat.maxlen = BUFFSIZE;
+
+	strcpy (dat.buf, "#####"); 
+	dat.len = strlen (dat.buf)+1; 
+
+    // to test zero length send
+    if (dat.len == 1 && dat.buf[0] == '\n')
+        dat.len = 0;
+#if 0
+    dat.len = -1;
+#elif 0
+    dat.len = 0;
+#elif 0
+    // warning: telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+#elif 0
+    // error: EINVAL
+    flag = RS_HIPRI;
+#elif 0
+    // blocked, use Ctrl+C to exit
+    // if use Ctrl+D you will get telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    flag = RS_HIPRI;
+#elif 0
+    // blocked, use Ctrl+C to exit
+    // if use Ctrl+D you will get telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    dat.len = -1;
+    flag = RS_HIPRI;
+#elif 0
+    if (dat.len % 2 == 0) {
+        // add some random
+        strcpy (ctl.buf, dat.buf);
+        ctl.len = dat.len;
+    }
+#endif
+	if ((n = putmsg(fd, &ctl, &dat, flag)) < 0) {
+        fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
+        exit(-1);
+    }
+
+    fprintf (stderr, "[%08x] flag = %d, ctl.len = %d, dat.len = %d, ret = %d\n", getpid (), flag, ctl.len, dat.len, n); 
+}
+
+void writepmsg (int fd)
+{
+	int flag = 0, n = 0, band = 0; 
+	char ctlbuf[BUFFSIZE+1], datbuf[BUFFSIZE+1];
+    struct strbuf ctl, dat;
+    ctl.buf = ctlbuf;
+    ctl.maxlen = BUFFSIZE;
+    dat.buf = datbuf;
+    dat.maxlen = BUFFSIZE;
+
+	strcpy (dat.buf, "#####"); 
+	dat.len = strlen (dat.buf)+1; 
+
+    // to test zero length send
+    if (dat.len == 1 && dat.buf[0] == '\n')
+        dat.len = 0;
+#if 0
+    dat.len = -1;
+#elif 0
+    dat.len = 0;
+#elif 0
+    // warning: telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+#elif 0
+    // error: EINVAL
+    flag = RS_HIPRI;
+#elif 0
+    // blocked, use Ctrl+C to exit
+    // if use Ctrl+D you will get telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    flag = RS_HIPRI;
+#elif 0
+    // blocked, use Ctrl+C to exit
+    // if use Ctrl+D you will get telnet reset
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    dat.len = -1;
+    flag = RS_HIPRI;
+#elif 0
+    if (dat.len % 2 == 0) {
+        // add some random
+        strcpy (ctl.buf, dat.buf);
+        ctl.len = dat.len;
+    }
+#elif 0
+    band = 128;
+    flag = MSG_BAND;
+#elif 0
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    band = 127;
+    flag = MSG_BAND;
+#elif 0
+    strcpy (ctl.buf, "hello world!");
+    ctl.len = strlen(ctl.buf);
+    dat.len = -1;
+    band = 127;
+    flag = MSG_BAND;
+#elif 1
+    if (dat.len % 2 == 0) {
+        // add some random
+        strcpy (ctl.buf, dat.buf);
+    	ctl.len = dat.len;
+    }
+    band = 127;
+    flag = MSG_BAND;
+#endif
+
+	if ((n = putpmsg(fd, &ctl, &dat, band, flag)) < 0) {
+        fprintf (stderr, "putpmsg error %d, %s\n", errno, strerror(errno)); 
+        exit(-1);
+    }
+
+    fprintf (stderr, "[%08x] flag = %d, band = %d, ctl.len = %d, dat.len = %d, ret = %d\n", getpid (), flag, band, ctl.len, dat.len, n); 
 }
 
 int main (int argc, char *argv[])
@@ -122,11 +257,12 @@ int main (int argc, char *argv[])
 	pfd[0].events = POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI; 
 #ifdef POLL_STDOUT
 	pfd[1].fd = STDOUT_FILENO; 
-	pfd[1].events = POLLOUT | POLLWRBAND ; 
+	pfd[1].events = POLLOUT /*| POLLWRBAND*/ ; 
 #endif 
 
 	while (!has_error) 
 	{
+		fprintf (stderr, "poll %d handles\n", PFD_MAX); 
 		ret = poll (pfd, PFD_MAX, -1); 
 		if (ret == -1)
 		{
@@ -165,12 +301,15 @@ int main (int argc, char *argv[])
 
 			if (pfd[i].revents & POLLWRBAND) { 
 				fprintf (stderr, "poll %d write band\n", pfd[i].fd); 
+				writepmsg (pfd[i].fd); 
 			}
 			else if (pfd[i].revents & POLLWRNORM) { 
 				fprintf (stderr, "poll %d write normal\n", pfd[i].fd); 
+				writemsg (pfd[i].fd); 
 			}
 			else if (pfd[i].revents & POLLOUT) { 
 				fprintf (stderr, "poll %d out\n", pfd[i].fd); 
+				writemsg (pfd[i].fd); 
 			}
 			else if (pfd[i].revents & POLLERR) { 
 				has_error = 1; 
