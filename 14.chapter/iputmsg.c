@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define BUFFSIZE 4096
+#define USE_BAND
 
 void set_wr_mode (int fd)
 {
@@ -53,68 +54,72 @@ int main (void)
 			// to test zero length send
 			if (dat.len == 1 && dat.buf[0] == '\n')
 				dat.len = 0; 
-#if 0
+#ifdef USE_BAND
+#  if 0
+			band = 128; 
+			flag = MSG_BAND; 
+#  elif 0
+			strcpy (ctl.buf, "hello world!"); 
+			ctl.len = strlen(ctl.buf); 
+			band = 127; 
+			flag = MSG_BAND; 
+#  elif 0
+			strcpy (ctl.buf, "hello world!"); 
+			ctl.len = strlen(ctl.buf); 
 			dat.len = -1; 
-#elif 0
+			band = 127; 
+			flag = MSG_BAND; 
+#  elif 1
+			if (dat.len % 2 == 0) { 
+				// add some random
+				strcpy (ctl.buf, dat.buf); 
+				ctl.len = dat.len; 
+			}
+			band = 127; 
+			flag = MSG_BAND; 
+#  endif
+#else
+#  if 0
+			dat.len = -1; 
+#  elif 0
 			dat.len = 0; 
-#elif 0
+#  elif 0
 			// warning: telnet reset
 			strcpy (ctl.buf, "hello world!"); 
 			ctl.len = strlen(ctl.buf); 
-#elif 0
+#  elif 0
 			// error: EINVAL
 			flag = RS_HIPRI; 
-#elif 0
+#  elif 0
 			// blocked, use Ctrl+C to exit
 			// if use Ctrl+D you will get telnet reset
 			strcpy (ctl.buf, "hello world!"); 
 			ctl.len = strlen(ctl.buf); 
 			flag = RS_HIPRI; 
-#elif 0
+#  elif 0
 			// blocked, use Ctrl+C to exit
 			// if use Ctrl+D you will get telnet reset
 			strcpy (ctl.buf, "hello world!"); 
 			ctl.len = strlen(ctl.buf); 
 			dat.len = -1; 
 			flag = RS_HIPRI; 
-#elif 0 
+#  elif 1 
 			if (dat.len % 2 == 0) { 
 				// add some random
 				strcpy (ctl.buf, dat.buf); 
 				ctl.len = dat.len; 
 			}
-#elif 0
-			band = 128; 
-			flag = MSG_BAND; 
-#elif 0
-			strcpy (ctl.buf, "hello world!"); 
-			ctl.len = strlen(ctl.buf); 
-			band = 127; 
-			flag = MSG_BAND; 
-#elif 0
-			strcpy (ctl.buf, "hello world!"); 
-			ctl.len = strlen(ctl.buf); 
-			dat.len = -1; 
-			band = 127; 
-			flag = MSG_BAND; 
-#elif 1
-			if (dat.len % 2 == 0) { 
-				// add some random
-				strcpy (ctl.buf, dat.buf); 
-				ctl.len = dat.len; 
-			}
-			band = 127; 
-			flag = MSG_BAND; 
+#  endif 
 #endif 
 
-#if 0
-			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
-				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
+#ifdef USE_BAND 
+			if (putpmsg (STDOUT_FILENO, &ctl, &dat, band, flag) < 0){ 
+				fprintf (stderr, "putpmsg error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
 			}
 #else 
-			if (putpmsg (STDOUT_FILENO, &ctl, &dat, band, flag) < 0){ 
-				fprintf (stderr, "putpmsg error %d, %s\n", errno, strerror(errno)); 
+			if (putmsg (STDOUT_FILENO, &ctl, &dat, flag) < 0){ 
+				fprintf (stderr, "putmsg error %d, %s\n", errno, strerror(errno)); 
 				exit (-1); 
 			}
 #endif 
