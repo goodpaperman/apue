@@ -95,4 +95,7 @@ void SYNC_INIT (void);
 void SYNC_TELL (pid_t pid, int child);
 void SYNC_WAIT (void);
 
+ssize_t readn (int fd, void *buf, size_t len); 
+ssize_t writen (int fd, void const* buf, size_t len); 
+
 #endif 
