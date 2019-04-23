@@ -28,6 +28,8 @@ main(int argc, char *argv[])
     fd = open(argv[1], 
 #ifdef TEST_WRITE
             O_RDWR);
+            // to test EPERM
+            //O_RDONLY);
 #else
             O_RDONLY);
 #endif
@@ -49,8 +51,13 @@ main(int argc, char *argv[])
     if (argc == 4) {
         length = atoi(argv[3]);
         if (offset + length > sb.st_size)
+#if 1
             length = sb.st_size - offset;
                 /* Can't display bytes past end of file */
+#else 
+            // can display but no back write indeed
+            printf ("length %d pass end of file %d\n", length, sb.st_size); 
+#endif
 
     } else {    /* No length arg ==> display to end of file */
         length = sb.st_size - offset;
@@ -74,7 +81,8 @@ main(int argc, char *argv[])
         handle_error("mmap");
 
 #ifdef TEST_WRITE
-    addr[offset-pa_offset] = 'b'; 
+    // write backend to test map pass end of file and write is nonsense
+    addr[length + offset-pa_offset - 1] = 'b';  
 #endif
 
     s = write(STDOUT_FILENO, addr + offset - pa_offset, length);
@@ -88,7 +96,7 @@ main(int argc, char *argv[])
 
 #if 0
     // no need, when unmaped, all view will be flushed.
-    ret = msync (addr, length + offset - pa_offset, MS_SYNC); 
+    ret = msync (addr + offset - pa_offset, length, MS_SYNC); 
     if (ret == -1)
         handle_error ("msync"); 
 #endif
