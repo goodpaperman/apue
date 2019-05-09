@@ -4,11 +4,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h> 
 
 #define TEST_WRITE
+//#define TEST_SIGSEGV
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
+#ifdef TEST_SIGSEGV
+char ** g_addr = 0; 
+int *g_len = 0; 
+int *g_fd = 0; 
+int *g_off = 0; 
+
+void sigsegv (int signo)
+{
+    printf ("caught signal %d\n", signo); 
+    char *old_addr = *g_addr; 
+    munmap (old_addr, 0); 
+    *g_addr = mmap(old_addr,  /* do keep the addr not change !*/
+                *g_len, 
+                PROT_READ | PROT_WRITE, 
+                MAP_SHARED, 
+                *g_fd, 
+                *g_off);
+
+    if (*g_addr == MAP_FAILED)
+        handle_error("mmap");
+    else 
+    {
+        printf ("remap %p to %p\n", old_addr, *g_addr); 
+        if (old_addr != *g_addr)
+            handle_error ("old addr not kept!"); 
+    }
+}
+#endif
 
 int
 main(int argc, char *argv[])
@@ -24,6 +55,10 @@ main(int argc, char *argv[])
         fprintf(stderr, "%s file offset [length]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+
+#ifdef TEST_SIGSEGV
+    signal (SIGSEGV, sigsegv); 
+#endif 
 
     fd = open(argv[1], 
 #ifdef TEST_WRITE
@@ -63,11 +98,16 @@ main(int argc, char *argv[])
         length = sb.st_size - offset;
     }
 
+    int s_len = length + offset - pa_offset; 
     fprintf (stderr, "map %s (total %d) from %d (aligned %d) with length %d\n", argv[1], sb.st_size, offset, pa_offset, length); 
     addr = mmap(NULL, 
-                length + offset - pa_offset, 
+                s_len, 
 #ifdef TEST_WRITE
+#  ifdef TEST_SIGSEGV
+                PROT_READ, 
+#  else
                 PROT_READ | PROT_WRITE, 
+#  endif
                 MAP_SHARED, 
                 //MAP_PRIVATE, 
 #else
@@ -79,6 +119,13 @@ main(int argc, char *argv[])
 
     if (addr == MAP_FAILED)
         handle_error("mmap");
+
+#ifdef TEST_SIGSEGV
+    g_addr = &addr; 
+    g_len = &s_len; 
+    g_fd = &fd; 
+    g_off = &pa_offset; 
+#endif
 
 #ifdef TEST_WRITE
     // write backend to test map pass end of file and write is nonsense
