@@ -14,27 +14,27 @@
 
 #ifdef TEST_SIGSEGV
 char ** g_addr = 0; 
-int *g_len = 0; 
-int *g_fd = 0; 
-int *g_off = 0; 
+int g_len = 0; 
+int g_fd = 0; 
+int g_off = 0; 
 
 void sigsegv (int signo)
 {
     printf ("caught signal %d\n", signo); 
     char *old_addr = *g_addr; 
-    munmap (old_addr, 0); 
+    munmap (old_addr, g_len); 
     *g_addr = mmap(old_addr,  /* do keep the addr not change !*/
-                *g_len, 
+                g_len, 
                 PROT_READ | PROT_WRITE, 
                 MAP_SHARED, 
-                *g_fd, 
-                *g_off);
+                g_fd, 
+                g_off);
 
     if (*g_addr == MAP_FAILED)
         handle_error("mmap");
     else 
     {
-        printf ("remap %p to %p\n", old_addr, *g_addr); 
+        printf ("remap %p to %p with length %d\n", old_addr, *g_addr, g_len); 
         if (old_addr != *g_addr)
             handle_error ("old addr not kept!"); 
     }
@@ -122,9 +122,9 @@ main(int argc, char *argv[])
 
 #ifdef TEST_SIGSEGV
     g_addr = &addr; 
-    g_len = &s_len; 
-    g_fd = &fd; 
-    g_off = &pa_offset; 
+    g_len = s_len; 
+    g_fd = fd; 
+    g_off = pa_offset; 
 #endif
 
 #ifdef TEST_WRITE
