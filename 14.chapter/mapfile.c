@@ -8,6 +8,7 @@
 
 #define TEST_WRITE
 //#define TEST_SIGSEGV
+//#define USE_MPROTECT
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -21,6 +22,13 @@ int g_off = 0;
 void sigsegv (int signo)
 {
     printf ("caught signal %d\n", signo); 
+#  ifdef USE_MPROTECT
+    int ret = mprotect (*g_addr, g_len, PROT_READ | PROT_WRITE); 
+    if (ret == 0)
+        printf ("mprotect %p to rw ok\n", *g_addr); 
+    else 
+        handle_error("mprotect"); 
+#  else 
     char *old_addr = *g_addr; 
     munmap (old_addr, g_len); 
     *g_addr = mmap(old_addr,  /* do keep the addr not change !*/
@@ -38,6 +46,7 @@ void sigsegv (int signo)
         if (old_addr != *g_addr)
             handle_error ("old addr not kept!"); 
     }
+#  endif 
 }
 #endif
 
