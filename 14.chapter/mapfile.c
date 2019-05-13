@@ -157,11 +157,13 @@ main(int argc, char *argv[])
         handle_error ("msync"); 
 #endif
 
+    close (fd); 
+    
+    // to see if we can access maps after close file
+    printf ("after alter %d: %c\n", length + offset - pa_offset - 1, addr[length + offset-pa_offset - 1]); 
     ret = munmap (addr, length + offset - pa_offset); 
     if (ret == -1)
         handle_error ("munmap"); 
-
-    close (fd); 
 
     exit(EXIT_SUCCESS);
 } /* main */
