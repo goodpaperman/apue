@@ -7,7 +7,7 @@
 #include <signal.h> 
 
 #define TEST_WRITE
-//#define TEST_SIGSEGV
+#define TEST_SIGSEGV
 //#define USE_MPROTECT
 
 #define handle_error(msg) \
@@ -21,6 +21,7 @@ int g_off = 0;
 
 void sigsegv (int signo)
 {
+    int ret = 0; 
     printf ("caught signal %d\n", signo); 
 #  ifdef USE_MPROTECT
     int ret = mprotect (*g_addr, g_len, PROT_READ | PROT_WRITE); 
@@ -30,7 +31,12 @@ void sigsegv (int signo)
         handle_error("mprotect"); 
 #  else 
     char *old_addr = *g_addr; 
-    munmap (old_addr, g_len); 
+    // works well when g_len > 0.
+    //ret = munmap (old_addr, 1); 
+    ret = munmap (old_addr, g_len); 
+    if (ret < 0)
+        handle_error ("munmap"); 
+
     *g_addr = mmap(old_addr,  /* do keep the addr not change !*/
                 g_len, 
                 PROT_READ | PROT_WRITE, 
@@ -138,7 +144,7 @@ main(int argc, char *argv[])
 
 #ifdef TEST_WRITE
     // write backend to test map pass end of file and write is nonsense
-    addr[length + offset-pa_offset - 1] = 'b';  
+    addr[s_len - 1] = 'b';  
 #endif
 
     s = write(STDOUT_FILENO, addr + offset - pa_offset, length);
@@ -150,9 +156,11 @@ main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-#if 0
-    // no need, when unmaped, all view will be flushed.
-    ret = msync (addr + offset - pa_offset, length, MS_SYNC); 
+#if 1
+    // need, when unmaped, view will not be flushed.
+    ret = msync (addr, s_len, MS_SYNC); 
+    // fatal error, parameter addr must block aligned!!
+    //ret = msync (addr + offset - pa_offset, length, MS_SYNC); 
     if (ret == -1)
         handle_error ("msync"); 
 #endif
@@ -160,8 +168,8 @@ main(int argc, char *argv[])
     close (fd); 
     
     // to see if we can access maps after close file
-    printf ("after alter %d: %c\n", length + offset - pa_offset - 1, addr[length + offset-pa_offset - 1]); 
-    ret = munmap (addr, length + offset - pa_offset); 
+    printf ("after alter %d: %c\n", s_len - 1, addr[s_len - 1]); 
+    ret = munmap (addr, s_len); 
     if (ret == -1)
         handle_error ("munmap"); 
 
