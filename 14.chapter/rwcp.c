@@ -18,7 +18,6 @@ int main (int argc, char *argv[])
 {
     int fdin, fdout; 
     char buf[BUF_SIZE] = { 0 }; 
-    struct stat statbuf; 
     if (argc != 3)
         handle_error ("wrong usage"); 
 
