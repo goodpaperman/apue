@@ -1,4 +1,10 @@
-all: nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp
+all: nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
+
+rwcp: rwcp.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+rwcp.o: rwcp.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 mapcp: mapcp.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -98,7 +104,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp
+	-rm -f *.o core.* *.log *~ *.swp nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
 	@echo "end clean"
 
 .PHONY: clean
