@@ -1,4 +1,4 @@
-all: nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
+all: nonblock nonblockpipe filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
 
 rwcp: rwcp.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -88,6 +88,12 @@ filelock: filelock.o apue.o
 	gcc -Wall -g $^ -o $@
 
 filelock.o: filelock.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+nonblockpipe: nonblockpipe.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+nonblockpipe.o: nonblockpipe.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 nonblock: nonblock.o apue.o 
