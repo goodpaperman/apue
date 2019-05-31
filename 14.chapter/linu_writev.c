@@ -8,6 +8,9 @@
 #include <fcntl.h> 
 #include <sys/uio.h>
 
+#define USE_WRITEV
+#ifdef USE_WRITEV
+
 void test_writev (int fd, char const* buf1, int len1, char const* buf2, int len2)
 {
 	struct iovec block[2]; 
@@ -18,15 +21,34 @@ void test_writev (int fd, char const* buf1, int len1, char const* buf2, int len2
 	int ret = writev (fd, block, 2); 
 	//printf ("total write %d\n", ret); 
 	if (ret == -1) { 
+		printf ("fatal error while writev, errno %d\n", errno); 
+		exit(-1); 
+	}
+}
+
+#else
+
+void test_writev (int fd, char const* buf1, int len1, char const* buf2, int len2)
+{
+    int len = len1 + len2; 
+    char *buf = (char *)malloc (len); 
+    memcpy (buf, buf1, len1); 
+    memcpy (buf+len1, buf2, len2); 
+
+    int ret = write (fd, buf, len); 
+	//printf ("total write %d\n", ret); 
+	if (ret == -1) { 
 		printf ("fatal error while write, errno %d\n", errno); 
 		exit(-1); 
 	}
 }
 
+#endif 
+
 int main (int argc, char *argv[])
 {
-	if (argc < 2) { 
-		printf ("Usage: sola_writev file\n"); 
+	if (argc < 3) { 
+		printf ("Usage: linu_writev file times\n"); 
 		exit (0); 
 	}
 
@@ -37,14 +59,15 @@ int main (int argc, char *argv[])
 		exit (0); 
 	}
 
+    int total = atoi (argv[2]); 
 	char buf1[100] = { 0 }; 
 	char buf2[200] = { 0 }; 
-	for (n=0; n<1048576; ++n) { 
+	for (n=0; n<total; ++n) { 
 		test_writev (fd, buf1, sizeof(buf1), buf2, sizeof(buf2)); 
 	}
 
 	close (fd); 
-	printf ("test over\n"); 
+	printf ("test over, write %d total\n", total); 
 	return 0; 
 }
 
