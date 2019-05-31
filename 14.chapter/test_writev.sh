@@ -1,6 +1,7 @@
 #! /bin/sh
 
-for ((n=0; n<10; n++))
+for ((n=1; n<11; n++))
 {
-    time ./linu_writev tmp$n $((104857*$n))
+    time ./linu_writev tmp$(($n*2)) $((1024*$n)) 1
+    time ./linu_writev tmp$(($n*2+1)) $((1024*$n)) 0
 }
