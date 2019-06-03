@@ -110,7 +110,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp nonblock filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
+	-rm -f *.o core.* *.log *~ *.swp nonblock nonblockpipe filelock flocksplit flockcover flockdead flockdeadpair filelockfd flockend flockmandatory flockoccupy sigio linu_writev readn mapfile mapcp rwcp
 	@echo "end clean"
 
 .PHONY: clean
