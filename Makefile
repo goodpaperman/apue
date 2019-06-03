@@ -13,6 +13,7 @@ all:
 	$(MAKE) -C 12.chapter 
 	$(MAKE) -C 13.chapter 
 	$(MAKE) -C 14.chapter 
+	$(MAKE) -C 15.chapter 
 
 
 clean:
@@ -30,5 +31,6 @@ clean:
 	$(MAKE) -C 12.chapter clean 
 	$(MAKE) -C 13.chapter clean 
 	$(MAKE) -C 14.chapter clean 
+	$(MAKE) -C 15.chapter clean 
 
 .PHONY: clean
