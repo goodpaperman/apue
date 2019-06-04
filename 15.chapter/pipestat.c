@@ -2,6 +2,9 @@
 #include <unistd.h> 
 #include <sys/stat.h>
 
+//#define SHUTDOWN_PARENT_READ
+//#define SHUTDOWN_PARENT_WRITE
+
 int main (int argc, char *argv[])
 {
     int ret = 0; 
@@ -26,6 +29,17 @@ int main (int argc, char *argv[])
     pid_t pid = fork (); 
     if (pid == 0) { 
         // child
+#ifdef SHUTDOWN_PARENT_READ
+        close (fd[1]); 
+        ret = read (fd[0], buf, 1); 
+        printf ("child read %c\n", buf[0]); 
+        ret = read (fd[0], buf, 1); 
+        printf ("child read %c\n", buf[0]); 
+#elif defined (SHUTDOWN_PARENT_WRITE)
+        close (fd[0]); 
+        ret = write (fd[1], "aA", 2); 
+        printf ("child write %d with a\n", ret); 
+#else
         printf ("child start\n"); 
         ret = write (fd[1], "aA", 2); 
         printf ("child write %d with a\n", ret); 
@@ -34,10 +48,23 @@ int main (int argc, char *argv[])
         sleep (2); 
         ret = read (fd[0], buf, 1); 
         printf ("child read %c\n", buf[0]); 
+#endif
     }
     else if (pid > 0) { 
         // parent
         printf ("start child %lu\n", pid); 
+#ifdef SHUTDOWN_PARENT_READ
+        close (fd[0]); 
+        ret = write (fd[1], "bB", 2); 
+        printf ("parent write %d with b\n", ret); 
+#elif defined (SHUTDOWN_PARENT_WRITE)
+        close (fd[1]); 
+        ret = read (fd[0], buf, 1); 
+        printf ("parent read %c\n", buf[0]); 
+        sleep (1); 
+        ret = read (fd[0], buf, 1); 
+        printf ("parent read %c\n", buf[0]); 
+#else
         ret = write (fd[1], "bB", 2); 
         printf ("parent write %d with b\n", ret); 
         sleep (1); 
@@ -46,6 +73,7 @@ int main (int argc, char *argv[])
         sleep (1); 
         ret = read (fd[0], buf, 1); 
         printf ("parent read %c\n", buf[0]); 
+#endif
     }
     else 
         err_sys ("fork"); 
