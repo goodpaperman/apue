@@ -19,7 +19,7 @@ int main (int argc, char *argv[])
     int fdin, fdout; 
     char buf[BUF_SIZE] = { 0 }; 
     if (argc != 3)
-        handle_error ("wrong usage"); 
+        handle_error ("usage: rwcp input output"); 
 
     fdin = open (argv[1], O_RDONLY); 
     if (fdin < 0)
