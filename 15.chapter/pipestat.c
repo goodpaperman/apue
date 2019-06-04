@@ -1,5 +1,6 @@
 #include "../apue.h" 
 #include <unistd.h> 
+#include <sys/stat.h>
 
 int main (int argc, char *argv[])
 {
@@ -10,6 +11,18 @@ int main (int argc, char *argv[])
         err_sys ("pipe"); 
 
     printf ("parent %lu start\n", getpid ()); 
+
+    struct stat fs = { 0 }; 
+    if (fstat (fd[0], &fs) < 0)
+        err_sys ("fstat"); 
+
+    printf ("fd[0] st_size: %d\n", fs.st_size); 
+    printf ("S_ISFIFO(fd[0]): %d\n", S_ISFIFO(fs.st_mode)); 
+    if (fstat (fd[1], &fs) < 0)
+        err_sys ("fstat"); 
+
+    printf ("fd[1] st_size: %d\n", fs.st_size); 
+    printf ("S_ISFIFO(fd[1]): %d\n", S_ISFIFO(fs.st_mode)); 
     pid_t pid = fork (); 
     if (pid == 0) { 
         // child
@@ -38,6 +51,6 @@ int main (int argc, char *argv[])
         err_sys ("fork"); 
 
 
-    sleep (2); 
+    sleep (20); 
     return 0; 
 }
