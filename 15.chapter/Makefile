@@ -1,4 +1,10 @@
-all: pipestat
+all: pipestat pipemulti
+
+pipemulti: pipemulti.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+pipemulti.o: pipemulti.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 pipestat: pipestat.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pipestat
+	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti
 	@echo "end clean"
 
 .PHONY: clean

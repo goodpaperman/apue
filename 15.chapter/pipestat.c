@@ -2,7 +2,7 @@
 #include <unistd.h> 
 #include <sys/stat.h>
 
-//#define SHUTDOWN_PARENT_READ
+#define SHUTDOWN_PARENT_READ
 //#define SHUTDOWN_PARENT_WRITE
 
 int main (int argc, char *argv[])
@@ -49,6 +49,7 @@ int main (int argc, char *argv[])
         ret = read (fd[0], buf, 1); 
         printf ("child read %c\n", buf[0]); 
 #endif
+        //return 0; 
     }
     else if (pid > 0) { 
         // parent
@@ -57,6 +58,11 @@ int main (int argc, char *argv[])
         close (fd[0]); 
         ret = write (fd[1], "bB", 2); 
         printf ("parent write %d with b\n", ret); 
+#  if 0
+        sleep (2); 
+        ret = write (fd[1], "bB", 2); 
+        printf ("parent write %d with b\n", ret); 
+#  endif
 #elif defined (SHUTDOWN_PARENT_WRITE)
         close (fd[1]); 
         ret = read (fd[0], buf, 1); 
