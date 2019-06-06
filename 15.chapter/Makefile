@@ -1,4 +1,10 @@
-all: pipestat pipemulti
+all: pipestat pipemulti pipeatom
+
+pipeatom: pipeatom.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+pipeatom.o: pipeatom.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 pipemulti: pipemulti.o apue.o 
 	gcc -Wall -g $^ -o $@
