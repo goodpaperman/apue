@@ -2,9 +2,19 @@
 #include <unistd.h> 
 #include <sys/stat.h>
 
-#define N 10
-#define M 10
-#define P 3
+// to test is the PIPE_BUF atom indeed ?
+//#define PIPEBUF_SLICE
+
+#ifdef PIPEBUF_SLICE
+#  define N 20
+#  define M 100
+#  define S 16
+#  define P S 
+#else 
+#  define N 10
+#  define M 10
+#  define P 3
+#endif 
 
 int main (int argc, char *argv[])
 {
@@ -15,6 +25,11 @@ int main (int argc, char *argv[])
 
     printf ("parent %lu start\n", getpid ()); 
     int pipe_buf = pathconf (".", _PC_PIPE_BUF); 
+
+#ifdef PIPEBUF_SLICE
+    pipe_buf = pipe_buf / S; 
+#endif 
+
     printf ("PIPE_BUF = %d\n", pipe_buf); 
     char *buf = (char *) malloc(pipe_buf * P); 
 
