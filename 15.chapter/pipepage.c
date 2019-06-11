@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
         close (fd[1]); 
         fclose (fp); 
 
-        printf ("child begin to redirect pipe to stdin/out/err\n"); 
+        printf ("child begin to redirect pipe to stdin, pipe fd %d\n", fd[0]); 
         if (fd[0] != STDIN_FILENO) { 
             if (dup2 (fd[0], STDIN_FILENO) != STDIN_FILENO)
                 err_sys ("dup2 error to stdin"); 
