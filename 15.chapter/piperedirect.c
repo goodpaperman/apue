@@ -96,14 +96,25 @@ int main (int argc, char *argv[])
         printf ("child begin to redirect pipe to stdin/out/err\n"); 
         // read stdin from pipe
         // write stdout/stderr to pipe
-        if (dup2 (fd_in[0], STDIN_FILENO) != STDIN_FILENO)
-            err_sys ("dup2 stdin error"); 
+        if (fd_in[0] != STDIN_FILENO) { 
+            if (dup2 (fd_in[0], STDIN_FILENO) != STDIN_FILENO)
+                err_sys ("dup2 stdin error"); 
+            close (fd_in[0]); 
+        }
 
-        if (dup2 (fd_out[1], STDOUT_FILENO) != STDOUT_FILENO)
-            err_sys ("dup2 stdout error"); 
+        if (fd_out[1] != STDOUT_FILENO) { 
+            if (dup2 (fd_out[1], STDOUT_FILENO) != STDOUT_FILENO)
+                err_sys ("dup2 stdout error"); 
 
-        if (dup2 (fd_out[1], STDERR_FILENO) != STDERR_FILENO)
-            err_sys ("dup2 stderr error"); 
+            // close fd_out[1] later
+        }
+
+        if (fd_out[1] != STDERR_FILENO) { 
+            if (dup2 (fd_out[1], STDERR_FILENO) != STDERR_FILENO)
+                err_sys ("dup2 stderr error"); 
+
+            close (fd_out[1]); 
+        }
 
         printf ("redirect OK\n"); 
         while (gets (line)) { 
