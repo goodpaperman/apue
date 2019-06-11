@@ -1,4 +1,10 @@
-all: pipestat pipemulti pipeatom piperedirect
+all: pipestat pipemulti pipeatom piperedirect pipepage
+
+pipepage: pipepage.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+pipepage.o: pipepage.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 piperedirect: piperedirect.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -32,7 +38,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti piperedirect
+	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti piperedirect pipepage
 	@echo "end clean"
 
 .PHONY: clean
