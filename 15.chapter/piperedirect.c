@@ -31,9 +31,9 @@ int main (int argc, char *argv[])
         
 	    struct pollfd pfd[2]; 
 	    pfd[0].fd = STDIN_FILENO; 
-	    pfd[0].events = POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI; 
+	    pfd[0].events = POLLIN;
 	    pfd[1].fd = fd_out[0]; 
-	    pfd[1].events = POLLIN; 
+	    pfd[1].events = POLLIN | POLLHUP;   
         while (1) { 
 		    ret = poll (pfd, 2, -1); 
 		    if (ret == -1) { 
@@ -84,7 +84,15 @@ int main (int argc, char *argv[])
                         printf ("write end\n"); 
                         break; 
                     }
+                    //else { 
+                    //    printf ("write %d\n", ret); 
+                    //}
                 }
+            }
+
+            if (pfd[1].revents & POLLHUP) {
+                printf ("poll pipe hup\n"); 
+                break; 
             }
         }
     } else { 
@@ -118,16 +126,20 @@ int main (int argc, char *argv[])
 
         printf ("redirect OK\n"); 
         while (gets (line)) { 
-            if (strncmp (line, "exit", 4) == 0)
-                err_sys ("got exit"); 
+            if (strncmp (line, "exit", 4) == 0) { 
+                //err_sys ("got exit");  // will write pipe back
+                break; 
+            }
 
             puts (line); 
         }
 #else
         //execl ("/bin/ls", "ls", NULL); 
         while ((ret = read (fd_in[0], line, sizeof(line))) >= 0) { 
-            if (strncmp (line, "exit", 4) == 0)
-                err_sys ("got exit"); 
+            if (strncmp (line, "exit", 4) == 0) { 
+                //err_sys ("got exit");  // will write pipe back
+                break; 
+            }
 
             write (fd_out[1], line, ret); 
         }
