@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
 	    pfd[0].fd = STDIN_FILENO; 
 	    pfd[0].events = POLLIN;
 	    pfd[1].fd = fd_out[0]; 
-	    pfd[1].events = POLLIN | POLLHUP;   
+	    pfd[1].events = POLLIN; //| POLLHUP;   
         while (1) { 
 		    ret = poll (pfd, 2, -1); 
 		    if (ret == -1) { 
