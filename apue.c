@@ -846,43 +846,47 @@ void SYNC_WAIT (void)
 {
     int n = 0, m = 0; 
     struct pollfd fds[2] = {{ 0 }}; 
-    if (pp[0] != -1) {
+    // if fd==-1, just be a place taker !
+    //if (pp[0] != -1) 
+    {
         fds[n].fd = pp[0]; 
         fds[n].events = POLLIN; 
         n++; 
     }
 
-    if (pc[0] != -1) { 
+    //if (pc[0] != -1) 
+    { 
         fds[n].fd = pc[0]; 
         fds[n].events = POLLIN; 
         n++; 
     }
+
     int ret = poll (fds, n, -1); 
     if (ret == -1)
         err_sys ("poll error"); 
     else if (ret > 0) { 
         char c = 0; 
+        //printf ("poll %d from %d\n", ret, n); 
         for (m=0; m<n; ++m) {
+            //printf ("poll fd %d event 0x%08x\n", fds[m].fd, fds[m].revents); 
             if (fds[m].revents & POLLIN) { 
                 if (fds[m].fd == pp[0]) { 
                     if (read (pp[0], &c, 1) != 1)
                         err_sys ("read parent pipe error"); 
                     if (c != 'p')
                         err_quit ("wait parent pipe but got incorrect data %c", c); 
-
-                    //printf ("wait parent pipe\n"); 
                 }
                 else {
                     if (read (pc[0], &c, 1) != 1) 
                         err_sys ("read child pipe error"); 
                     if (c != 'c') 
                         err_quit ("wait child pipe but got incorrect data %c", c); 
-
-                    //printf ("wait child pipe\n"); 
                 }
             }
         }
     }
+    else 
+        printf ("poll return 0\n"); 
 }
 
 #else // use signal
