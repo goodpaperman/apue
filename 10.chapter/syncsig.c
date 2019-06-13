@@ -22,17 +22,17 @@ int read_increase_write ()
 #if USE_FSTREAM==1
             ret = fread (buf, 1, sizeof(buf), fp); 
             err = errno; 
-            printf ("read %d, errno %d\n", ret, err); 
+            //printf ("read %d, errno %d\n", ret, err); 
         } while (ret == -1 && err == EINTR); 
 #elif USE_FSTREAM==2
             ptr = fgets (buf, sizeof(buf), fp); 
             err = errno; 
-            printf ("read %s, errno %d\n", ptr, err); 
+            //printf ("read %s, errno %d\n", ptr, err); 
         } while (ptr == NULL && err == EINTR); 
 #else 
             ret = read (fd, buf, sizeof(buf)); 
             err = errno; 
-            printf ("read %d, errno %d\n", ret, err); 
+            //printf ("read %d, errno %d\n", ret, err); 
         } while (ret == -1 && err == EINTR); 
 #endif
 
@@ -62,7 +62,7 @@ int read_increase_write ()
             ret = write (fd, buf, strlen(buf)+1); 
 #endif
             err = errno; 
-            printf ("write %d, errno %d\n", ret, err); 
+            //printf ("write %d, errno %d\n", ret, err); 
         } while (ret == -1 && err == EINTR); 
 
         printf ("[%d] read %d, write %d\n", getpid (), n-1, n); 
@@ -105,7 +105,7 @@ int main (void)
         {
             ret = read_increase_write (); 
             SYNC_TELL (getppid (), 0); 
-            printf ("notify parent, prepare to wait\n"); 
+            printf ("notify parent\n"); 
             if (ret < 0 || ret >= 10)
                 break; 
 
@@ -117,12 +117,12 @@ int main (void)
 
     while (ret < 10 && ret >= 0)
     {
-        printf ("prepare to wait child\n"); 
+        //printf ("prepare to wait child\n"); 
         SYNC_WAIT(); 
-        printf ("wait child ready\n"); 
+        printf ("wait child\n"); 
         ret = read_increase_write (); 
         SYNC_TELL (cid, 1); 
-        printf ("notify chld\n"); 
+        printf ("notify child\n"); 
     }
 
     pid_t wid = 0; 

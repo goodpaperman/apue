@@ -12,6 +12,7 @@
 #endif
 #include <syslog.h>
 #include <fcntl.h> 
+#include <poll.h>
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -810,6 +811,82 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len)
   return lock.l_pid; 
 }
 
+#ifdef USE_PIPE_SYNC
+
+// pp is the pipe that parent notify(write) child wait(read)
+// pc is the pipe that child notify(write) parent wait(read)
+static int pp[2], pc[2]; 
+
+void SYNC_INIT (void)
+{
+    if (pipe (pp) < 0 || pipe(pc) < 0)
+        err_sys ("pipe error"); 
+}
+
+void SYNC_TELL (pid_t pid, int child)
+{
+    // close unused read end to avoid poll receive events
+    // note, we can NOT do it in SYNC_INIT, 
+    // as at that moment, we have not fork yet !
+    if (child) { 
+        close (pp[0]); 
+        close (pc[1]); 
+        pp[0] = pc[1] = -1; 
+    } else { 
+        close (pc[0]); 
+        close (pp[1]); 
+        pc[0] = pp[1] = -1; 
+    }
+
+    if (write (child ? pp[1] : pc[1], child ? "p" : "c", 1) != 1)
+        err_sys ("write error"); 
+}
+
+void SYNC_WAIT (void)
+{
+    int n = 0, m = 0; 
+    struct pollfd fds[2] = {{ 0 }}; 
+    if (pp[0] != -1) {
+        fds[n].fd = pp[0]; 
+        fds[n].events = POLLIN; 
+        n++; 
+    }
+
+    if (pc[0] != -1) { 
+        fds[n].fd = pc[0]; 
+        fds[n].events = POLLIN; 
+        n++; 
+    }
+    int ret = poll (fds, n, -1); 
+    if (ret == -1)
+        err_sys ("poll error"); 
+    else if (ret > 0) { 
+        char c = 0; 
+        for (m=0; m<n; ++m) {
+            if (fds[m].revents & POLLIN) { 
+                if (fds[m].fd == pp[0]) { 
+                    if (read (pp[0], &c, 1) != 1)
+                        err_sys ("read parent pipe error"); 
+                    if (c != 'p')
+                        err_quit ("wait parent pipe but got incorrect data %c", c); 
+
+                    //printf ("wait parent pipe\n"); 
+                }
+                else {
+                    if (read (pc[0], &c, 1) != 1) 
+                        err_sys ("read child pipe error"); 
+                    if (c != 'c') 
+                        err_quit ("wait child pipe but got incorrect data %c", c); 
+
+                    //printf ("wait child pipe\n"); 
+                }
+            }
+        }
+    }
+}
+
+#else // use signal
+
 static volatile sig_atomic_t sigflag; 
 static sigset_t newmask, oldmask, zeromask; 
 
@@ -849,6 +926,8 @@ void SYNC_WAIT (void)
     if (sigprocmask (SIG_SETMASK, &oldmask, NULL) < 0)
         err_sys ("SIG_SETMASK error"); 
 }
+
+#endif
 
 ssize_t readn (int fd, void *ptr, size_t n)
 {
