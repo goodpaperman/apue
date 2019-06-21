@@ -28,6 +28,11 @@ int main (int argc, char *argv[])
     if (ferror (fpin))
         err_sys ("fgets error"); 
 
+#if 0
+    // to see pipe at parent
+    sleep (60); 
+#endif 
+
     int ret = pclose (fpout); 
     if (ret == -1)
         err_sys ("pclose error"); 
