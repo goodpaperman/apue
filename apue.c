@@ -981,6 +981,15 @@ ssize_t writen (int fd, const void *ptr, size_t n)
 }
 
 static pid_t *apue_popen_cid = NULL; 
+static void dump_popen_cids (char const* prompt, int size)
+{
+    int i; 
+    printf ("%s \n", prompt); 
+    for (i=0; i<size; ++ i)
+        if (apue_popen_cid[i] > 0)
+            printf ("%d %d\n", i, apue_popen_cid[i]); 
+    printf ("\n"); 
+}
 
 FILE* apue_popen (char const* cmdstr, char const* type)
 {
@@ -1021,10 +1030,16 @@ FILE* apue_popen (char const* cmdstr, char const* type)
         }
 
         int i; 
+#if 0
+        sleep (1); 
+#endif 
+        dump_popen_cids ("before clear unused pipe handle in child", maxfd); 
+        // close pipes prevous apue_popen uses
         for (i=0; i<maxfd; ++ i) 
             if (apue_popen_cid [i] > 0)
                 close (i); 
 
+        dump_popen_cids ("after clear unused pipe handle in child", maxfd); 
         execl ("/bin/sh", "sh", "-c", cmdstr, (char *)0); 
         _exit (127); 
     }
@@ -1042,7 +1057,10 @@ FILE* apue_popen (char const* cmdstr, char const* type)
     if (fp == NULL)
         return NULL; 
 
+    // set global variable after fork, 
+    // child can NOT see !!
     apue_popen_cid [fileno(fp)] = pid; 
+    dump_popen_cids ("after set pid in parent", maxfd); 
     return fp; 
 }
 
@@ -1060,7 +1078,12 @@ int apue_pclose (FILE *fp)
         return -1; 
     }
 
+#if 0
+    sleep (2); 
+#endif
+
     apue_popen_cid [fd] = 0; 
+    dump_popen_cids ("after clear pid in parent", open_max ()); 
     // note: must close pipe before wait child process, 
     // this is a kind of signal that tell child exit...
     if (fclose (fp) == EOF)
