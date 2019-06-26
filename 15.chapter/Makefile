@@ -1,7 +1,7 @@
 all: pipestat pipemulti pipeatom pipepoll pipepage ppage
 
 ppage: ppage.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 ppage.o: ppage.c ../apue.h
 	gcc -Wall -g -c $< -o $@
@@ -40,7 +40,7 @@ log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@
 
 apue.o: ../apue.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -D__USE_BSD
+	gcc -Wall -g -c $< -o $@ -D__USE_BSD -DUSE_PTHREAD
 
 clean: 
 	@echo "start clean..."

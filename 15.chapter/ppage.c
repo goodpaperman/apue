@@ -3,6 +3,13 @@
 #include <sys/wait.h> 
 
 #define PAGER "${PAGER:-more}"
+#if 0
+#  define POPEN popen
+#  define PCLOSE pclose
+#else 
+#  define POPEN apue_popen
+#  define PCLOSE apue_pclose
+#endif 
 
 int main (int argc, char *argv[])
 {
@@ -16,7 +23,7 @@ int main (int argc, char *argv[])
     if (fpin == NULL)
         err_sys ("can't open %s", argv[1]); 
 
-    fpout = popen (PAGER, "w"); 
+    fpout = POPEN (PAGER, "w"); 
     if (fpout == NULL)
         err_sys ("popen %s error", PAGER); 
 
@@ -33,7 +40,7 @@ int main (int argc, char *argv[])
     sleep (60); 
 #endif 
 
-    int ret = pclose (fpout); 
+    int ret = PCLOSE (fpout); 
     if (ret == -1)
         err_sys ("pclose error"); 
     else 

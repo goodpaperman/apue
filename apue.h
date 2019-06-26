@@ -99,4 +99,7 @@ void SYNC_WAIT (void);
 ssize_t readn (int fd, void *buf, size_t len); 
 ssize_t writen (int fd, void const* buf, size_t len); 
 
+FILE* apue_popen (char const* cmdstr, char const* type); 
+int apue_pclose (FILE *fp); 
+
 #endif 

@@ -979,3 +979,98 @@ ssize_t writen (int fd, const void *ptr, size_t n)
 
     return n - nleft; 
 }
+
+static pid_t *apue_popen_cid = NULL; 
+
+FILE* apue_popen (char const* cmdstr, char const* type)
+{
+    if ((type[0] != 'r' && type[0] != 'w') || type[1] != 0) { 
+        errno = EINVAL; 
+        return NULL; 
+    }
+
+    int maxfd = 0; 
+    if (apue_popen_cid == NULL) { 
+        maxfd = open_max (); 
+        apue_popen_cid = calloc (maxfd, sizeof (pid_t)); 
+        if (apue_popen_cid == NULL)
+            return NULL; 
+    }
+
+    int pfd[2] = { 0 }; 
+    if (pipe (pfd) < 0)
+        return NULL; 
+
+    pid_t pid = fork (); 
+    if (pid < 0) 
+        return NULL; 
+    else if (pid == 0) { 
+        // child process
+        if (*type == 'r') { 
+            close (pfd[0]); 
+            if (pfd[1] != STDOUT_FILENO) { 
+                dup2 (pfd[1], STDOUT_FILENO); 
+                close (pfd[1]); 
+            }
+        } else { 
+            close (pfd[1]); 
+            if (pfd[0] != STDIN_FILENO) { 
+                dup2 (pfd[0], STDIN_FILENO); 
+                close (pfd[0]); 
+            }
+        }
+
+        int i; 
+        for (i=0; i<maxfd; ++ i) 
+            if (apue_popen_cid [i] > 0)
+                close (i); 
+
+        execl ("/bin/sh", "sh", "-c", cmdstr, (char *)0); 
+        _exit (127); 
+    }
+
+    // parent process
+    FILE *fp = NULL; 
+    if (*type == 'r') { 
+        close (pfd[1]); 
+        fp = fdopen (pfd[0], type); 
+    } else { 
+        close (pfd[0]); 
+        fp = fdopen (pfd[1], type); 
+    }
+
+    if (fp == NULL)
+        return NULL; 
+
+    apue_popen_cid [fileno(fp)] = pid; 
+    return fp; 
+}
+
+int apue_pclose (FILE *fp) 
+{
+    if (apue_popen_cid == NULL) { 
+        errno = EINVAL; 
+        return -1; 
+    }
+
+    int fd = fileno (fp); 
+    pid_t pid = apue_popen_cid [fd]; 
+    if (pid == 0) { 
+        errno = EINVAL; 
+        return -1; 
+    }
+
+    apue_popen_cid [fd] = 0; 
+    // note: must close pipe before wait child process, 
+    // this is a kind of signal that tell child exit...
+    if (fclose (fp) == EOF)
+        return -1; 
+
+    int stat = 0; 
+    while (waitpid (pid, &stat, 0) < 0)
+        if (errno != EINTR)
+            return -1; 
+
+    return stat; 
+
+}
