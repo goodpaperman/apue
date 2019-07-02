@@ -1,4 +1,10 @@
-all: pipestat pipemulti pipeatom pipepoll pipepage ppage
+all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti
+
+pmulti: pmulti.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+pmulti.o: pmulti.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 ppage: ppage.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread

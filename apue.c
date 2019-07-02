@@ -984,11 +984,11 @@ static pid_t *apue_popen_cid = NULL;
 static void dump_popen_cids (char const* prompt, int size)
 {
     int i; 
-    printf ("%s \n", prompt); 
+    fprintf (stderr, "%s (%d)\n", prompt, size); 
     for (i=0; i<size; ++ i)
         if (apue_popen_cid[i] > 0)
-            printf ("%d %d\n", i, apue_popen_cid[i]); 
-    printf ("\n"); 
+            fprintf (stderr, "%d %d\n", i, apue_popen_cid[i]); 
+    //fprintf (stderr, "\n"); 
 }
 
 FILE* apue_popen (char const* cmdstr, char const* type)
@@ -998,9 +998,8 @@ FILE* apue_popen (char const* cmdstr, char const* type)
         return NULL; 
     }
 
-    int maxfd = 0; 
+    int maxfd = open_max (); 
     if (apue_popen_cid == NULL) { 
-        maxfd = open_max (); 
         apue_popen_cid = calloc (maxfd, sizeof (pid_t)); 
         if (apue_popen_cid == NULL)
             return NULL; 
@@ -1035,9 +1034,12 @@ FILE* apue_popen (char const* cmdstr, char const* type)
 #endif 
         dump_popen_cids ("before clear unused pipe handle in child", maxfd); 
         // close pipes prevous apue_popen uses
-        for (i=0; i<maxfd; ++ i) 
-            if (apue_popen_cid [i] > 0)
+        for (i=0; i<maxfd; ++ i) {
+            if (apue_popen_cid [i] > 0) { 
                 close (i); 
+                apue_popen_cid[i] = 0; 
+            }
+        }
 
         dump_popen_cids ("after clear unused pipe handle in child", maxfd); 
         execl ("/bin/sh", "sh", "-c", cmdstr, (char *)0); 
