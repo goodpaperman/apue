@@ -1,4 +1,16 @@
-all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti
+all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower
+
+ptolower: ptolower.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+ptolower.o: ptolower.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+tolower: tolower.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+tolower.o: tolower.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 pmulti: pmulti.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread
@@ -50,7 +62,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage
+	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower
 	@echo "end clean"
 
 .PHONY: clean
