@@ -2,8 +2,8 @@
 #include <sys/wait.h> 
 
 #define CLD_NUM 2
-#define USE_SIG 2
-#define USE_SIGACT 
+#define USE_SIG 1
+//#define USE_SIGACT 
 
 #ifdef USE_SIGACT
 static void sig_cld (int signo, siginfo_t *info, void* param); 
@@ -54,7 +54,7 @@ int main ()
             perror ("fork error"); 
         else if (pid == 0) 
         {
-#if 1
+#if 0
             sleep (3); 
 #else 
             sleep (1); 
@@ -164,7 +164,7 @@ static void sig_cld (int signo)
     pid_t pid = 0; 
     int status = 0; 
     printf ("SIGCLD received\n"); 
-#if 0
+#if 1
     if (signal (SIGCLD, sig_cld) == SIG_ERR)
         perror ("signal error"); 
 #endif
