@@ -2,25 +2,50 @@
 #include <sys/wait.h> 
 
 #define CLD_NUM 2
-#define USE_SIG 4
+#define USE_SIG 2
+#define USE_SIGACT 
 
+#ifdef USE_SIGACT
+static void sig_cld (int signo, siginfo_t *info, void* param); 
+#else
 static void sig_cld (int); 
+#endif
 
 int main ()
 {
     pid_t pid = 0; 
 #if USE_SIG == 1
+#  ifdef USE_SIGACT
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_sigaction = sig_cld; 
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    int ret = sigaction (SIGCHLD, &act, 0); 
+    if (ret == -1)
+        perror ("sigaction error"); 
+#  else    
     __sighandler_t ret = signal (SIGCLD, sig_cld);
     if (ret == SIG_ERR)
         perror ("signal error"); 
     else 
         printf ("old handler %x\n", ret); 
+#  endif
 #elif USE_SIG == 2
+#  ifdef USE_SIGACT
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_sigaction = SIG_IGN; 
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    int ret = sigaction (SIGCHLD, &act, 0); 
+    if (ret == -1)
+        perror ("sigaction error"); 
+#  else
     __sighandler_t ret = signal (SIGCLD, SIG_IGN);
     if (ret == SIG_ERR)
         perror ("signal error"); 
     else 
         printf ("old handler %x\n", ret); 
+#  endif
 #endif
 
     for (int i=0; i<CLD_NUM; ++ i)
@@ -29,7 +54,13 @@ int main ()
             perror ("fork error"); 
         else if (pid == 0) 
         {
+#if 1
             sleep (3); 
+#else 
+            sleep (1); 
+            printf ("send me to background\n"); 
+            kill(getpid (), SIGSTOP); 
+#endif
             printf ("child %u exit\n", getpid ()); 
             _exit (0); 
         }
@@ -44,12 +75,22 @@ int main ()
 
     printf ("pid = %d\n", pid); 
 #elif USE_SIG == 3
-    sleep (3); 
+    sleep (4); 
+#  ifdef USE_SIGACT
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_sigaction = sig_cld; 
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    int ret = sigaction (SIGCHLD, &act, 0); 
+    if (ret == -1)
+        perror ("sigaction error"); 
+#  else
     __sighandler_t ret = signal (SIGCLD, sig_cld);
     if (ret == SIG_ERR)
         perror ("signal error"); 
     else 
         printf ("old handler %x\n", ret); 
+#  endif
 
     int status = 0; 
     for (int i=0; i<CLD_NUM; ++ i)
@@ -61,11 +102,21 @@ int main ()
     }
 #elif USE_SIG == 4
     sleep (4); 
+#  ifdef USE_SIGACT
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_sigaction = SIG_IGN; 
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    int ret = sigaction (SIGCHLD, &act, 0); 
+    if (ret == -1)
+        perror ("sigaction error"); 
+#  else
     __sighandler_t ret = signal (SIGCLD, SIG_IGN);
     if (ret == SIG_ERR)
         perror ("signal error"); 
     else 
         printf ("old handler %x\n", ret); 
+#  endif
 
     int status = 0; 
     for (int i=0; i<CLD_NUM; ++ i)
@@ -86,14 +137,40 @@ int main ()
     return 0; 
 }
 
+#ifdef USE_SIGACT
+static void sig_cld (int signo, siginfo_t *info, void* param)
+{
+    int status = 0; 
+    if (signo == SIGCHLD)
+    {
+        if (info->si_code == CLD_EXITED ||
+                info->si_code == CLD_KILLED || 
+                info->si_code == CLD_DUMPED)
+        {
+            //printf ("child %d die\n", info->si_pid); 
+            if (waitpid (info->si_pid, &status, 0) < 0)
+                perror ("wait(in signal) error"); 
+            printf ("pid (wait in signal) = %d\n", info->si_pid); 
+        }
+        else 
+        {
+            printf ("unknown signal code %d\n", info->si_code); 
+        }
+    }
+}
+#else
 static void sig_cld (int signo)
 {
     pid_t pid = 0; 
     int status = 0; 
     printf ("SIGCLD received\n"); 
+#if 0
     if (signal (SIGCLD, sig_cld) == SIG_ERR)
         perror ("signal error"); 
+#endif
+
     if ((pid = wait (&status)) < 0)
-        perror ("wait error"); 
-    printf ("pid = %d\n", pid); 
+        perror ("wait(in signal) error"); 
+    printf ("pid (wait in signal) = %d\n", pid); 
 }
+#endif 
