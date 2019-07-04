@@ -3,7 +3,11 @@
 
 #define CLD_NUM 2
 #define USE_SIG 1
-//#define USE_SIGACT 
+#define USE_SIGACT 
+
+#ifdef USE_SIGACT
+#  define AUTO_WAIT
+#endif
 
 #ifdef USE_SIGACT
 static void sig_cld (int signo, siginfo_t *info, void* param); 
@@ -20,6 +24,9 @@ int main ()
     sigemptyset (&act.sa_mask); 
     act.sa_sigaction = sig_cld; 
     act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+#    ifdef AUTO_WAIT
+    act.sa_flags |= SA_NOCLDWAIT; 
+#    endif
     int ret = sigaction (SIGCHLD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
@@ -36,6 +43,9 @@ int main ()
     sigemptyset (&act.sa_mask); 
     act.sa_sigaction = SIG_IGN; 
     act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+#    ifdef AUTO_WAIT
+    act.sa_flags |= SA_NOCLDWAIT; 
+#    endif
     int ret = sigaction (SIGCHLD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
@@ -54,7 +64,7 @@ int main ()
             perror ("fork error"); 
         else if (pid == 0) 
         {
-#if 0
+#if 1
             sleep (3); 
 #else 
             sleep (1); 
@@ -80,7 +90,10 @@ int main ()
     struct sigaction act; 
     sigemptyset (&act.sa_mask); 
     act.sa_sigaction = sig_cld; 
-    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP;
+#    ifdef AUTO_WAIT
+    act.sa_flags |= SA_NOCLDWAIT; 
+#    endif
     int ret = sigaction (SIGCHLD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
@@ -107,6 +120,9 @@ int main ()
     sigemptyset (&act.sa_mask); 
     act.sa_sigaction = SIG_IGN; 
     act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+#    ifdef AUTO_WAIT
+    act.sa_flags |= SA_NOCLDWAIT; 
+#    endif
     int ret = sigaction (SIGCHLD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
@@ -133,7 +149,12 @@ int main ()
         printf ("wake up by signal %d\n", i); 
     }
 #endif
+
     printf ("parent exit\n"); 
+#ifdef AUTO_WAIT
+    // pause to see if any defunct child leave...
+    sleep (10); 
+#endif
     return 0; 
 }
 
@@ -147,10 +168,13 @@ static void sig_cld (int signo, siginfo_t *info, void* param)
                 info->si_code == CLD_KILLED || 
                 info->si_code == CLD_DUMPED)
         {
-            //printf ("child %d die\n", info->si_pid); 
+#ifdef AUTO_WAIT
+            printf ("pid (auto wait in signal) = %d\n", info->si_pid); 
+#else 
             if (waitpid (info->si_pid, &status, 0) < 0)
                 perror ("wait(in signal) error"); 
             printf ("pid (wait in signal) = %d\n", info->si_pid); 
+#endif
         }
         else 
         {
