@@ -3,10 +3,20 @@
 
 #define CLD_NUM 2
 #define USE_SIG 1
-#define USE_SIGACT 
+//#define USE_SIGACT 
+
+#if 0
+#  define MY_SIG_CHILD SIGCLD
+#else
+#  define MY_SIG_CHILD SIGCHLD
+#endif
 
 #ifdef USE_SIGACT
 #  define AUTO_WAIT
+#endif
+
+#ifndef AUTO_WAIT
+#  define TEST_COMPETITION
 #endif
 
 #ifdef USE_SIGACT
@@ -15,6 +25,19 @@ static void sig_cld (int signo, siginfo_t *info, void* param);
 static void sig_cld (int); 
 #endif
 
+#ifdef TEST_COMPETITION
+void pid_remove (pid_t pid)
+{
+    printf ("remove pid %u\n", pid); 
+}
+
+void pid_add (pid_t pid)
+{
+    printf ("add pid %u\n", pid); 
+}
+#endif
+
+
 int main ()
 {
     pid_t pid = 0; 
@@ -22,12 +45,16 @@ int main ()
 #  ifdef USE_SIGACT
     struct sigaction act; 
     sigemptyset (&act.sa_mask); 
+#    ifdef AUTO_WAIT
+    act.sa_sigaction = SIG_DFL; 
+#    else 
     act.sa_sigaction = sig_cld; 
+#    endif
     act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
 #    ifdef AUTO_WAIT
     act.sa_flags |= SA_NOCLDWAIT; 
 #    endif
-    int ret = sigaction (SIGCHLD, &act, 0); 
+    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
 #  else    
@@ -46,7 +73,7 @@ int main ()
 #    ifdef AUTO_WAIT
     act.sa_flags |= SA_NOCLDWAIT; 
 #    endif
-    int ret = sigaction (SIGCHLD, &act, 0); 
+    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
 #  else
@@ -64,21 +91,41 @@ int main ()
             perror ("fork error"); 
         else if (pid == 0) 
         {
-#if 1
+#ifdef TEST_COMPETITION
+            ;
+#else
+#  if 1
             sleep (3); 
-#else 
+#  else 
             sleep (1); 
             printf ("send me to background\n"); 
             kill(getpid (), SIGSTOP); 
+#  endif
 #endif
             printf ("child %u exit\n", getpid ()); 
             _exit (0); 
         }
 
         sleep (1); 
+#ifdef TEST_COMPETITION
+        pid_add (pid); 
+#endif
     }
 
-#if USE_SIG == 2
+#if USE_SIG == 1
+#  ifdef AUTO_WAIT
+    // pause to see if any defunct child leave...
+    sleep (10); 
+#  elif defined(TEST_COMPETITION)
+    sleep (1); 
+#  else
+    for (int i=0; i<CLD_NUM; ++ i)
+    {
+        pause (); 
+        printf ("wake up by signal %d\n", i); 
+    }
+#  endif
+#elif USE_SIG == 2
     int status = 0; 
     if ((pid = wait (&status)) < 0)
         perror ("wait error"); 
@@ -89,12 +136,16 @@ int main ()
 #  ifdef USE_SIGACT
     struct sigaction act; 
     sigemptyset (&act.sa_mask); 
+#    ifdef AUTO_WAIT
+    act.sa_sigaction = SIG_DFL; 
+#    else 
     act.sa_sigaction = sig_cld; 
+#    endif
     act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP;
 #    ifdef AUTO_WAIT
     act.sa_flags |= SA_NOCLDWAIT; 
 #    endif
-    int ret = sigaction (SIGCHLD, &act, 0); 
+    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
 #  else
@@ -123,7 +174,7 @@ int main ()
 #    ifdef AUTO_WAIT
     act.sa_flags |= SA_NOCLDWAIT; 
 #    endif
-    int ret = sigaction (SIGCHLD, &act, 0); 
+    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
     if (ret == -1)
         perror ("sigaction error"); 
 #  else
@@ -142,19 +193,9 @@ int main ()
 
         printf ("pid = %d\n", pid); 
     }
-#else
-    for (int i=0; i<CLD_NUM; ++ i)
-    {
-        pause (); 
-        printf ("wake up by signal %d\n", i); 
-    }
 #endif
 
     printf ("parent exit\n"); 
-#ifdef AUTO_WAIT
-    // pause to see if any defunct child leave...
-    sleep (10); 
-#endif
     return 0; 
 }
 
@@ -162,7 +203,7 @@ int main ()
 static void sig_cld (int signo, siginfo_t *info, void* param)
 {
     int status = 0; 
-    if (signo == SIGCHLD)
+    if (signo == MY_SIG_CHILD)
     {
         if (info->si_code == CLD_EXITED ||
                 info->si_code == CLD_KILLED || 
@@ -174,6 +215,10 @@ static void sig_cld (int signo, siginfo_t *info, void* param)
             if (waitpid (info->si_pid, &status, 0) < 0)
                 perror ("wait(in signal) error"); 
             printf ("pid (wait in signal) = %d\n", info->si_pid); 
+#endif
+
+#ifdef TEST_COMPETITION
+            pid_remove (info->si_pid); 
 #endif
         }
         else 
@@ -196,5 +241,9 @@ static void sig_cld (int signo)
     if ((pid = wait (&status)) < 0)
         perror ("wait(in signal) error"); 
     printf ("pid (wait in signal) = %d\n", pid); 
+
+#ifdef TEST_COMPETITION
+    pid_remove (pid); 
+#endif
 }
 #endif 
