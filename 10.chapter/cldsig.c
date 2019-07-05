@@ -12,11 +12,11 @@
 #endif
 
 #ifdef USE_SIGACT
-#  define AUTO_WAIT
+//#  define AUTO_WAIT
 #endif
 
 #ifndef AUTO_WAIT
-#  define TEST_COMPETITION
+//#  define TEST_COMPETITION
 #endif
 
 #ifdef USE_SIGACT
@@ -85,6 +85,13 @@ int main ()
 #  endif
 #endif
 
+#ifdef TEST_COMPETITION
+    sigset_t mask; 
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+#endif
+
     for (int i=0; i<CLD_NUM; ++ i)
     {
         if ((pid = fork ()) < 0)
@@ -92,11 +99,12 @@ int main ()
         else if (pid == 0) 
         {
 #ifdef TEST_COMPETITION
-            ;
+            sigprocmask(SIG_UNBLOCK, &mask, NULL);
 #else
 #  if 1
             sleep (3); 
 #  else 
+            // to test stop
             sleep (1); 
             printf ("send me to background\n"); 
             kill(getpid (), SIGSTOP); 
@@ -109,6 +117,7 @@ int main ()
         sleep (1); 
 #ifdef TEST_COMPETITION
         pid_add (pid); 
+        sigprocmask(SIG_UNBLOCK, &mask, NULL);
 #endif
     }
 
