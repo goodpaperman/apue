@@ -3,7 +3,7 @@
 
 #define CLD_NUM 2
 #define USE_SIG 1
-//#define USE_SIGACT 
+#define USE_SIGACT 
 
 #if 0
 #  define MY_SIG_CHILD SIGCLD
@@ -16,7 +16,7 @@
 #endif
 
 #ifndef AUTO_WAIT
-//#  define TEST_COMPETITION
+#  define TEST_COMPETITION
 #endif
 
 #ifdef USE_SIGACT
@@ -37,63 +37,51 @@ void pid_add (pid_t pid)
 }
 #endif
 
+void install_handler (__sighandler_t h)
+{
+#ifdef USE_SIGACT
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+#  ifdef AUTO_WAIT
+    act.sa_sigaction = SIG_DFL; 
+#  else 
+    act.sa_sigaction = h; 
+#  endif
+    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
+#  ifdef AUTO_WAIT
+    act.sa_flags |= SA_NOCLDWAIT; 
+#  endif
+    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
+    if (ret == -1)
+        perror ("sigaction error"); 
+#else    
+    __sighandler_t ret = signal (SIGCLD, h);
+    if (ret == SIG_ERR)
+        perror ("signal error"); 
+    else 
+        printf ("old handler %x\n", ret); 
+#endif
+}
+
 
 int main ()
 {
     pid_t pid = 0; 
 #if USE_SIG == 1
-#  ifdef USE_SIGACT
-    struct sigaction act; 
-    sigemptyset (&act.sa_mask); 
-#    ifdef AUTO_WAIT
-    act.sa_sigaction = SIG_DFL; 
-#    else 
-    act.sa_sigaction = sig_cld; 
-#    endif
-    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
-#    ifdef AUTO_WAIT
-    act.sa_flags |= SA_NOCLDWAIT; 
-#    endif
-    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
-    if (ret == -1)
-        perror ("sigaction error"); 
-#  else    
-    __sighandler_t ret = signal (SIGCLD, sig_cld);
-    if (ret == SIG_ERR)
-        perror ("signal error"); 
-    else 
-        printf ("old handler %x\n", ret); 
-#  endif
+    install_handler (sig_cld); 
 #elif USE_SIG == 2
-#  ifdef USE_SIGACT
-    struct sigaction act; 
-    sigemptyset (&act.sa_mask); 
-    act.sa_sigaction = SIG_IGN; 
-    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
-#    ifdef AUTO_WAIT
-    act.sa_flags |= SA_NOCLDWAIT; 
-#    endif
-    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
-    if (ret == -1)
-        perror ("sigaction error"); 
-#  else
-    __sighandler_t ret = signal (SIGCLD, SIG_IGN);
-    if (ret == SIG_ERR)
-        perror ("signal error"); 
-    else 
-        printf ("old handler %x\n", ret); 
-#  endif
-#endif
-
-#ifdef TEST_COMPETITION
-    sigset_t mask; 
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGCHLD);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
+    install_handler (SIG_IGN); 
 #endif
 
     for (int i=0; i<CLD_NUM; ++ i)
     {
+#ifdef TEST_COMPETITION
+        sigset_t mask; 
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGCHLD);
+        sigprocmask(SIG_BLOCK, &mask, NULL);
+#endif
+
         if ((pid = fork ()) < 0)
             perror ("fork error"); 
         else if (pid == 0) 
@@ -142,28 +130,7 @@ int main ()
     printf ("pid = %d\n", pid); 
 #elif USE_SIG == 3
     sleep (4); 
-#  ifdef USE_SIGACT
-    struct sigaction act; 
-    sigemptyset (&act.sa_mask); 
-#    ifdef AUTO_WAIT
-    act.sa_sigaction = SIG_DFL; 
-#    else 
-    act.sa_sigaction = sig_cld; 
-#    endif
-    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP;
-#    ifdef AUTO_WAIT
-    act.sa_flags |= SA_NOCLDWAIT; 
-#    endif
-    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
-    if (ret == -1)
-        perror ("sigaction error"); 
-#  else
-    __sighandler_t ret = signal (SIGCLD, sig_cld);
-    if (ret == SIG_ERR)
-        perror ("signal error"); 
-    else 
-        printf ("old handler %x\n", ret); 
-#  endif
+    install_handler (sig_cld); 
 
     int status = 0; 
     for (int i=0; i<CLD_NUM; ++ i)
@@ -175,24 +142,7 @@ int main ()
     }
 #elif USE_SIG == 4
     sleep (4); 
-#  ifdef USE_SIGACT
-    struct sigaction act; 
-    sigemptyset (&act.sa_mask); 
-    act.sa_sigaction = SIG_IGN; 
-    act.sa_flags = SA_SIGINFO | SA_NOCLDSTOP; 
-#    ifdef AUTO_WAIT
-    act.sa_flags |= SA_NOCLDWAIT; 
-#    endif
-    int ret = sigaction (MY_SIG_CHILD, &act, 0); 
-    if (ret == -1)
-        perror ("sigaction error"); 
-#  else
-    __sighandler_t ret = signal (SIGCLD, SIG_IGN);
-    if (ret == SIG_ERR)
-        perror ("signal error"); 
-    else 
-        printf ("old handler %x\n", ret); 
-#  endif
+    install_handler (SIG_IGN); 
 
     int status = 0; 
     for (int i=0; i<CLD_NUM; ++ i)
