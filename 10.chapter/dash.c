@@ -5,7 +5,7 @@
 #define CLD_NUM 2
 #define USE_SIG 1
 #define USE_SIGACT 
-#define USE_MASK
+//#define USE_MASK
 
 #if 0
 #  define MY_SIG_CHILD SIGCLD
@@ -80,11 +80,11 @@ int main ()
 #endif
             if (i % 2 == 0) { 
                 // simulate background
-                sleep (2); 
+                sleep (3); 
             }
             else {
                 // simulate foreground
-                sleep (3); 
+                sleep (4); 
             }
 
             printf ("child %u exit\n", getpid ()); 
@@ -99,6 +99,7 @@ int main ()
 
     int status = 0; 
     while (1) { 
+        printf ("before wait pid %u\n", pid); 
         if (waitpid (pid, &status, 0) < 0)
         {
             int err = errno; 
