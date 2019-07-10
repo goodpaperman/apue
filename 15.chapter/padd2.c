@@ -2,8 +2,13 @@
 
 static void sig_pipe (int); 
 
-int main (void)
+int main (int argc, char *argv[])
 {
+    if (argc < 2) { 
+        printf ("usage: padd2 <add2-program>\n"); 
+        return 0; 
+    }
+
     int n, fd1[2], fd2[2]; 
     if (signal (SIGPIPE, sig_pipe) == SIG_ERR)
         err_sys ("signal error"); 
@@ -54,7 +59,7 @@ int main (void)
             close (fd2[1]); 
         }
 
-        if (execl ("./add2", "add2", (char *)0) < 0)
+        if (execl (argv[1], "add2", (char *)0) < 0)
             err_sys ("execl error"); 
     }
 
