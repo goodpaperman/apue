@@ -59,6 +59,13 @@ int main (int argc, char *argv[])
             close (fd2[1]); 
         }
 
+#if 0
+        // not work after exec
+        if (setvbuf (stdin, NULL, _IOLBF, 0) != 0)
+            err_sys ("setvbuf error"); 
+        if (setvbuf (stdout, NULL, _IOLBF, 0) != 0)
+            err_sys ("setvbuf error"); 
+#endif 
         if (execl (argv[1], "add2", (char *)0) < 0)
             err_sys ("execl error"); 
     }
