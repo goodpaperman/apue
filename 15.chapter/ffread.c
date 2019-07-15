@@ -11,7 +11,7 @@ int main (int argc, char *argv[])
         fifo = "fifo.tmp"; 
 
     if (access (fifo, R_OK) != 0) { 
-        if (mkfifo (fifo, O_RDWR) < 0)
+        if (mkfifo (fifo, FILE_MODE) < 0)
             err_sys ("mkfifo failed"); 
 
         printf ("mkfifo %s", fifo); 
