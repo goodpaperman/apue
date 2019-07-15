@@ -1,4 +1,16 @@
-all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2
+all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite
+
+ffwrite: ffwrite.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+ffwrite.o: ffwrite.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+ffread: ffread.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+ffread.o: ffread.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 padd2: padd2.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread
@@ -43,31 +55,31 @@ ppage.o: ppage.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pipepage: pipepage.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 pipepage.o: pipepage.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pipepoll: pipepoll.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 pipepoll.o: pipepoll.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pipeatom: pipeatom.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 pipeatom.o: pipeatom.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pipemulti: pipemulti.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 pipemulti.o: pipemulti.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pipestat: pipestat.o apue.o 
-	gcc -Wall -g $^ -o $@
+	gcc -Wall -g $^ -o $@ -lpthread
 
 pipestat.o: pipestat.c ../apue.h
 	gcc -Wall -g -c $< -o $@
@@ -80,7 +92,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2
+	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite
 	@echo "end clean"
 
 .PHONY: clean
