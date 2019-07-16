@@ -1,6 +1,9 @@
 #include "../apue.h" 
 #include <sys/stat.h> 
 
+//#define RW_OPEN
+#define NBLK_OPEN
+
 int main (int argc, char *argv[])
 {
     char const* fifo = 0; 
@@ -17,11 +20,17 @@ int main (int argc, char *argv[])
         printf ("mkfifo %s", fifo); 
     }
 
-#if 1
-    int fd = open (fifo, O_RDWR); 
+    int flags = 0; 
+#ifdef RW_OPEN
+    flags = O_RDWR; 
 #else
-    int fd = open (fifo, O_RDONLY); 
+    flags = O_RDONLY; 
 #endif
+
+#ifdef NBLK_OPEN
+    flags |= O_NONBLOCK; 
+#endif
+    int fd = open (fifo, flags); 
     if (fd < 0)
         err_sys ("open fifo for read failed"); 
 
@@ -39,6 +48,12 @@ int main (int argc, char *argv[])
     while ((ret = read (fd, buf, sizeof buf)) >= 0)
     {
         printf ("read %d from fifo\n", ret); 
+        if (ret == 0)
+#ifdef NBLK_OPEN
+            sleep (1); 
+#else
+            break; 
+#endif
     }
 
     printf ("read over\n"); 
