@@ -17,10 +17,15 @@ int main (int argc, char *argv[])
         printf ("mkfifo %s", fifo); 
     }
 
+#if 1
+    int fd = open (fifo, O_RDWR); 
+#else
     int fd = open (fifo, O_WRONLY); 
+#endif
     if (fd < 0)
         err_sys ("open fifo for write failed"); 
 
+    printf ("open fifo for write\n"); 
     struct stat sb; 
     if (fstat (fd, &sb) < 0)
         err_sys ("stat failed"); 
@@ -28,9 +33,9 @@ int main (int argc, char *argv[])
     if (!S_ISFIFO(sb.st_mode))
         err_sys ("not a fifo"); 
 
+    printf ("is a fifo\n"); 
     int ret = 0; 
     char buf[4096] = { 0 }; 
-    printf ("open fifo %s for write  OK\n", fifo); 
     sprintf (buf, "this is %d", ret); 
     while ((ret = write (fd, buf, strlen(buf))) >= 0)
     {
