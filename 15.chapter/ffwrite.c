@@ -1,9 +1,10 @@
 #include "../apue.h" 
 #include <sys/stat.h> 
+#include <errno.h> 
 
 #define MAX_LINE 10
-#define RW_OPEN
-//#define NBLK_OPEN
+//#define RW_OPEN
+#define NBLK_OPEN
 
 int main (int argc, char *argv[])
 {
@@ -33,7 +34,7 @@ int main (int argc, char *argv[])
 #endif
     int fd = open (fifo, flags); 
     if (fd < 0)
-        err_sys ("open fifo for write failed"); 
+        err_sys ("open fifo for write failed, errno %d", errno); 
 
     printf ("open fifo for write\n"); 
     struct stat sb; 
@@ -54,7 +55,7 @@ int main (int argc, char *argv[])
         sprintf (buf, "this is %d", ret); 
     }
 
-    printf ("write over\n"); 
+    printf ("write over, ret = %d, errno %d\n", ret, errno); 
     close (fd); 
     return 0; 
 }

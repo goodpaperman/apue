@@ -1,9 +1,10 @@
 #include "../apue.h" 
 #include <sys/stat.h> 
+#include <errno.h> 
 
 #define MAX_LINE 10
-#define RW_OPEN
-//#define NBLK_OPEN
+//#define RW_OPEN
+#define NBLK_OPEN
 
 int main (int argc, char *argv[])
 {
@@ -46,10 +47,22 @@ int main (int argc, char *argv[])
     printf ("is a fifo\n"); 
     int ret = 0, n = 0; 
     char buf[4096] = { 0 }; 
-    while ((ret = read (fd, buf, sizeof buf)) >= 0 && n++ < MAX_LINE)
+    while (n++ < MAX_LINE)
     {
+        ret = read (fd, buf, sizeof buf); 
         printf ("read %d from fifo\n", ret); 
-        if (ret == 0)
+        if (ret < 0)
+        {
+#ifdef NBLK_OPEN
+            if (errno == EAGAIN) { 
+                sleep (1); 
+                continue; 
+            }
+            else 
+#endif
+                break; 
+        }
+        else if (ret == 0)
 #ifdef NBLK_OPEN
             sleep (1); 
 #else
@@ -57,7 +70,7 @@ int main (int argc, char *argv[])
 #endif
     }
 
-    printf ("read over\n"); 
+    printf ("read over, ret = %d, errno %d\n", ret, errno); 
     close (fd); 
     return 0; 
 }
