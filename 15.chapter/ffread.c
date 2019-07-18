@@ -1,8 +1,9 @@
 #include "../apue.h" 
 #include <sys/stat.h> 
 
-//#define RW_OPEN
-#define NBLK_OPEN
+#define MAX_LINE 10
+#define RW_OPEN
+//#define NBLK_OPEN
 
 int main (int argc, char *argv[])
 {
@@ -43,9 +44,9 @@ int main (int argc, char *argv[])
         err_sys ("not a fifo"); 
 
     printf ("is a fifo\n"); 
-    int ret = 0; 
+    int ret = 0, n = 0; 
     char buf[4096] = { 0 }; 
-    while ((ret = read (fd, buf, sizeof buf)) >= 0)
+    while ((ret = read (fd, buf, sizeof buf)) >= 0 && n++ < MAX_LINE)
     {
         printf ("read %d from fifo\n", ret); 
         if (ret == 0)
