@@ -3,8 +3,6 @@
 #include <errno.h> 
 
 #define MAX_LINE 10
-//#define MAX_LINE 3 // test write SIGPIPE
-//#define RW_OPEN
 //#define NBLK_OPEN
 
 int main (int argc, char *argv[])
@@ -24,20 +22,16 @@ int main (int argc, char *argv[])
     }
 
     int flags = 0; 
-#ifdef RW_OPEN
     flags = O_RDWR; 
-#else
-    flags = O_RDONLY; 
-#endif
 
 #ifdef NBLK_OPEN
     flags |= O_NONBLOCK; 
 #endif
     int fd = open (fifo, flags); 
     if (fd < 0)
-        err_sys ("open fifo for read failed"); 
+        err_sys ("open fifo for read/write failed"); 
 
-    printf ("open fifo for read\n"); 
+    printf ("open fifo for read/write\n"); 
     struct stat sb; 
     if (fstat (fd, &sb) < 0)
         err_sys ("stat failed"); 
@@ -72,7 +66,7 @@ int main (int argc, char *argv[])
         }
     }
 
-    printf ("read over, ret = %d, errno %d\n", ret, errno); 
+    printf ("read/write over, ret = %d, errno %d\n", ret, errno); 
     close (fd); 
     return 0; 
 }
