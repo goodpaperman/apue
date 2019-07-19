@@ -1,9 +1,43 @@
 #include "../apue.h" 
 #include <sys/stat.h> 
 #include <errno.h> 
+#include <pthread.h> 
 
 #define MAX_LINE 10
 //#define NBLK_OPEN
+
+void* thr_func (void *arg)
+{
+    int ret = 0, n = 0; 
+    int fd = (int) arg; 
+    char ibuf[4096] = { 0 }; 
+    while (n++ < MAX_LINE)
+    {
+        ret = read (fd, ibuf, sizeof ibuf); 
+        printf ("read %d from fifo\n", ret); 
+        if (ret < 0)
+        {
+#ifdef NBLK_OPEN
+            if (errno == EAGAIN) { 
+                sleep (1); 
+                continue; 
+            }
+            else 
+#endif
+                break; 
+        }
+        else if (ret == 0) {
+#ifdef NBLK_OPEN
+            sleep (1); 
+#else
+            break; 
+#endif
+        }
+    }
+
+    printf ("read over, ret = %d, errno %d\n", ret, errno); 
+}
+
 
 int main (int argc, char *argv[])
 {
@@ -40,33 +74,32 @@ int main (int argc, char *argv[])
         err_sys ("not a fifo"); 
 
     printf ("is a fifo\n"); 
-    int ret = 0, n = 0; 
-    char buf[4096] = { 0 }; 
-    while (n++ < MAX_LINE)
+    pthread_t tid = 0; 
+    int ret = pthread_create (&tid, NULL, thr_func, (void *)fd); 
+    if (ret != 0)
     {
-        ret = read (fd, buf, sizeof buf); 
-        printf ("read %d from fifo\n", ret); 
-        if (ret < 0)
-        {
-#ifdef NBLK_OPEN
-            if (errno == EAGAIN) { 
-                sleep (1); 
-                continue; 
-            }
-            else 
-#endif
-                break; 
-        }
-        else if (ret == 0) {
-#ifdef NBLK_OPEN
-            sleep (1); 
-#else
-            break; 
-#endif
-        }
+        printf ("pthread create failed, errno %d\n", errno); 
+        close (fd); 
+        return -1; 
     }
 
-    printf ("read/write over, ret = %d, errno %d\n", ret, errno); 
+    printf ("create thread %u\n", tid); 
+    int n = 0; 
+    char obuf[4096] = { 0 }; 
+    sprintf (obuf, "this is %d", ret); 
+    while (n++ < MAX_LINE)
+    {
+        ret = write (fd, obuf, strlen(obuf)); 
+        printf ("write %d to fifo\n", ret); 
+        sleep (1); 
+        sprintf (obuf, "this is %d", ret); 
+    }
+
+    printf ("write over, ret = %d, errno %d\n", ret, errno); 
+
+    void *status = 0; 
+    pthread_join (tid, &status); 
+    printf ("wait write thread, return %d\n", status); 
     close (fd); 
     return 0; 
 }
