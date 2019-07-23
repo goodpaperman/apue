@@ -2,8 +2,8 @@
 #include <sys/stat.h> 
 #include <errno.h> 
 
-#define MAX_LINE 10
-//#define MAX_LINE 3 // test write SIGPIPE
+//#define MAX_LINE 10
+#define MAX_LINE 3 // test write SIGPIPE
 //#define RW_OPEN
 //#define NBLK_OPEN
 

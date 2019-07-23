@@ -2,8 +2,8 @@
 #include <sys/stat.h> 
 #include <errno.h> 
 
-//#define MAX_LINE 10
-#define MAX_LINE 5 // to test read over return 0
+#define MAX_LINE 10
+//#define MAX_LINE 5 // to test read over return 0
 //#define RW_OPEN
 //#define NBLK_OPEN
 
