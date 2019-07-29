@@ -55,5 +55,6 @@ int main (int argc, char *argv[])
     else 
         printf ("unknown type %s\n", type); 
 
+    //sleep (60); 
     return 0; 
 }
