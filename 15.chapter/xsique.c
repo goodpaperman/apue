@@ -73,7 +73,7 @@ void dump_queue (int mid)
 int main (int argc, char *argv[])
 {
     int projid = -1; 
-    int mode = 0;  // 0: get; 1: put
+    int put = 0;  // 0: get; 1: put
     if (argc > 1)
     {
         //printf ("Usage: xsique <projid> \n"); 
@@ -82,39 +82,41 @@ int main (int argc, char *argv[])
 
     if (argc > 2)
     {
-        mode = (strcasecmp (argv[2], "get") == 0 ? 0 : 1); 
-        printf ("%s mode\n", mode == 0 ? "get" : "put"); 
+        put = (strcasecmp (argv[2], "get") == 0 ? 0 : 1); 
+        printf ("%s put\n", put == 0 ? "get" : "put"); 
     }
 
     key_t key = IPC_PRIVATE; 
     if (projid >= 0)
         key = ftok ("./xsique.c", projid); 
 
+    int mode = 0666; 
     int flag = IPC_CREAT; 
 #ifdef USE_EXCL
     flag |= IPC_EXCL; 
 #endif
 
     int ret = 0, n = 0; 
-    int mid = msgget (key, flag); 
+    int mid = msgget (key, flag | mode); 
     if (mid < 0)
         err_sys ("msgget failed"); 
 
     printf ("create msgqueue %d with key 0x%08x ok\n", mid, key); 
 
-    // read access right is always needed as dumping queue, event for write process
-    set_mode (mid, S_IRUSR | (mode == 1 ? S_IWUSR : 0)); 
+    // after set mode bits in msgget, we don't need do this again.
+    //// read access right is always needed as dumping queue, event for write process
+    //set_mode (mid, S_IRUSR | (put == 1 ? S_IWUSR : 0)); 
     dump_queue (mid); 
 
     ssize_t res = 0; 
     struct msgbuf buf = { 0 }; 
     for (n=0; n<MAX_QUEUE_SIZE; ++ n)
     {
-        if (mode == 0)
+        if (put == 0)
         {
             // read
-            res = msgrcv (mid, &buf, sizeof (buf), 0, 0); 
-            if (res <= 0)
+            res = msgrcv (mid, &buf, sizeof (buf.data), 0, 0); 
+            if (res < 0)
             {
                 printf ("receive msg failed, ret %d, errno %d\n", res, errno); 
                 break; 
@@ -125,10 +127,10 @@ int main (int argc, char *argv[])
         else 
         {
             // write
-            buf.type = n; 
+            buf.type = n+1; 
             sprintf (buf.data, "this is msg %d", n+1); 
-            res = msgsnd (mid, &buf, strlen (buf.data) + sizeof (long), 0); 
-            if (ret <= 0)
+            res = msgsnd (mid, &buf, strlen (buf.data), 0); 
+            if (res < 0)
             {
                 printf ("send msg failed, ret %d, errno %d\n", res, errno); 
                 break; 
