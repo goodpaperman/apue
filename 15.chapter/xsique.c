@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
     int ret = 0, n = 0; 
     int mid = msgget (key, flag | mode); 
     if (mid < 0)
-        err_sys ("msgget failed"); 
+        err_sys ("msgget for key %ld failed", key); 
 
     printf ("create msgqueue %d with key 0x%08x ok\n", mid, key); 
 
@@ -124,7 +124,7 @@ int main (int argc, char *argv[])
             }
             else if (res == 0)
             {
-                printf ("receive end message, quit\n"); 
+                printf ("receive end message, type %ld, quit\n", buf.type); 
                 break; 
             }
 
