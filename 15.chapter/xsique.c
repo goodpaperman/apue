@@ -3,6 +3,7 @@
 #include <errno.h> 
 
 //#define USE_EXCL
+//#define WRITE_REMOVEQ
 #define MAX_QUEUE_SIZE 10
 #define MAX_DATA_SIZE 512
 
@@ -110,9 +111,9 @@ int main (int argc, char *argv[])
 
     ssize_t res = 0; 
     struct msgbuf buf = { 0 }; 
-    for (n=0; n<MAX_QUEUE_SIZE; ++ n)
+    if (put == 0)
     {
-        if (put == 0)
+        while (1)
         {
             // read
             res = msgrcv (mid, &buf, sizeof (buf.data), 0, 0); 
@@ -121,10 +122,18 @@ int main (int argc, char *argv[])
                 printf ("receive msg failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
+            else if (res == 0)
+            {
+                printf ("receive end message, quit\n"); 
+                break; 
+            }
 
             printf ("recv %d, type %ld, content %s\n", res, buf.type, buf.data); 
         }
-        else 
+    }
+    else 
+    {
+        for (n=0; n<MAX_QUEUE_SIZE; ++ n)
         {
             // write
             buf.type = n+1; 
@@ -138,13 +147,26 @@ int main (int argc, char *argv[])
 
             printf ("send %d, type %ld\n", res, buf.type); 
         }
+
+        // end with a empty message.
+        buf.type = 1; 
+        res = msgsnd (mid, &buf, 0, 0); 
+        if (res < 0)
+            printf ("send empty msg failed, ret %d, errno %d\n", res, errno); 
+        else
+            printf ("send end message\n"); 
     }
 
     printf ("operate queue over\n"); 
-    ret = msgctl (mid, IPC_RMID, NULL); 
-    if (ret < 0)
-        err_sys ("msgctl to remove queue failed"); 
+#ifdef WRITE_REMOVEQ
+    if (put == 1)
+    {
+        ret = msgctl (mid, IPC_RMID, NULL); 
+        if (ret < 0)
+            err_sys ("msgctl to remove queue failed"); 
 
-    printf ("remove that queue\n"); 
+        printf ("remove that queue\n"); 
+    }
+#endif
     return 0; 
 }
