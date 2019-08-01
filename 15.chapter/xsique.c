@@ -4,7 +4,7 @@
 
 //#define USE_EXCL
 #define USE_TYPE 1
-#define READ_REMOVEQ
+//#define READ_REMOVEQ
 //#define WRITE_REMOVEQ
 //#define DUMP_QUEUE
 #define MAX_QUEUE_SIZE 10
@@ -38,12 +38,16 @@ void dump_perm (struct ipc_perm* perm)
             "   gid: %d\n"
             "   create uid: %d\n"
             "   create gid: %d\n"
-            "   mode: 0x%08x\n", 
+            "   mode: 0x%08x\n"
+            "   key: 0x%08x\n"
+            "   seq: %d\n", 
             perm->uid, 
             perm->gid, 
             perm->cuid, 
             perm->cgid, 
-            perm->mode); 
+            perm->mode, 
+            perm->__key, 
+            perm->__seq); 
 }
 
 void dump_queue (char const *prompt, int mid, int with_perm)
@@ -89,25 +93,34 @@ int main (int argc, char *argv[])
     if (argc > 2)
     {
         put = (strcasecmp (argv[2], "get") == 0 ? 0 : 1); 
-        printf ("%s put\n", put == 0 ? "get" : "put"); 
+        printf ("mode: %s\n", put == 0 ? "get" : "put"); 
     }
 
-    key_t key = IPC_PRIVATE; 
-    if (projid >= 0)
-        key = ftok ("./xsique.c", projid); 
+    int mid = 0; 
+    int ret = 0, n = 0; 
+    if (argc > 3)
+    {
+        mid = atol (argv[3]); 
+        printf ("use mid %d\n", mid); 
+    }
+    else 
+    {
+        key_t key = IPC_PRIVATE; 
+        if (projid >= 0)
+            key = ftok ("./xsique.c", projid); 
 
-    int mode = 0666; 
-    int flag = IPC_CREAT; 
+        int mode = 0666; 
+        int flag = IPC_CREAT; 
 #ifdef USE_EXCL
-    flag |= IPC_EXCL; 
+        flag |= IPC_EXCL; 
 #endif
 
-    int ret = 0, n = 0; 
-    int mid = msgget (key, flag | mode); 
-    if (mid < 0)
-        err_sys ("msgget for key %ld failed", key); 
+        mid = msgget (key, flag | mode); 
+        if (mid < 0)
+            err_sys ("msgget for key %ld failed", key); 
 
-    printf ("create msgqueue %d with key 0x%08x ok\n", mid, key); 
+        printf ("create msgqueue %d with key 0x%08x ok\n", mid, key); 
+    }
 
     // after set mode bits in msgget, we don't need do this again.
     //// read access right is always needed as dumping queue, event for write process
