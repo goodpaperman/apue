@@ -131,6 +131,11 @@ int main (int argc, char *argv[])
 
     ssize_t res = 0; 
     struct msgbuf buf = { 0 }; 
+
+    int flag = 0; 
+#ifdef USE_NOWAIT
+    flag |= IPC_NOWAIT; 
+#endif
     if (put == 0)
     {
 #if USE_TYPE == 1
@@ -146,10 +151,18 @@ int main (int argc, char *argv[])
 #ifdef USE_TYPE
             printf ("require type %d\n", n); 
 #endif
-            res = msgrcv (mid, &buf, sizeof (buf.data), n, 0); 
+            res = msgrcv (mid, &buf, sizeof (buf.data), n, flag); 
             if (res < 0)
             {
                 printf ("receive msg failed, ret %d, errno %d\n", res, errno); 
+#ifdef USE_NOWAIT
+                if (errno == ENOMSG)
+                {
+                    printf ("retry 1 second later for ENOMSG\n"); 
+                    sleep (1); 
+                    continue; 
+                }
+#endif
                 break; 
             }
             else if (res == 0)
@@ -177,9 +190,7 @@ int main (int argc, char *argv[])
     }
     else 
     {
-        int flag = 0; 
 #ifdef USE_NOWAIT
-        flag |= IPC_NOWAIT; 
         for (n=0;;++n)
 #else
         for (n=0; n<MAX_QUEUE_SIZE; ++ n)
