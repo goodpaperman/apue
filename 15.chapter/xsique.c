@@ -3,7 +3,9 @@
 #include <errno.h> 
 
 //#define USE_EXCL
-#define USE_TYPE 1
+//#define USE_TYPE 1
+#define USE_NOWAIT
+
 //#define READ_REMOVEQ
 //#define WRITE_REMOVEQ
 //#define DUMP_QUEUE
@@ -141,7 +143,9 @@ int main (int argc, char *argv[])
         while (1)
         {
             // read
+#ifdef USE_TYPE
             printf ("require type %d\n", n); 
+#endif
             res = msgrcv (mid, &buf, sizeof (buf.data), n, 0); 
             if (res < 0)
             {
@@ -173,15 +177,29 @@ int main (int argc, char *argv[])
     }
     else 
     {
+        int flag = 0; 
+#ifdef USE_NOWAIT
+        flag |= IPC_NOWAIT; 
+        for (n=0;;++n)
+#else
         for (n=0; n<MAX_QUEUE_SIZE; ++ n)
+#endif
         {
             // write
             buf.type = n+1; 
             sprintf (buf.data, "this is msg %d", n+1); 
-            res = msgsnd (mid, &buf, strlen (buf.data), 0); 
+            res = msgsnd (mid, &buf, strlen (buf.data), flag); 
             if (res < 0)
             {
                 printf ("send msg failed, ret %d, errno %d\n", res, errno); 
+#ifdef USE_NOWAIT
+                if (errno == EAGAIN)
+                {
+                    printf ("retry 1 second later for EAGAIN\n"); 
+                    sleep (1); 
+                    continue; 
+                }
+#endif
                 break; 
             }
 
@@ -194,7 +212,7 @@ int main (int argc, char *argv[])
 
         // end with a empty message.
         buf.type = 1; 
-        res = msgsnd (mid, &buf, 0, 0); 
+        res = msgsnd (mid, &buf, 0, flag); 
         if (res < 0)
             printf ("send empty msg failed, ret %d, errno %d\n", res, errno); 
         else
