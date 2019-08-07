@@ -4,7 +4,9 @@
 
 //#define USE_EXCL
 //#define USE_TYPE 1
-#define USE_NOWAIT
+//#define USE_NOWAIT
+#define USE_E2BIG
+//#define USE_NOERR
 
 //#define READ_REMOVEQ
 //#define WRITE_REMOVEQ
@@ -131,10 +133,14 @@ int main (int argc, char *argv[])
 
     ssize_t res = 0; 
     struct msgbuf buf = { 0 }; 
+    size_t size = 0; 
 
     int flag = 0; 
 #ifdef USE_NOWAIT
     flag |= IPC_NOWAIT; 
+#endif
+#ifdef USE_NOERR
+    flag |= MSG_NOERROR; 
 #endif
     if (put == 0)
     {
@@ -145,13 +151,21 @@ int main (int argc, char *argv[])
 #else
         n = 0; 
 #endif
+
+#if defined(USE_E2BIG) || defined (USE_NOERR)
+        // make error condition
+        size = 1; 
+#else
+        size = sizeof (buf.data); 
+#endif
+
         while (1)
         {
             // read
 #ifdef USE_TYPE
             printf ("require type %d\n", n); 
 #endif
-            res = msgrcv (mid, &buf, sizeof (buf.data), n, flag); 
+            res = msgrcv (mid, &buf, size, n, flag); 
             if (res < 0)
             {
                 printf ("receive msg failed, ret %d, errno %d\n", res, errno); 
@@ -163,6 +177,24 @@ int main (int argc, char *argv[])
                     continue; 
                 }
 #endif
+
+#ifdef USE_E2BIG
+                if (errno == E2BIG)
+                {
+                    if (size == sizeof (buf.data))
+                    {
+                        printf ("message too large, fatal error\n"); 
+                        break; 
+                    }
+
+                    size *= 2; 
+                    if (size > sizeof (buf.data))
+                        size = sizeof (buf.data); 
+
+                    printf ("message buffer too small, try to enlarge it to %d\n", size); 
+                    continue; 
+                }
+#endif 
                 break; 
             }
             else if (res == 0)
@@ -174,8 +206,14 @@ int main (int argc, char *argv[])
                 break; 
             }
 
+#ifdef USE_NOERR
+            size *= 2; 
+            if (size > sizeof (buf.data))
+                size = sizeof (buf.data); 
+#endif
+
             buf.data[res] = 0;  // null terminated
-            printf ("recv %d, type %ld, content %s\n", res, buf.type, buf.data); 
+            printf ("recv %d, type %ld: %s\n", res, buf.type, buf.data); 
 #ifdef DUMP_QUEUE
             dump_queue ("after recv: ", mid, 0); 
             sleep (1); 
