@@ -116,7 +116,7 @@ int main (int argc, char *argv[])
         if (projid >= 0)
             key = ftok ("./xsisem.c", projid); 
 
-        int mode = 0; //0666; 
+        int mode = 0666;  // 0; 
         int flag = IPC_CREAT; 
 #ifdef USE_EXCL
         flag |= IPC_EXCL; 
@@ -131,7 +131,7 @@ int main (int argc, char *argv[])
 
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
-    set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
+    //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
     dump_sem ("after open: ", mid, 0, 1); 
 
     /*
