@@ -67,6 +67,7 @@ void dump_sem (char const *prompt, int mid, int n, int with_perm)
         err_sys ("semctl to stat sem failed"); 
 
     printf ("%s sems %d: \n"
+            "   number sems: %d\n"
             "   last semop time: %d\n"
             "   last change time: %d\n", 
             prompt, 
@@ -91,11 +92,14 @@ int main (int argc, char *argv[])
     }
 
     if (argc > 2)
+    {
         nsem = atoi (argv[2]); 
+        printf ("num of sems: %d\n", nsem); 
+    }
 
     if (argc > 3)
     {
-        put = (strcasecmp (argv[2], "get") == 0 ? 0 : 1); 
+        put = (strcasecmp (argv[3], "get") == 0 ? 0 : 1); 
         printf ("mode: %s\n", put == 0 ? "get" : "put"); 
     }
 
@@ -103,7 +107,7 @@ int main (int argc, char *argv[])
     int ret = 0, n = 0; 
     if (argc > 4)
     {
-        mid = atol (argv[3]); 
+        mid = atol (argv[4]); 
         printf ("use mid %d\n", mid); 
     }
     else 
@@ -112,7 +116,7 @@ int main (int argc, char *argv[])
         if (projid >= 0)
             key = ftok ("./xsisem.c", projid); 
 
-        int mode = 0666; 
+        int mode = 0; //0666; 
         int flag = IPC_CREAT; 
 #ifdef USE_EXCL
         flag |= IPC_EXCL; 
@@ -120,14 +124,14 @@ int main (int argc, char *argv[])
 
         mid = semget (key, nsem, flag | mode); 
         if (mid < 0)
-            err_sys ("semget for key %ld failed", key); 
+            err_sys ("semget for key 0x%08x failed", key); 
 
         printf ("create semaphore %d with key 0x%08x ok\n", mid, key); 
     }
 
     // after set mode bits in msgget, we don't need do this again.
-    //// read access right is always needed as dumping queue, event for write process
-    //set_mode (mid, S_IRUSR | (put == 1 ? S_IWUSR : 0)); 
+    /// read access right is always needed as dumping queue, event for write process
+    set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
     dump_sem ("after open: ", mid, 0, 1); 
 
     /*
