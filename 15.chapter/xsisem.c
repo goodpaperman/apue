@@ -4,9 +4,10 @@
 
 //#define USE_EXCL
 //#define USE_TYPE 1
+#define SEM_INIT
 
-//#define READ_REMOVEQ
-//#define WRITE_REMOVEQ
+#define READ_REMOVES
+#define WRITE_REMOVES
 //#define DUMP_QUEUE
 //#define MAX_QUEUE_SIZE 10
 //#define MAX_DATA_SIZE 512
@@ -57,16 +58,17 @@ void dump_perm (struct ipc_perm* perm)
             perm->__seq); 
 }
 
-void dump_sem (char const *prompt, int mid, int n, int with_perm)
+void dump_sem (char const *prompt, int mid, int size, int with_perm)
 {
     struct semid_ds mbuf; 
     union semun sem; 
     sem.buf = &mbuf; 
-    int ret = semctl (mid, n, IPC_STAT, sem); 
+    int ret = semctl (mid, 0, IPC_STAT, sem); 
     if (ret < 0)
         err_sys ("semctl to stat sem failed"); 
 
-    printf ("%s sems %d: \n"
+    printf ("%s: \n"
+            "   sem id: %d\n"
             "   number sems: %d\n"
             "   last semop time: %d\n"
             "   last change time: %d\n", 
@@ -76,6 +78,41 @@ void dump_sem (char const *prompt, int mid, int n, int with_perm)
             mbuf.sem_otime, 
             mbuf.sem_ctime
             ); 
+
+    int n = 0; 
+    printf ("   \n"); 
+    for (; n<size; ++ n) { 
+        ret = semctl (mid, n, GETZCNT); 
+        if (ret < 0)
+            err_sys ("semctl to get zcnt failed"); 
+
+        printf ("       [%d].zcnt: %d\n", n, ret); 
+
+        ret = semctl (mid, n, GETNCNT); 
+        if (ret < 0)
+            err_sys ("semctl to get ncnt failed"); 
+
+        printf ("       [%d].ncnt: %d\n", n, ret); 
+
+        ret = semctl (mid, n, GETPID); 
+        if (ret < 0)
+            err_sys ("semctl to get pid failed"); 
+
+        printf ("       [%d].pid: %d\n", n, ret); 
+
+#ifdef SEM_INIT
+        sem.val = 10;
+        ret = semctl (mid, n, SETVAL, sem); 
+        if (ret < 0)
+            err_sys ("semctl to set val failed"); 
+#endif
+
+        ret = semctl (mid, n, GETVAL); 
+        if (ret < 0)
+            err_sys ("semctl to get val failed"); 
+
+        printf ("       [%d].val: %d\n\n", n, ret); 
+    }
 
     if (with_perm)
         dump_perm (&mbuf.sem_perm); 
@@ -132,7 +169,7 @@ int main (int argc, char *argv[])
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
     //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
-    dump_sem ("after open: ", mid, 0, 1); 
+    dump_sem ("after open: ", mid, nsem, 1); 
 
     /*
     ssize_t res = 0; 
@@ -166,7 +203,7 @@ int main (int argc, char *argv[])
             {
                 printf ("receive end message, type %ld, quit\n", buf.type); 
 #ifdef DUMP_QUEUE
-                dump_sem ("after recv: ", mid, 0, 0); 
+                dump_sem ("after recv: ", mid, nsem, 0); 
 #endif
                 break; 
             }
@@ -174,7 +211,7 @@ int main (int argc, char *argv[])
             buf.data[res] = 0;  // null terminated
             printf ("recv %d, type %ld: %s\n", res, buf.type, buf.data); 
 #ifdef DUMP_QUEUE
-            dump_sem ("after recv: ", mid, 0, 0); 
+            dump_sem ("after recv: ", mid, nsem, 0); 
             sleep (1); 
 #endif 
 
@@ -201,7 +238,7 @@ int main (int argc, char *argv[])
 
             printf ("send %d, type %ld\n", res, buf.type); 
 #ifdef DUMP_QUEUE
-            dump_sem ("after send: ", mid, 0, 0); 
+            dump_sem ("after send: ", mid, nsem, 0); 
             sleep (1); 
 #endif
         }
@@ -215,7 +252,7 @@ int main (int argc, char *argv[])
         {
             printf ("send end message\n"); 
 #ifdef DUMP_QUEUE
-            dump_sem ("after send: ", mid, 0, 0); 
+            dump_sem ("after send: ", mid, nsem, 0); 
             sleep (1); 
 #endif
         }
@@ -223,21 +260,34 @@ int main (int argc, char *argv[])
     }
 
     printf ("operate queue over\n"); 
-#ifdef WRITE_REMOVEQ
-    if (put == 1)
-#elif defined(READ_REMOVEQ)
-    if (put == 0)
-#else 
-    if (0)
-#endif
-    {
-        ret = msgctl (mid, IPC_RMID, NULL); 
-        if (ret < 0)
-            err_sys ("msgctl to remove queue failed"); 
-
-        printf ("remove that queue\n"); 
-    }
     */
 
+    switch (put)
+    {
+        case 0:
+#ifdef READ_REMOVES
+            goto DEFAULT; 
+#else 
+            break; 
+#endif
+        case 1:
+#ifdef WRITE_REMOVES
+            goto DEFAULT; 
+#else
+            break; 
+#endif
+DEFAULT:
+        default:
+        {
+            ret = semctl (mid, 0, IPC_RMID, NULL); 
+            if (ret < 0)
+                err_sys ("semctl to remove semaphore failed"); 
+
+            printf ("remove that semaphore\n"); 
+            break; 
+        }
+    }
+
+    printf ("exit\n"); 
     return 0; 
 }
