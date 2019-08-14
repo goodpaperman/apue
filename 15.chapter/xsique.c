@@ -8,8 +8,8 @@
 #define USE_E2BIG
 //#define USE_NOERR
 
-//#define READ_REMOVEQ
-//#define WRITE_REMOVEQ
+#define READ_REMOVEQ
+#define WRITE_REMOVEQ
 //#define DUMP_QUEUE
 #define MAX_QUEUE_SIZE 10
 #define MAX_DATA_SIZE 512
@@ -276,19 +276,31 @@ int main (int argc, char *argv[])
     }
 
     printf ("operate queue over\n"); 
-#ifdef WRITE_REMOVEQ
-    if (put == 1)
-#elif defined(READ_REMOVEQ)
-    if (put == 0)
-#else 
-    if (0)
-#endif
-    {
-        ret = msgctl (mid, IPC_RMID, NULL); 
-        if (ret < 0)
-            err_sys ("msgctl to remove queue failed"); 
 
-        printf ("remove that queue\n"); 
+    switch (put)
+    {
+        case 0:
+#ifdef READ_REMOVEQ
+            goto DEFAULT; 
+#else 
+            break; 
+#endif
+        case 1:
+#ifdef WRITE_REMOVEQ
+            goto DEFAULT; 
+#else
+            break; 
+#endif
+DEFAULT:
+        default:
+            {
+                ret = msgctl (mid, IPC_RMID, NULL); 
+                if (ret < 0)
+                    err_sys ("msgctl to remove queue failed"); 
+
+                printf ("remove that queue\n"); 
+                break; 
+            }
     }
 
     return 0; 
