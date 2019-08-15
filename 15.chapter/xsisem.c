@@ -4,7 +4,8 @@
 
 //#define USE_EXCL
 //#define USE_TYPE 1
-#define SEM_INIT
+//#define SEM_INIT
+//#define USE_ARRAY
 
 #define READ_REMOVES
 #define WRITE_REMOVES
@@ -81,6 +82,31 @@ void dump_sem (char const *prompt, int mid, int size, int with_perm)
 
     int n = 0; 
     printf ("   \n"); 
+#ifdef USE_ARRAY
+    unsigned short *arr = calloc (sizeof (unsigned short), size); 
+    if (arr == NULL)
+        err_sys ("malloc array failed\n"); 
+
+    sem.array = arr; 
+#  ifdef SEM_INIT
+    for (n=0; n<size; ++ n) {
+        arr[n] = 10;
+    }
+
+    ret = semctl (mid, 0, SETALL, sem); 
+    if (ret < 0)
+        err_sys ("semctl to set all val failed"); 
+
+#  endif
+
+    ret = semctl (mid, 0, GETALL, sem); 
+    if (ret < 0)
+        err_sys ("semctl to get all val failed"); 
+
+    for (n=0; n<size; ++ n) { 
+        printf ("       [%d].val: %d\n", n, sem.array[n]); 
+    }
+#else
     for (; n<size; ++ n) { 
         ret = semctl (mid, n, GETZCNT); 
         if (ret < 0)
@@ -100,19 +126,21 @@ void dump_sem (char const *prompt, int mid, int size, int with_perm)
 
         printf ("       [%d].pid: %d\n", n, ret); 
 
-#ifdef SEM_INIT
+#  ifdef SEM_INIT
         sem.val = 10;
         ret = semctl (mid, n, SETVAL, sem); 
         if (ret < 0)
             err_sys ("semctl to set val failed"); 
-#endif
+#  endif
 
         ret = semctl (mid, n, GETVAL); 
         if (ret < 0)
             err_sys ("semctl to get val failed"); 
 
-        printf ("       [%d].val: %d\n\n", n, ret); 
+        printf ("       [%d].val: %d\n", n, ret); 
+        printf ("\n"); 
     }
+#endif
 
     if (with_perm)
         dump_perm (&mbuf.sem_perm); 
