@@ -3,15 +3,13 @@
 #include <errno.h> 
 
 //#define USE_EXCL
-//#define USE_TYPE 1
-//#define SEM_INIT
+#define SEM_INIT
 //#define USE_ARRAY
 
 #define READ_REMOVES
 #define WRITE_REMOVES
-//#define DUMP_QUEUE
-//#define MAX_QUEUE_SIZE 10
-//#define MAX_DATA_SIZE 512
+//#define DUMP_SEM
+#define MAX_SEM_SIZE 10
 
 #include <sys/sem.h>
 
@@ -59,7 +57,7 @@ void dump_perm (struct ipc_perm* perm)
             perm->__seq); 
 }
 
-void dump_sem (char const *prompt, int mid, int size, int with_perm)
+void dump_sem (char const *prompt, int mid, int with_perm)
 {
     struct semid_ds mbuf; 
     union semun sem; 
@@ -83,13 +81,13 @@ void dump_sem (char const *prompt, int mid, int size, int with_perm)
     int n = 0; 
     printf ("   \n"); 
 #ifdef USE_ARRAY
-    unsigned short *arr = calloc (sizeof (unsigned short), size); 
+    unsigned short *arr = calloc (sizeof (unsigned short), mbuf.sem_nsems); 
     if (arr == NULL)
         err_sys ("malloc array failed\n"); 
 
     sem.array = arr; 
 #  ifdef SEM_INIT
-    for (n=0; n<size; ++ n) {
+    for (n=0; n<mbuf.sem_nsems; ++ n) {
         arr[n] = 10;
     }
 
@@ -103,11 +101,11 @@ void dump_sem (char const *prompt, int mid, int size, int with_perm)
     if (ret < 0)
         err_sys ("semctl to get all val failed"); 
 
-    for (n=0; n<size; ++ n) { 
+    for (n=0; n<mbuf.sem_nsems; ++ n) { 
         printf ("       [%d].val: %d\n", n, sem.array[n]); 
     }
 #else
-    for (; n<size; ++ n) { 
+    for (; n<mbuf.sem_nsems; ++ n) { 
         ret = semctl (mid, n, GETZCNT); 
         if (ret < 0)
             err_sys ("semctl to get zcnt failed"); 
@@ -169,7 +167,7 @@ int main (int argc, char *argv[])
     }
 
     int mid = 0; 
-    int ret = 0, n = 0; 
+    int ret = 0; 
     if (argc > 4)
     {
         mid = atol (argv[4]); 
@@ -197,99 +195,56 @@ int main (int argc, char *argv[])
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
     //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
-    dump_sem ("after open: ", mid, nsem, 1); 
+    dump_sem ("after open: ", mid, 1); 
 
-    /*
-    ssize_t res = 0; 
-    size_t size = 0; 
 
-    int flag = 0; 
+    int n = 0; 
+    int res = 0; 
+    struct sembuf sb; 
+    sb.sem_num = 0; 
+    sb.sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
     if (put == 0)
     {
-#if USE_TYPE == 1
-        n = MAX_QUEUE_SIZE; 
-#elif USE_TYPE == 2
-        n = -MAX_QUEUE_SIZE / 2; 
-#else
-        n = 0; 
-#endif
-
-        size = sizeof (buf.data); 
+        sb.sem_op = -1; 
         while (1)
         {
             // read
-#ifdef USE_TYPE
-            printf ("require type %d\n", n); 
-#endif
-            res = msgrcv (mid, &buf, size, n, flag); 
+            res = semop (mid, &sb, 1); 
             if (res < 0)
             {
-                printf ("receive msg failed, ret %d, errno %d\n", res, errno); 
-                break; 
-            }
-            else if (res == 0)
-            {
-                printf ("receive end message, type %ld, quit\n", buf.type); 
-#ifdef DUMP_QUEUE
-                dump_sem ("after recv: ", mid, nsem, 0); 
-#endif
+                printf ("semop to request resource failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
 
-            buf.data[res] = 0;  // null terminated
-            printf ("recv %d, type %ld: %s\n", res, buf.type, buf.data); 
-#ifdef DUMP_QUEUE
-            dump_sem ("after recv: ", mid, nsem, 0); 
-            sleep (1); 
+            printf ("request a resource %d, order %d\n", res, n++); 
+#ifdef DUMP_SEM
+            dump_sem ("after request: ", mid, 0); 
+            //sleep (1); 
 #endif 
-
-#if USE_TYPE == 1
-            n--; 
-#elif USE_TYPE == 2
-            n++; 
-#endif
         }
     }
     else 
     {
-        for (n=0; n<MAX_QUEUE_SIZE; ++ n)
+        sb.sem_op = 1; 
+        for (n=0; n<MAX_SEM_SIZE; ++ n)
         {
             // write
-            buf.type = n+1; 
-            sprintf (buf.data, "this is msg %d", n+1); 
-            res = msgsnd (mid, &buf, strlen (buf.data), flag); 
+#ifdef DUMP_SEM
+            dump_sem ("before release: ", mid, 0); 
+#endif
+            res = semop (mid, &sb, 1); 
             if (res < 0)
             {
-                printf ("send msg failed, ret %d, errno %d\n", res, errno); 
+                printf ("semop to release resource failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
 
-            printf ("send %d, type %ld\n", res, buf.type); 
-#ifdef DUMP_QUEUE
-            dump_sem ("after send: ", mid, nsem, 0); 
+            printf ("release %d, order %d\n", res, n); 
             sleep (1); 
-#endif
         }
-
-        // end with a empty message.
-        buf.type = 1; 
-        res = msgsnd (mid, &buf, 0, flag); 
-        if (res < 0)
-            printf ("send empty msg failed, ret %d, errno %d\n", res, errno); 
-        else
-        {
-            printf ("send end message\n"); 
-#ifdef DUMP_QUEUE
-            dump_sem ("after send: ", mid, nsem, 0); 
-            sleep (1); 
-#endif
-        }
-
     }
 
-    printf ("operate queue over\n"); 
-    */
-
+    printf ("operate semaphore over\n"); 
     switch (put)
     {
         case 0:
