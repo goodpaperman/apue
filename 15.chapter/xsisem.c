@@ -5,12 +5,14 @@
 //#define USE_EXCL
 //#define SEM_INIT
 //#define USE_ARRAY
+//#define USE_UNDO
 
-#define READ_REMOVES
-#define WRITE_REMOVES
+//#define READ_REMOVES
+//#define WRITE_REMOVES
 #ifndef SEM_INIT
 #  define DUMP_SEM // every dump will increate semaphore, so exclude..
 #endif 
+
 #define MAX_SEM_SIZE 10
 
 #include <sys/sem.h>
@@ -57,6 +59,35 @@ void dump_perm (struct ipc_perm* perm)
             perm->mode, 
             perm->__key, 
             perm->__seq); 
+}
+
+void set_sem (int mid, int nsem, int val)
+{
+    int n = 0, ret = 0; 
+    union semun sem; 
+#ifdef USE_ARRAY
+    unsigned short *arr = calloc (sizeof (unsigned short), nsem); 
+    if (arr == NULL)
+        err_sys ("malloc array failed\n"); 
+
+    sem.array = arr; 
+    for (n=0; n<nsem; ++ n) {
+        arr[n] = val;
+    }
+
+    ret = semctl (mid, 0, SETALL, sem); 
+    if (ret < 0)
+        err_sys ("semctl to set all val failed"); 
+#else
+    for (n=0; n<nsem; ++ n) { 
+        sem.val = val;
+        ret = semctl (mid, n, SETVAL, sem); 
+        if (ret < 0)
+            err_sys ("semctl to set val failed"); 
+    }
+#endif
+
+    printf ("set %d semaphore value to %d\n", nsem, val); 
 }
 
 // return real nsems
@@ -213,7 +244,11 @@ int main (int argc, char *argv[])
         {
             sb[n].sem_op = -1; 
             sb[n].sem_num = n; 
+#ifdef USE_UNDO
+            sb[n].sem_flg = SEM_UNDO; 
+#else
             sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+#endif
         }
 
         n = 0; 
@@ -240,7 +275,11 @@ int main (int argc, char *argv[])
         {
             sb[n].sem_op = 1; 
             sb[n].sem_num = n; 
+#ifdef USE_UNDO
+            sb[n].sem_flg = SEM_UNDO; 
+#else
             sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+#endif
         }
 
         for (n=0; n<MAX_SEM_SIZE; ++ n)
@@ -262,6 +301,11 @@ int main (int argc, char *argv[])
     }
 
     printf ("operate semaphore over\n"); 
+#ifdef USE_UNDO
+    // try to see set the semaphores disables undo operations
+    //set_sem (mid, nsem, 2); 
+#endif
+
     switch (put)
     {
         case 0:
