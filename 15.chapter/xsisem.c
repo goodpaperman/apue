@@ -3,12 +3,14 @@
 #include <errno.h> 
 
 //#define USE_EXCL
-#define SEM_INIT
+//#define SEM_INIT
 //#define USE_ARRAY
 
 #define READ_REMOVES
 #define WRITE_REMOVES
-//#define DUMP_SEM
+#ifndef SEM_INIT
+#  define DUMP_SEM // every dump will increate semaphore, so exclude..
+#endif 
 #define MAX_SEM_SIZE 10
 
 #include <sys/sem.h>
@@ -57,7 +59,8 @@ void dump_perm (struct ipc_perm* perm)
             perm->__seq); 
 }
 
-void dump_sem (char const *prompt, int mid, int with_perm)
+// return real nsems
+int dump_sem (char const *prompt, int mid, int with_perm)
 {
     struct semid_ds mbuf; 
     union semun sem; 
@@ -142,6 +145,8 @@ void dump_sem (char const *prompt, int mid, int with_perm)
 
     if (with_perm)
         dump_perm (&mbuf.sem_perm); 
+
+    return mbuf.sem_nsems; 
 }
 
 int main (int argc, char *argv[])
@@ -195,21 +200,27 @@ int main (int argc, char *argv[])
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
     //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
-    dump_sem ("after open: ", mid, 1); 
+    nsem = dump_sem ("after open: ", mid, 1); 
+    printf ("update nsems to %d\n", nsem); 
 
 
     int n = 0; 
     int res = 0; 
-    struct sembuf sb; 
-    sb.sem_num = 0; 
-    sb.sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+    struct sembuf *sb = malloc (sizeof (struct sembuf) * nsem) ; 
     if (put == 0)
     {
-        sb.sem_op = -1; 
+        for (n=0; n<nsem; ++ n)
+        {
+            sb[n].sem_op = -1; 
+            sb[n].sem_num = n; 
+            sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+        }
+
+        n = 0; 
         while (1)
         {
             // read
-            res = semop (mid, &sb, 1); 
+            res = semop (mid, sb, nsem); 
             if (res < 0)
             {
                 printf ("semop to request resource failed, ret %d, errno %d\n", res, errno); 
@@ -225,21 +236,27 @@ int main (int argc, char *argv[])
     }
     else 
     {
-        sb.sem_op = 1; 
+        for (n=0; n<nsem; ++ n)
+        {
+            sb[n].sem_op = 1; 
+            sb[n].sem_num = n; 
+            sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+        }
+
         for (n=0; n<MAX_SEM_SIZE; ++ n)
         {
             // write
 #ifdef DUMP_SEM
             dump_sem ("before release: ", mid, 0); 
 #endif
-            res = semop (mid, &sb, 1); 
+            res = semop (mid, sb, nsem); 
             if (res < 0)
             {
                 printf ("semop to release resource failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
 
-            printf ("release %d, order %d\n", res, n); 
+            printf ("release return %d, order %d\n", res, n); 
             sleep (1); 
         }
     }
