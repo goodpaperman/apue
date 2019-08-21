@@ -6,6 +6,7 @@
 //#define SEM_INIT
 //#define USE_ARRAY
 //#define USE_UNDO
+#define USE_ZERO
 
 //#define READ_REMOVES
 //#define WRITE_REMOVES
@@ -122,7 +123,7 @@ int dump_sem (char const *prompt, int mid, int with_perm)
     sem.array = arr; 
 #  ifdef SEM_INIT
     for (n=0; n<mbuf.sem_nsems; ++ n) {
-        arr[n] = 10;
+        arr[n] = 1;
     }
 
     ret = semctl (mid, 0, SETALL, sem); 
@@ -159,7 +160,7 @@ int dump_sem (char const *prompt, int mid, int with_perm)
         printf ("       [%d].pid: %d\n", n, ret); 
 
 #  ifdef SEM_INIT
-        sem.val = 10;
+        sem.val = 1;
         ret = semctl (mid, n, SETVAL, sem); 
         if (ret < 0)
             err_sys ("semctl to set val failed"); 
@@ -242,12 +243,15 @@ int main (int argc, char *argv[])
     {
         for (n=0; n<nsem; ++ n)
         {
+#ifdef USE_ZERO
+            sb[n].sem_op = 0; 
+#else 
             sb[n].sem_op = -1; 
+#endif
             sb[n].sem_num = n; 
-#ifdef USE_UNDO
-            sb[n].sem_flg = SEM_UNDO; 
-#else
             sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+#ifdef USE_UNDO
+            sb[n].sem_flg |= SEM_UNDO; 
 #endif
         }
 
@@ -262,28 +266,41 @@ int main (int argc, char *argv[])
                 break; 
             }
 
-            printf ("request a resource %d, order %d\n", res, n++); 
+            printf ("request %d resource %d, order %d\n", sb[n].sem_op, res, n++); 
 #ifdef DUMP_SEM
             dump_sem ("after request: ", mid, 0); 
             //sleep (1); 
 #endif 
+
+#ifdef USE_ZERO
+            // to avoid loop too many times when semaphore count down to 0.
+            usleep (100); 
+#endif
         }
     }
     else 
     {
-        for (n=0; n<nsem; ++ n)
+        int m; 
+        for (m=0; m<nsem; ++ m)
         {
-            sb[n].sem_op = 1; 
-            sb[n].sem_num = n; 
+            sb[m].sem_op = 1; 
+            sb[m].sem_num = m; 
+            sb[m].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
 #ifdef USE_UNDO
-            sb[n].sem_flg = SEM_UNDO; 
-#else
-            sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+            sb[m].sem_flg |= SEM_UNDO; 
 #endif
         }
 
         for (n=0; n<MAX_SEM_SIZE; ++ n)
         {
+            for (m=0; m<nsem; ++ m)
+            {
+#ifdef USE_ZERO
+                // changed between -1 & 1.
+                sb[m].sem_op = n % 2 ? 1 : -1; 
+#endif
+            }
+
             // write
 #ifdef DUMP_SEM
             dump_sem ("before release: ", mid, 0); 
@@ -295,11 +312,12 @@ int main (int argc, char *argv[])
                 break; 
             }
 
-            printf ("release return %d, order %d\n", res, n); 
+            printf ("release %d return %d, order %d\n", sb[0].sem_op, res, n); 
             sleep (1); 
         }
     }
 
+    free (sb); 
     printf ("operate semaphore over\n"); 
 #ifdef USE_UNDO
     // try to see set the semaphores disables undo operations
