@@ -6,10 +6,11 @@
 //#define SEM_INIT
 //#define USE_ARRAY
 //#define USE_UNDO
-#define USE_ZERO
+//#define USE_ZERO
+#define USE_NOWAIT
 
 //#define READ_REMOVES
-//#define WRITE_REMOVES
+#define WRITE_REMOVES
 #ifndef SEM_INIT
 #  define DUMP_SEM // every dump will increate semaphore, so exclude..
 #endif 
@@ -253,6 +254,9 @@ int main (int argc, char *argv[])
 #ifdef USE_UNDO
             sb[n].sem_flg |= SEM_UNDO; 
 #endif
+#ifdef USE_NOWAIT
+            sb[n].sem_flg |= IPC_NOWAIT; 
+#endif
         }
 
         n = 0; 
@@ -262,6 +266,13 @@ int main (int argc, char *argv[])
             res = semop (mid, sb, nsem); 
             if (res < 0)
             {
+                if (errno == EAGAIN)
+                {
+                    printf ("try 1 second later...\n"); 
+                    sleep (1); 
+                    continue; 
+                }
+
                 printf ("semop to request resource failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
@@ -289,6 +300,9 @@ int main (int argc, char *argv[])
 #ifdef USE_UNDO
             sb[m].sem_flg |= SEM_UNDO; 
 #endif
+#ifdef USE_NOWAIT
+            sb[m].sem_flg |= IPC_NOWAIT; 
+#endif
         }
 
         for (n=0; n<MAX_SEM_SIZE; ++ n)
@@ -308,6 +322,13 @@ int main (int argc, char *argv[])
             res = semop (mid, sb, nsem); 
             if (res < 0)
             {
+                if (errno == EAGAIN)
+                {
+                    printf ("try 1 second later...\n"); 
+                    sleep (1); 
+                    continue; 
+                }
+
                 printf ("semop to release resource failed, ret %d, errno %d\n", res, errno); 
                 break; 
             }
