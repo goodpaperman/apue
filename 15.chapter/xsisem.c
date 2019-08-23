@@ -7,7 +7,7 @@
 //#define USE_ARRAY
 //#define USE_UNDO
 //#define USE_ZERO
-#define USE_NOWAIT
+//#define USE_NOWAIT
 
 //#define READ_REMOVES
 #define WRITE_REMOVES
@@ -188,7 +188,7 @@ int main (int argc, char *argv[])
     int put = 0;  // 0: get; 1: put
     if (argc > 1)
     {
-        //printf ("Usage: xsisem <projid> <nsems> <mode (put|get)> [semid]\n"); 
+        //printf ("Usage: xsisem <projid> <nsems> <mode (put|get)> [semid] [op]\n"); 
         projid = atoi (argv[1]); 
     }
 
@@ -207,9 +207,11 @@ int main (int argc, char *argv[])
     int mid = 0; 
     int ret = 0; 
     if (argc > 4)
-    {
         mid = atol (argv[4]); 
-        printf ("use mid %d\n", mid); 
+
+    if (mid > 0)
+    {
+        printf ("use mid %d directly\n", mid); 
     }
     else 
     {
@@ -230,6 +232,17 @@ int main (int argc, char *argv[])
         printf ("create semaphore %d with key 0x%08x ok\n", mid, key); 
     }
 
+    int op = 1; 
+    if (argc > 5)
+    {
+        op = abs(atoi (argv[5])); 
+    }
+
+    if (op > 0)
+        printf ("using op val %d\n", op); 
+    else 
+        op = 1; 
+
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
     //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
@@ -247,7 +260,7 @@ int main (int argc, char *argv[])
 #ifdef USE_ZERO
             sb[n].sem_op = 0; 
 #else 
-            sb[n].sem_op = -1; 
+            sb[n].sem_op = -op; 
 #endif
             sb[n].sem_num = n; 
             sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
@@ -294,7 +307,7 @@ int main (int argc, char *argv[])
         int m; 
         for (m=0; m<nsem; ++ m)
         {
-            sb[m].sem_op = 1; 
+            sb[m].sem_op = op; 
             sb[m].sem_num = m; 
             sb[m].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
 #ifdef USE_UNDO
@@ -311,7 +324,7 @@ int main (int argc, char *argv[])
             {
 #ifdef USE_ZERO
                 // changed between -1 & 1.
-                sb[m].sem_op = n % 2 ? 1 : -1; 
+                sb[m].sem_op = n % 2 ? op : -op; 
 #endif
             }
 
