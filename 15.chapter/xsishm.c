@@ -3,11 +3,6 @@
 #include <errno.h> 
 
 //#define USE_EXCL
-//#define SEM_INIT
-//#define USE_ARRAY
-//#define USE_UNDO
-//#define USE_ZERO
-//#define USE_NOWAIT
 
 //#define READ_REMOVEM
 #define WRITE_REMOVEM
@@ -139,7 +134,7 @@ int main (int argc, char *argv[])
 
     // after set mode bits in msgget, we don't need do this again.
     /// read access right is always needed as dumping queue, event for write process
-    //set_mode (mid, 0, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
+    //set_mode (mid, S_IRUSR | S_IRGRP | (put == 1 ? S_IWUSR | S_IWGRP : 0)); 
     size = dump_shm ("after open: ", mid, 1); 
     printf ("size updated to %d\n", size); 
 
