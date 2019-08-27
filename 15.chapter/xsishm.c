@@ -4,11 +4,11 @@
 
 //#define USE_EXCL
 
-//#define READ_REMOVEM
-#define WRITE_REMOVEM
+#define READ_REMOVEM
+//#define WRITE_REMOVEM
 #define DUMP_SHM 
 
-//#define MAX_SEM_SIZE 10
+#define MAX_SHM_SIZE 10
 
 #include <sys/shm.h>
 
@@ -138,109 +138,56 @@ int main (int argc, char *argv[])
     size = dump_shm ("after open: ", mid, 1); 
     printf ("size updated to %d\n", size); 
 
-//    int n = 0; 
-//    int res = 0; 
-//    struct sembuf *sb = malloc (sizeof (struct sembuf) * nsem) ; 
-//    if (put == 0)
-//    {
-//        for (n=0; n<nsem; ++ n)
-//        {
-//#ifdef USE_ZERO
-//            sb[n].sem_op = 0; 
-//#else 
-//            sb[n].sem_op = -op; 
-//#endif
-//            sb[n].sem_num = n; 
-//            sb[n].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
-//#ifdef USE_UNDO
-//            sb[n].sem_flg |= SEM_UNDO; 
-//#endif
-//#ifdef USE_NOWAIT
-//            sb[n].sem_flg |= IPC_NOWAIT; 
-//#endif
-//        }
-//
-//        n = 0; 
-//        while (1)
-//        {
-//            // read
-//            res = semop (mid, sb, nsem); 
-//            if (res < 0)
-//            {
-//                if (errno == EAGAIN)
-//                {
-//                    printf ("try 1 second later...\n"); 
-//                    sleep (1); 
-//                    continue; 
-//                }
-//
-//                printf ("semop to request resource failed, ret %d, errno %d\n", res, errno); 
-//                break; 
-//            }
-//
-//            printf ("request %d resource %d, order %d\n", sb[n].sem_op, res, n++); 
-//#ifdef DUMP_SHM
-//            dump_shm ("after request: ", mid, 0); 
-//            //sleep (1); 
-//#endif 
-//
-//#ifdef USE_ZERO
-//            // to avoid loop too many times when semaphore count down to 0.
-//            usleep (100); 
-//#endif
-//        }
-//    }
-//    else 
-//    {
-//        int m; 
-//        for (m=0; m<nsem; ++ m)
-//        {
-//            sb[m].sem_op = op; 
-//            sb[m].sem_num = m; 
-//            sb[m].sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
-//#ifdef USE_UNDO
-//            sb[m].sem_flg |= SEM_UNDO; 
-//#endif
-//#ifdef USE_NOWAIT
-//            sb[m].sem_flg |= IPC_NOWAIT; 
-//#endif
-//        }
-//
-//        for (n=0; n<MAX_SEM_SIZE; ++ n)
-//        {
-//            for (m=0; m<nsem; ++ m)
-//            {
-//#ifdef USE_ZERO
-//                // changed between -1 & 1.
-//                sb[m].sem_op = n % 2 ? op : -op; 
-//#endif
-//            }
-//
-//            // write
-//#ifdef DUMP_SHM
-//            dump_shm ("before release: ", mid, 0); 
-//#endif
-//            res = semop (mid, sb, nsem); 
-//            if (res < 0)
-//            {
-//                if (errno == EAGAIN)
-//                {
-//                    printf ("try 1 second later...\n"); 
-//                    sleep (1); 
-//                    continue; 
-//                }
-//
-//                printf ("semop to release resource failed, ret %d, errno %d\n", res, errno); 
-//                break; 
-//            }
-//
-//            printf ("release %d return %d, order %d\n", sb[0].sem_op, res, n); 
-//            sleep (1); 
-//        }
-//    }
-//
-//    free (sb); 
-    printf ("operate shared-memory over\n"); 
+    int n=0, val = 0; 
+    void* addr = 0; 
+    int flag = SHM_RND; 
+
+    if (put == 0)
+    {
+        addr = shmat (mid, 0, flag); 
+        if (addr == -1)
+            err_sys ("shmat failed, errno %d", errno); 
+
+        printf ("attach shared-memory at %p\n", addr); 
+        dump_shm ("after attach", mid, 0); 
+
+        while (1)
+        {
+            val = ((int *)addr)[n++]; 
+            if (val == 0)
+            {
+                printf ("reach end\n"); 
+                break; 
+            }
+
+            printf ("%d got val at %d: %d\n", getpid (), n, val); 
+            sleep (1); 
+        }
+
+        shmdt (addr); 
+        dump_shm ("after detach", mid, 0); 
+
+    }
+    else
+    {
+        addr = shmat (mid, 0, flag); 
+        if (addr == -1)
+            err_sys ("shmat failed, errno %d", errno); 
+
+        printf ("attach shared-memory at %p\n", addr); 
+        dump_shm ("after attach", mid, 0); 
+
+        for (n=0; n<MAX_SHM_SIZE; ++ n)
+        {
+            val = getpid () + n; 
+            ((int *)addr)[n] = val; 
+            printf ("%d set %d to %d\n", getpid (), n, val); 
+            sleep (1); 
+        }
+
+        shmdt (addr); 
+        dump_shm ("after detach", mid, 0); 
+    }
 
     switch (put)
     {
