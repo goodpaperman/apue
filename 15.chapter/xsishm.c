@@ -3,6 +3,8 @@
 #include <errno.h> 
 
 //#define USE_EXCL
+//#define USE_RND
+//#define USE_RDONLY
 
 #define READ_REMOVEM
 //#define WRITE_REMOVEM
@@ -140,11 +142,22 @@ int main (int argc, char *argv[])
 
     int n=0, val = 0; 
     void* addr = 0; 
-    int flag = SHM_RND; 
+    int flag = 0; 
+#ifdef USE_RND
+    flag |= SHM_RND; 
+    addr = 0x8004001; 
+    printf ("try addr 0x%08x\n", addr); 
+#endif
+
+#ifdef USE_RDONLY
+    flag |= SHM_RDONLY; 
+    printf ("try open map readonly\n"); 
+#endif
 
     if (put == 0)
     {
-        addr = shmat (mid, 0, flag); 
+        flag |= SHM_RDONLY; 
+        addr = shmat (mid, addr, flag); 
         if (addr == -1)
             err_sys ("shmat failed, errno %d", errno); 
 
@@ -170,7 +183,7 @@ int main (int argc, char *argv[])
     }
     else
     {
-        addr = shmat (mid, 0, flag); 
+        addr = shmat (mid, addr, flag); 
         if (addr == -1)
             err_sys ("shmat failed, errno %d", errno); 
 
