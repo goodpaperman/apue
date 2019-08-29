@@ -4,7 +4,7 @@ zroshm: zroshm.o apue.o
 	gcc -Wall -g $^ -o $@ -lpthread
 
 zroshm.o: zroshm.c ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -D_BSD_SOURCE
 
 addr: addr.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread

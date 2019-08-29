@@ -2,7 +2,8 @@
 #include <fcntl.h> 
 #include <sys/mman.h> 
 
-#define USE_NULL
+#define USE_ANON
+//#define USE_NULL
 //#define USE_PRIVATE
 
 #define NLOOPS 1000
@@ -15,18 +16,27 @@ static int update (long *ptr)
 
 int main (void)
 {
-#ifdef USE_NULL
+#ifdef USE_ANON
+    int fd = -1; 
+#else 
+#  ifdef USE_NULL
     int fd = open ("/dev/null", O_RDWR); 
-#else
+#  else
     int fd = open ("/dev/zero", O_RDWR); 
-#endif
+#  endif
     if (fd < 0)
         err_sys ("open error"); 
 
     printf ("open /dev/zero ok\n"); 
+#endif
+
     int flag = MAP_SHARED; 
 #ifdef USE_PRIVATE
     flag = MAP_PRIVATE; 
+#endif
+
+#ifdef USE_ANON
+    flag |= MAP_ANONYMOUS; 
 #endif
 
     void *area = mmap (0, SIZE, PROT_READ | PROT_WRITE, flag, fd, 0); 
