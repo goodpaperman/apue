@@ -1,5 +1,7 @@
 #include "../apue.h" 
 
+//#define USE_FILE 1
+
 static void sig_pipe (int); 
 
 int main (int argc, char *argv[])
@@ -24,12 +26,29 @@ int main (int argc, char *argv[])
     {
         close (fd1[0]);  // write on pipe1 as stdin for co-process
         close (fd2[1]);  // read on pipe2 as stdout for co-process
+#ifdef USE_FILE
+        FILE* fp1 = fdopen (fd1[1], "w"); 
+        FILE* fp2 = fdopen (fd2[0], "r"); 
+        if (fp1 == NULL || fp2 == NULL)
+            err_sys ("open filep on fd failed"); 
+#endif 
+
         while (fgets (line, MAXLINE, stdin) != NULL) { 
             n = strlen (line); 
+#ifdef USE_FILE
+            if (fwrite (line, 1, n, fp1) != n)
+                err_sys ("fwrite error to pipe"); 
+            fflush (fp1); 
+            printf ("waiting reply\n"); 
+            if (fgets (line, MAXLINE, fp2) == NULL)
+                err_sys ("fread error from pipe"); 
+#else
             if (write (fd1[1], line, n) != n)
                 err_sys ("write error to pipe"); 
             if ((n = read (fd2[0], line, MAXLINE)) < 0)
                 err_sys ("read error from pipe"); 
+#endif
+
             if (n == 0) { 
                 err_msg ("child closed pipe"); 
                 break;
