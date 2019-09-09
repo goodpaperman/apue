@@ -1,4 +1,10 @@
-all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm
+all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm pipeselect
+
+pipeselect: pipeselect.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+pipeselect.o: pipeselect.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 zroshm: zroshm.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread
