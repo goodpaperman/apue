@@ -1,13 +1,18 @@
 #include "../apue.h" 
 #include <sys/wait.h> 
 
+//#define USE_REDIRECT
 //#define USE_STDERR 1
 
 int main (void)
 {
     char line[MAXLINE] = { 0 }; 
-    //FILE *fp = popen ("./tolower", "r"); 
+#ifdef USE_REDIRECT
     FILE *fp = popen ("./tolower 2>&1", "r"); 
+#else
+    FILE *fp = popen ("./tolower", "r"); 
+#endif
+
     if (fp == NULL)
         err_sys ("popen error"); 
 

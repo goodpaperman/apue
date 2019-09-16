@@ -1,7 +1,7 @@
 #include "../apue.h" 
 #include <ctype.h> 
 
-#define USE_STDERR 1
+//#define USE_STDERR 1
 
 int main (void) 
 {
