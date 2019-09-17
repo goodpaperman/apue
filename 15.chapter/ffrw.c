@@ -5,6 +5,7 @@
 
 #define MAX_LINE 10
 //#define NBLK_OPEN
+//#define OPEN_TWICE
 
 void* thr_func (void *arg)
 {
@@ -56,16 +57,34 @@ int main (int argc, char *argv[])
     }
 
     int flags = 0; 
+#ifdef OPEN_TWICE
+    flags = O_RDONLY | O_NONBLOCK; 
+    int fd2 = open (fifo, flags); 
+    if (fd2 < 0)
+        err_sys ("open fifo for read async failed"); 
+
+    printf ("open fifo for nonblock read ok\n"); 
+    flags = O_WRONLY; 
+    int fd = open (fifo, flags); 
+    if (fd < 0)
+        err_sys ("open fifo for write sync failed"); 
+
+    printf ("open fifo for block write ok\n"); 
+    clr_fl (fd2, O_NONBLOCK); 
+    printf ("clear nonblock for read ok\n"); 
+#else
     flags = O_RDWR; 
 
-#ifdef NBLK_OPEN
+#  ifdef NBLK_OPEN
     flags |= O_NONBLOCK; 
-#endif
+#  endif
     int fd = open (fifo, flags); 
     if (fd < 0)
         err_sys ("open fifo for read/write failed"); 
 
     printf ("open fifo for read/write\n"); 
+#endif
+
     struct stat sb; 
     if (fstat (fd, &sb) < 0)
         err_sys ("stat failed"); 
@@ -75,7 +94,11 @@ int main (int argc, char *argv[])
 
     printf ("is a fifo\n"); 
     pthread_t tid = 0; 
+#ifdef OPEN_TWICE
+    int ret = pthread_create (&tid, NULL, thr_func, (void *)fd2 /* for write */); 
+#else
     int ret = pthread_create (&tid, NULL, thr_func, (void *)fd); 
+#endif
     if (ret != 0)
     {
         printf ("pthread create failed, errno %d\n", errno); 
@@ -101,5 +124,8 @@ int main (int argc, char *argv[])
     pthread_join (tid, &status); 
     printf ("wait write thread, return %d\n", status); 
     close (fd); 
+#ifdef OPEN_TWICE
+    close (fd2); 
+#endif
     return 0; 
 }
