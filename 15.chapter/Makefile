@@ -1,4 +1,10 @@
-all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm pipeselect msgid
+all: pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm pipeselect msgid shmlst
+
+shmlst: shmlst.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+shmlst.o: shmlst.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 msgid: msgid.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread
@@ -146,7 +152,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm msgid
+	-rm -f *.o core.* *.log *~ *.swp pipestat pipemulti pipeatom pipepoll pipepage ppage pmulti tolower ptolower add2 add3 padd2 ffread ffwrite ffrw xsiget xsique xsisem xsishm addr zroshm msgid shmlst
 	@echo "end clean"
 
 .PHONY: clean
