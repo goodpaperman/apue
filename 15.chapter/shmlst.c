@@ -6,8 +6,10 @@
 //#define USE_EXCL
 //#define USE_RND
 //#define DUMP_SHM 
-#define MAX_DATA_SIZE (32-4)
-#define MAX_DATA_ITEM 10
+
+#define MAX_SHM_SIZE 1024
+#define MAX_DATA_SIZE (32-4-4)
+#define MAX_DATA_ITEM 1000
 
 #include <sys/shm.h>
 #include <sys/sem.h>
@@ -136,6 +138,7 @@ int dump_sem (char const *prompt, int mid, int with_perm)
 struct slist
 {
     int offset; 
+    int inuse; 
     char data[MAX_DATA_SIZE]; 
 
     // not support function in struct for C
@@ -148,11 +151,12 @@ struct slist
 void init_node (void *base)
 {
     struct slist *head = (struct slist *)base; 
+    head->inuse = 1;
     head->set_next (base, base); 
     printf ("init_node ok\n"); 
 }
 
-int add_node (void *base, int n)
+int add_node (void *base, int size, int n)
 {
     struct slist *head = (struct slist *)base; 
     struct slist *ptr = head->get_next(base), *prev = head; 
@@ -170,15 +174,46 @@ int add_node (void *base, int n)
 
     // find out last node at 'prev'
     struct slist *curr = prev + 1; 
+    while (curr->inuse && curr + 1 < base + size)
+    {
+        curr++; 
+#ifdef DEBUG
+        printf ("add_node_3: find %p\n", curr); 
+#endif
+    }
+
+    if (curr+1 > base + size)
+    {
+        // overflow ? run back
+        printf ("no free node in after section, try before...\n"); 
+        curr = head + 1; 
+        while (curr->inuse && curr < prev)
+        {
+            curr ++; 
+#ifdef DEBUG
+            printf ("add_node_4: find %p\n", curr); 
+#endif
+        }
+
+        if (curr >= prev)
+        {
+            // no more place
+            printf ("no memory !\n"); 
+            return 0; 
+        }
+    }
+
+
+    curr->inuse = 1; 
     sprintf (curr->data, "this is %d", n); 
     curr->set_next (base, head); 
 #ifdef DEBUG
-    printf ("add_node_3: curr %p, next %p\n", curr, curr->get_next(base)); 
+    printf ("add_node_5: curr %p, next %p\n", curr, curr->get_next(base)); 
 #endif
 
     prev->set_next (base, curr); 
 #ifdef DEBUG
-    printf ("add_node_4: prev %p, next %p\n", prev, prev->get_next(base)); 
+    printf ("add_node_6: prev %p, next %p\n", prev, prev->get_next(base)); 
 #endif
 
     printf ("add node %d ok\n", n); 
@@ -196,6 +231,7 @@ int remove_node (void *base, char **data)
 
     struct slist *ptr = head->get_next(base); 
     *data = ptr->data; 
+    ptr->inuse = 0; 
 
     struct slist *next = ptr->get_next(base); 
     head->set_next(base, next); 
@@ -209,7 +245,7 @@ int remove_node (void *base, char **data)
 
 int main (int argc, char *argv[])
 {
-    int projid = 42, size = 1024; 
+    int projid = 42, size = MAX_SHM_SIZE; 
     int put = 0;  // 0: get; 1: put
     if (argc > 1)
     {
@@ -304,6 +340,7 @@ int main (int argc, char *argv[])
             printf ("got msg: %s\n", ptr); 
             // no sleep for read any more, we will block at semaphore when no data..
             //sleep (1); 
+            usleep (100000); 
         }
 
         shmdt (addr); 
@@ -327,8 +364,16 @@ int main (int argc, char *argv[])
         //init_node (addr); 
         for (n=0; n<MAX_DATA_ITEM; ++ n)
         {
-            add_node (addr, n); 
-            printf ("create msg %d\n", n); 
+            if (add_node (addr, size, n))
+                printf ("create msg %d\n", n); 
+            else 
+            {
+                -- n; 
+                printf ("wait a while...\n"); 
+                usleep (100000); 
+                //sleep (1); 
+                continue; 
+            }
 
             sb.sem_op = 1; 
             sb.sem_num = 0; 
@@ -339,7 +384,8 @@ int main (int argc, char *argv[])
             else 
                 printf ("release 1 resource from semaphore\n"); 
 
-            usleep (100000); 
+            // no sleep for write
+            //usleep (100000); 
         }
 
         shmdt (addr); 
