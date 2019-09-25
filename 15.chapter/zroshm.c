@@ -136,6 +136,8 @@ int main (void)
 
         printf ("remove that shared-memory\n"); 
     }
+#else 
+    munmap (area, SIZE); 
 #endif 
 
     return 0; 
