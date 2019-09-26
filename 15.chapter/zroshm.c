@@ -104,7 +104,7 @@ int main (void)
                 printf ("parent increase to %d based %d\n", i+1, counter); 
 
             SYNC_TELL(pid, 1); 
-            SYNC_WAIT(); 
+            SYNC_WAIT(0); 
         }
 
         printf ("parent exit\n"); 
@@ -113,7 +113,7 @@ int main (void)
     {
         for (i=1; i<NLOOPS+1; i+=2)
         {
-            SYNC_WAIT(); 
+            SYNC_WAIT(1); 
             counter = update ((long *)area); 
             if (counter != i)
                 err_quit ("child: expected %d, got %d", i, counter); 

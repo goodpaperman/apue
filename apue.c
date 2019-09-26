@@ -13,6 +13,7 @@
 #include <syslog.h>
 #include <fcntl.h> 
 #include <poll.h>
+#include <sys/sem.h> 
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -811,6 +812,75 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len)
   return lock.l_pid; 
 }
 
+#ifdef USE_SEM_SYNC
+
+union semun
+{
+  int val;				//<= value for SETVAL
+  struct semid_ds *buf; //		<= buffer for IPC_STAT & IPC_SET
+  unsigned short int *array;// 		<= array for GETALL & SETALL
+  struct seminfo *__buf;    //		<= buffer for IPC_INFO
+};
+
+static int semid = -1;  
+
+void SYNC_INIT ()
+{
+    int mode = 0666;  // 0; 
+    int flag = IPC_CREAT; 
+#ifdef USE_EXCL
+    flag |= IPC_EXCL; 
+#endif
+
+    semid = semget (IPC_PRIVATE, 2, flag | mode); 
+    if (semid < 0)
+        err_sys ("semget for SYNC failed"); 
+
+    printf ("create semaphore %d for SYNC ok\n", semid); 
+
+    union semun sem; 
+    //sem.val = 1;
+    //int ret = semctl (semid, 0, SETVAL, sem); 
+    //if (ret < 0)
+    //    err_sys ("semctl to set val failed"); 
+    
+    short arr[2] = { 0 }; 
+    sem.array = arr; 
+    int ret = semctl (semid, 0, SETALL, sem); 
+    if (ret < 0)
+        err_sys ("semctl to set all val failed"); 
+
+    printf ("reset all semaphores ok\n"); 
+}
+
+void SYNC_TELL (pid_t pid, int child)
+{
+    struct sembuf sb; 
+    sb.sem_op = 1; 
+    sb.sem_num = child ? 1 : 0; 
+    sb.sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+    int ret = semop (semid, &sb, 1); 
+    if (ret < 0)
+        printf ("semop to release resource failed, ret %d, errno %d\n", ret, errno); 
+    else 
+        printf ("release %d resource %d\n", sb.sem_op, ret); 
+}
+
+void SYNC_WAIT (int child)
+{
+    struct sembuf sb; 
+    sb.sem_op = -1; 
+    sb.sem_num = child ? 1 : 0; 
+    sb.sem_flg = 0;  // IPC_NOWAIT, SEM_UNDO
+    int ret = semop (semid, &sb, 1); 
+    if (ret < 0)
+        printf ("semop to require resource failed, ret %d, errno %d\n", ret, errno); 
+    else 
+        printf ("require %d resource %d\n", sb.sem_op, ret); 
+}
+
+#endif
+
 #ifdef USE_PIPE_SYNC
 
 // pp is the pipe that parent notify(write) child wait(read)
@@ -842,7 +912,7 @@ void SYNC_TELL (pid_t pid, int child)
         err_sys ("write error"); 
 }
 
-void SYNC_WAIT (void)
+void SYNC_WAIT (int child /* unused */)
 {
     int n = 0, m = 0; 
     struct pollfd fds[2] = {{ 0 }}; 
@@ -889,7 +959,10 @@ void SYNC_WAIT (void)
         printf ("poll return 0\n"); 
 }
 
-#else // use signal
+#endif
+
+// use signal
+#ifdef USE_SIGNAL_SYNC
 
 static volatile sig_atomic_t sigflag; 
 static sigset_t newmask, oldmask, zeromask; 
@@ -900,7 +973,7 @@ static void sig_usr (int signo)
     printf ("SIGUSR1/2 called\n"); 
 }
 
-void SYNC_INIT (void)
+void SYNC_INIT ()
 {
     if (apue_signal (SIGUSR1, sig_usr) == SIG_ERR)
         err_sys ("signal (SIGUSR1) error"); 
@@ -921,7 +994,7 @@ void SYNC_TELL (pid_t pid, int child)
     kill (pid, child ? SIGUSR1 : SIGUSR2); 
 }
 
-void SYNC_WAIT (void)
+void SYNC_WAIT (int child /* unused */)
 {
     while (sigflag == 0)
         sigsuspend (&zeromask); 
