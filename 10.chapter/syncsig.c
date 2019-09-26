@@ -109,7 +109,7 @@ int main (void)
             if (ret < 0 || ret >= 10)
                 break; 
 
-            SYNC_WAIT (); 
+            SYNC_WAIT (1); 
             printf ("wait parent %u\n", getppid ()); 
         }
         return 2; 
@@ -118,7 +118,7 @@ int main (void)
     while (ret < 10 && ret >= 0)
     {
         //printf ("prepare to wait child\n"); 
-        SYNC_WAIT(); 
+        SYNC_WAIT(0); 
         printf ("wait child\n"); 
         ret = read_increase_write (); 
         SYNC_TELL (cid, 1); 

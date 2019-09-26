@@ -91,9 +91,9 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len);
 #define write_lockable(fd, offset, whence, len) \
           lock_test((fd), F_WRLCK, (offset), (whence), (len))
 
-#define USE_SIGNAL_SYNC
+//#define USE_SIGNAL_SYNC
 //#define USE_PIPE_SYNC
-//#define USE_SEM_SYNC
+#define USE_SEM_SYNC
 void SYNC_INIT (void);
 void SYNC_TELL (pid_t pid, int child);
 void SYNC_WAIT (int child);

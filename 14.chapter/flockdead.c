@@ -28,12 +28,12 @@ int main (int argc, char *argv[])
   else if (pid == 0) {
     lockabyte ("child", fd, 0); 
     SYNC_TELL (getppid (), 0); 
-    SYNC_WAIT (); 
+    SYNC_WAIT (1); 
     lockabyte ("child", fd, 1); 
   }
   else { 
     lockabyte ("parent", fd, 1); 
-    SYNC_WAIT (); 
+    SYNC_WAIT (0); 
     SYNC_TELL(pid, 1); 
     lockabyte ("parent", fd, 0); 
   }

@@ -32,6 +32,7 @@ int main (int argc, char *argv[])
   if (pid < 0) { 
     err_sys ("fork error"); 
   } else if (pid > 0) { 
+    // parent
     if (write_lock (fd, 0, SEEK_SET, 0) < 0)
       err_sys ("write_lock error"); 
 
@@ -39,7 +40,7 @@ int main (int argc, char *argv[])
     if (waitpid (pid, NULL, 0) < 0)
       err_sys ("waitpid error"); 
   } else { 
-    SYNC_WAIT (); 
+    SYNC_WAIT (1); 
 #if 1
     set_fl (fd, O_NONBLOCK); 
 #endif
