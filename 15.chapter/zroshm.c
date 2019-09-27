@@ -103,6 +103,10 @@ int main (void)
             else 
                 printf ("parent increase to %d based %d\n", i+1, counter); 
 
+            //if (i == 0)
+            //    // wait child to do reinit
+            //    usleep (100000); 
+
             SYNC_TELL(pid, 1); 
             SYNC_WAIT(0); 
         }
@@ -111,6 +115,7 @@ int main (void)
     }
     else 
     {
+        //SYNC_REINIT (); 
         for (i=1; i<NLOOPS+1; i+=2)
         {
             SYNC_WAIT(1); 

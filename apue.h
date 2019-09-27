@@ -84,7 +84,7 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len);
           lock_reg((fd), F_SETLK, F_WRLCK, (offset), (whence), (len))
 #define writew_lock(fd, offset, whence, len) \
           lock_reg((fd), F_SETLKW, F_WRLCK, (offset), (whence), (len))
-#define un_lock (fd, offset, whence, len) \
+#define un_lock(fd, offset, whence, len) \
           lock_reg((fd), F_SETLK, F_UNLCK, (offset), (whence), (len))
 #define read_lockable(fd, offset, whence, len) \
           lock_test((fd), F_RDLCK, (offset), (whence), (len))
@@ -94,7 +94,13 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len);
 //#define USE_SIGNAL_SYNC
 //#define USE_PIPE_SYNC
 #define USE_SEM_SYNC
-void SYNC_INIT (void);
+// always fails with this implement, 
+// 1. child process can not inherit parent locks
+// 2. double lock on same file on same region has no 'block' effective.
+//#define USE_FLCK_SYNC 
+
+void SYNC_INIT ();
+void SYNC_REINIT ();  // for child only if USE_FLCK_SYNC
 void SYNC_TELL (pid_t pid, int child);
 void SYNC_WAIT (int child);
 

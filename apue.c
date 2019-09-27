@@ -812,6 +812,78 @@ pid_t lock_test (int fd, int type, off_t *offset, int *whence, off_t *len)
   return lock.l_pid; 
 }
 
+#ifdef USE_FLCK_SYNC
+
+static int fd = -1; 
+
+void SYNC_INIT ()
+{
+    fd = open ("./lock_to_sync", O_RDWR | O_CREAT | O_TRUNC, FILE_MODE); 
+    if (fd < 0)
+        err_sys ("open file to add lock on it for synchronize failed\n"); 
+
+    int ret = write (fd, "ab", 2); 
+    if (ret != 2)
+        err_sys ("init lock file to length 2 failed\n"); 
+
+    printf ("open lock file and extend to 2 bytes\n"); 
+
+#if 0
+    if (writew_lock (fd, 0, SEEK_SET, 1) < 0)
+        err_sys ("try to hold lock for parent failed\n"); 
+
+    if (writew_lock (fd, 1, SEEK_SET, 1) < 0)
+        err_sys ("try to hold lock for child failed\n"); 
+
+    printf ("lock these two bytes for init ok\n"); 
+#else
+    //// parent operates child lock, and child operate parent lock.
+    //if (writew_lock (fd, child ? 0 : 1, SEEK_SET, 1) < 0)
+    // called by parent and lock child byte
+    if (writew_lock (fd, 1, SEEK_SET, 1) < 0)
+        err_sys ("try to hold child lock for parent failed\n"); 
+
+    printf ("lock child bytes for parent init ok\n"); 
+#endif 
+}
+
+void SYNC_REINIT()
+{
+    // called by child, and lock parent byte
+    if (writew_lock (fd, 0, SEEK_SET, 1) < 0)
+        err_sys ("try to hold parent lock for child failed\n"); 
+
+    printf ("lock parent bytes for child init ok\n"); 
+}
+
+void SYNC_TELL (pid_t pid, int child)
+{
+    int offset = child ? 1 : 0; 
+    if (un_lock(fd, offset, SEEK_SET, 1) < 0)
+        err_sys ("release lock for %s failed\n", child ? "child" : "parent"); 
+
+    // in reverse turn
+    printf ("%s unlock file at %d\n", child ? "parent" : "child", offset); 
+}
+
+void SYNC_WAIT (int child)
+{
+    int offset = child ? 1 : 0; 
+    if (writew_lock (fd, offset, SEEK_SET, 1) < 0)
+        err_sys ("try to hold lock for %s failed\n", child ? "child" : "parent"); 
+
+    printf ("%s lock file at %d\n", child ? "child" : "parent", offset); 
+}
+
+#else 
+
+void SYNC_REINIT()
+{
+    // do nothing
+}
+
+#endif
+
 #ifdef USE_SEM_SYNC
 
 union semun
