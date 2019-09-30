@@ -13,7 +13,7 @@
 #  include <sys/shm.h> 
 #endif
 
-#define NLOOPS 1000
+#define NLOOPS 100
 #define SIZE sizeof(long)
 
 static int update (long *ptr)
