@@ -101,6 +101,44 @@ void test_host3 (struct in_addr *addr)
         printf ("no host found by addr: 0x%08x\n", addr->s_addr); 
 }
 
+void dump_net (struct netent *h)
+{
+    struct in_addr addr; 
+    addr.s_addr = htonl(h->n_net); 
+    printf ("net entry: \n"
+            "  name: %s\n"
+            "  addrtype: %s\n"
+            "  net: %s 0x%08x\n"
+            "  aliases: \n", 
+            h->n_name, 
+            addr_type(h->n_addrtype), 
+            addr_str (h->n_addrtype, &addr), 
+            h->n_net); 
+
+    int i = 0; 
+    char **ptr = h->n_aliases; 
+    while (ptr[i] != 0)
+    {
+        printf ("    alias[%d]: %s\n", i, ptr[i]); 
+        i ++; 
+    }
+            
+    printf ("\n"); 
+}
+
+void test_net ()
+{
+    printf ("start walk around net entry\n"); 
+    struct netent* h = 0; 
+    while ((h = getnetent()) != 0)
+    {
+        dump_net (h); 
+    }
+
+    endnetent (); 
+    printf ("end\n"); 
+}
+
 int main (int argc, char *argv[])
 {
     test_host (); 
@@ -111,6 +149,8 @@ int main (int argc, char *argv[])
     addr.s_addr = 0x0100007f; 
     test_host3 (&addr); 
     addr.s_addr = 0xdf38810a;  // 10.129.56.223: gux.glodon.com
+    //addr.s_addr = 0x0a8138df;  
     test_host3 (&addr); 
+    test_net (); 
     return 0; 
 }
