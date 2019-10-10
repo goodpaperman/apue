@@ -139,6 +139,30 @@ void test_net ()
     printf ("end\n"); 
 }
 
+void test_net2 (char const* netname)
+{
+    struct netent *h = getnetbyname (netname); 
+    if (h)
+    {
+        printf ("find net by name: %s\n", netname); 
+        dump_net (h); 
+    }
+    else 
+        printf ("no net found by name: %s\n", netname); 
+}
+
+void test_net3 (in_addr_t addr)
+{
+    struct netent *h = getnetbyaddr (addr, AF_INET); 
+    if (h)
+    {
+        printf ("find net by addr: 0x%08x\n", addr); 
+        dump_net (h); 
+    }
+    else 
+        printf ("no net found by addr: 0x%08x\n", addr); 
+}
+
 int main (int argc, char *argv[])
 {
     test_host (); 
@@ -152,5 +176,12 @@ int main (int argc, char *argv[])
     //addr.s_addr = 0x0a8138df;  
     test_host3 (&addr); 
     test_net (); 
+    test_net2 ("default"); 
+    test_net2 ("loopback"); 
+    test_net2 ("eth0"); 
+    //test_net3 (0x0000007f); 
+    test_net3 (0x7f000000); 
+    //test_net3 (0xdf38810a); 
+    test_net3 (0x0a8138df); 
     return 0; 
 }
