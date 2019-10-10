@@ -19,11 +19,10 @@ char * addr_type (int addrtype)
     }
 }
 
-char* addr_str (int addrtype, struct sockaddr_in *addr)
+char* addr_str (int addrtype, struct in_addr *addr)
 {
     static char buf[128] = { 0 }; 
     inet_ntop (addrtype, addr, buf, sizeof (buf)); 
-    sprintf (buf + strlen(buf), ":%d", addr->sin_port); 
     return buf; 
 }
 
@@ -52,10 +51,13 @@ void dump_host (struct hostent *h)
     }
             
     i = 0; 
-    struct sockaddr_in** addr = (struct sockaddr_in **)h->h_addr_list; 
+    struct in_addr** addr = (struct in_addr **)h->h_addr_list; 
     while (addr[i] != 0)
     {
-        printf ("    addr[%d]: %s\n", i, addr_str(h->h_addrtype, addr[i])); 
+        //char *ptr = (char *) &addr[i]->sin_addr.s_addr; 
+        //printf ("        0x%08x\n", addr[i]->s_addr); 
+        //printf ("        %02x0%2x%02x%02x\n", ptr[0], ptr[1], ptr[2], ptr[3]); 
+        printf ("    addr[%d]: %s 0x%08x\n", i, addr_str(h->h_addrtype, addr[i]), addr[i]->s_addr); 
         i ++; 
     }
 
@@ -87,9 +89,28 @@ void test_host2 (char const* hostname)
         printf ("no host found by name: %s\n", hostname); 
 }
 
+void test_host3 (struct in_addr *addr)
+{
+    struct hostent *h = gethostbyaddr (addr, sizeof (struct in_addr), AF_INET); 
+    if (h)
+    {
+        printf ("find host by addr: 0x%08x\n", addr->s_addr); 
+        dump_host (h); 
+    }
+    else 
+        printf ("no host found by addr: 0x%08x\n", addr->s_addr); 
+}
+
 int main (int argc, char *argv[])
 {
     test_host (); 
     test_host2 ("localhost"); 
+    test_host2 ("www.baidu.com"); 
+    test_host2 ("gux.glodon.com"); 
+    struct in_addr addr; 
+    addr.s_addr = 0x0100007f; 
+    test_host3 (&addr); 
+    addr.s_addr = 0xdf38810a;  // 10.129.56.223: gux.glodon.com
+    test_host3 (&addr); 
     return 0; 
 }
