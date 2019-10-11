@@ -163,18 +163,142 @@ void test_net3 (in_addr_t addr)
         printf ("no net found by addr: 0x%08x\n", addr); 
 }
 
+void dump_proto (struct protoent *h)
+{
+    printf ("protocol entry: \n"
+            "  name: %s\n"
+            "  proto: %d\n"
+            "  aliases: \n", 
+            h->p_name, 
+            h->p_proto);
+
+    int i = 0; 
+    char **ptr = h->p_aliases; 
+    while (ptr[i] != 0)
+    {
+        printf ("    alias[%d]: %s\n", i, ptr[i]); 
+        i ++; 
+    }
+            
+    printf ("\n"); 
+}
+
+void test_proto ()
+{
+    printf ("start walk around protocol entry\n"); 
+    struct protoent* h = 0; 
+    while ((h = getprotoent()) != 0)
+    {
+        dump_proto (h); 
+    }
+
+    endprotoent (); 
+    printf ("end\n"); 
+}
+
+void test_proto2 (char const* protoname)
+{
+    struct protoent *h = getprotobyname (protoname); 
+    if (h)
+    {
+        printf ("find protocol by name: %s\n", protoname); 
+        dump_proto (h); 
+    }
+    else 
+        printf ("no protocol found by name: %s\n", protoname); 
+}
+
+void test_proto3 (int num)
+{
+    struct protoent *h = getprotobynumber (num); 
+    if (h)
+    {
+        printf ("find protocol by number: %d\n", num); 
+        dump_proto (h); 
+    }
+    else 
+        printf ("no protocol found by number: %d\n", num); 
+}
+
+void dump_serv (struct servent *h)
+{
+    printf ("server entry: \n"
+            "  name: %s\n"
+            "  port: %d\n"
+            "  protocol: %s\n"
+            "  aliases: \n", 
+            h->s_name, 
+            h->s_port, 
+            h->s_proto);
+
+    int i = 0; 
+    char **ptr = h->s_aliases; 
+    while (ptr[i] != 0)
+    {
+        printf ("    alias[%d]: %s\n", i, ptr[i]); 
+        i ++; 
+    }
+            
+    printf ("\n"); 
+}
+
+void test_serv ()
+{
+    printf ("start walk around server entry\n"); 
+    struct servent* h = 0; 
+    while ((h = getservent()) != 0)
+    {
+        dump_serv (h); 
+    }
+
+    endservent (); 
+    printf ("end\n"); 
+}
+
+void test_serv2 (char const* servname)
+{
+    struct servent *h = getservbyname (servname, "tcp"); 
+    if (h == NULL)
+        h = getservbyname (servname, "udp"); 
+
+    if (h)
+    {
+        printf ("find server by name: %s\n", servname); 
+        dump_serv (h); 
+    }
+    else 
+        printf ("no server found by name: %s\n", servname); 
+}
+
+void test_serv3 (int port)
+{
+    struct servent *h = getservbyport (port, "tcp"); 
+    if (h == NULL)
+        h = getservbyport (port, "udp"); 
+
+    if (h)
+    {
+        printf ("find server by port: %d\n", port); 
+        dump_serv (h); 
+    }
+    else 
+        printf ("no server found by port: %d\n", port); 
+}
+
 int main (int argc, char *argv[])
 {
     test_host (); 
     test_host2 ("localhost"); 
     test_host2 ("www.baidu.com"); 
     test_host2 ("gux.glodon.com"); 
+
     struct in_addr addr; 
     addr.s_addr = 0x0100007f; 
     test_host3 (&addr); 
     addr.s_addr = 0xdf38810a;  // 10.129.56.223: gux.glodon.com
     //addr.s_addr = 0x0a8138df;  
     test_host3 (&addr); 
+
     test_net (); 
     test_net2 ("default"); 
     test_net2 ("loopback"); 
@@ -183,5 +307,17 @@ int main (int argc, char *argv[])
     test_net3 (0x7f000000); 
     //test_net3 (0xdf38810a); 
     test_net3 (0x0a8138df); 
+
+    test_proto (); 
+    test_proto2 ("tcp"); 
+    test_proto2 ("raw"); 
+    test_proto3 (136); 
+    test_proto3 (224); 
+
+    test_serv (); 
+    test_serv2 ("http"); 
+    test_serv2 ("abcd"); 
+    test_serv3 (80); 
+    test_serv3 (8080); 
     return 0; 
 }
