@@ -1,4 +1,10 @@
-all: hostent 
+all: hostent addrinfo
+
+addrinfo: addrinfo.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+addrinfo.o: addrinfo.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 hostent: hostent.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp hostent 
+	-rm -f *.o core.* *.log *~ *.swp hostent addrinfo
 	@echo "end clean"
 
 .PHONY: clean
