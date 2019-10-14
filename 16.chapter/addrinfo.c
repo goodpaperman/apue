@@ -91,14 +91,28 @@ void print_flags (struct addrinfo *aip)
     }
 }
 
+void test_getnameinfo (struct sockaddr *addr, int addrlen)
+{
+    char host[128]; 
+    char service[128]; 
+    int err = getnameinfo (addr, addrlen, 
+            host, sizeof (host), service, sizeof (service), 0); 
+    if (err != 0)
+        err_quit ("\n\tgetnameinfo error %d: %s", err, gai_strerror (err)); 
+
+    printf ("\n\tgetnameinfo back: %s, %s\n", host, service); 
+}
+
 int main (int argc, char *argv[])
 {
     struct addrinfo *ailist, *aip; 
     struct addrinfo hint; 
     struct sockaddr_in *sinp; 
+    struct sockaddr_in6 *sinp6; 
     const char *addr; 
     int err; 
     char abuf[INET_ADDRSTRLEN]; 
+    char abuf6[INET6_ADDRSTRLEN]; 
     if (argc != 3)
         err_quit ("usage: %s nodename service", argv[0]); 
 
@@ -125,10 +139,23 @@ int main (int argc, char *argv[])
             addr = inet_ntop (AF_INET, &sinp->sin_addr, abuf, INET_ADDRSTRLEN); 
             printf ("  address %s", addr ? addr : "unknown"); 
             printf ("  port %d", ntohs (sinp->sin_port)); 
+#if 0
+            test_getnameinfo (aip->ai_addr, sizeof(struct sockaddr_in)); 
+#endif
+        }
+        else if (aip->ai_family == AF_INET6) { 
+            sinp6 = (struct sockaddr_in6 *)aip->ai_addr; 
+            addr = inet_ntop (AF_INET6, &sinp6->sin6_addr, abuf6, INET6_ADDRSTRLEN); 
+            printf ("  address %s", addr ? addr : "unknown"); 
+            printf ("  port %d", ntohs (sinp6->sin6_port)); 
+#if 0
+            test_getnameinfo (aip->ai_addr, sizeof(struct sockaddr_in6)); 
+#endif
         }
 
         printf ("\n"); 
     }
 
+    freeaddrinfo (ailist); 
     return 0; 
 }
