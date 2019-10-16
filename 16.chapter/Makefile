@@ -1,4 +1,16 @@
-all: hostent addrinfo bind
+all: hostent addrinfo bind dgrams dgramc
+
+dgramc: dgramc.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+dgramc.o: dgramc.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+dgrams: dgrams.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+dgrams.o: dgrams.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 bind: bind.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -26,7 +38,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp hostent addrinfo bind
+	-rm -f *.o core.* *.log *~ *.swp hostent addrinfo bind dgrams dgramc
 	@echo "end clean"
 
 .PHONY: clean
