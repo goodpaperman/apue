@@ -68,13 +68,23 @@ int main (int argc, char *argv[])
                 break; 
             }
 
-            printf ("send %d to %d\n", ret, port); 
+            printf ("client sendto %d\n", ret); 
             if (ret == 0) {
                 printf ("no more data, quit..\n"); 
                 break; 
             }
 
             dump_addr (fd); 
+            len = sizeof (addr); 
+            ret = recvfrom (fd, dbuf, sizeof (dbuf), 0, (struct sockaddr *)&addr, &len); 
+            if (ret == -1) { 
+                printf ("recvfrom call failed, errno %d\n", errno); 
+                break; 
+            }
+
+            dbuf[ret] = 0; 
+            printf ("client recvfrom %d\n", ret); 
+            printf ("   %s\n", dbuf); 
             sleep (10); 
         }
     } while (0); 

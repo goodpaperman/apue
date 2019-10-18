@@ -4,7 +4,7 @@
 #include <arpa/inet.h>  // for inet_ntop
 #include <errno.h> 
 
-#define USE_CONN
+//#define USE_CONN
 #define USE_DISCONN
 
 void dump_addr (int fd)
@@ -66,6 +66,7 @@ int main (int argc, char *argv[])
         char buf[INET_ADDRSTRLEN] = { 0 }; 
         char const* ptr = NULL; 
         socklen_t len = 0; 
+        int n = 0; 
         while (1)
         {
             len = sizeof (addr); 
@@ -77,7 +78,7 @@ int main (int argc, char *argv[])
             }
 
             ptr = inet_ntop (AF_INET, &addr.sin_addr, buf, INET_ADDRSTRLEN); 
-            printf ("recv %d from %s:%d\n", ret, ptr, ntohs(addr.sin_port)); 
+            printf ("server recvfrom %s:%d (%d)\n", ptr, ntohs(addr.sin_port), ret); 
 
             dbuf[ret] = 0; 
             printf ("\t%s\n", dbuf); 
@@ -85,6 +86,8 @@ int main (int argc, char *argv[])
                 printf ("no more data, quit..\n"); 
                 break; 
             }
+
+            sprintf (dbuf, "server reply %d", n++); 
 
 #ifdef USE_CONN
             ret = connect (fd, (struct sockaddr *) &addr, sizeof (addr)); 
@@ -95,6 +98,15 @@ int main (int argc, char *argv[])
 
             printf ("connect to that socket ok\n"); 
             dump_addr (fd); 
+
+            // can use send now.
+            ret = send (fd, dbuf, strlen (dbuf), 0); 
+            if (ret <= 0) { 
+                printf ("send call failed, errno %d\n", errno); 
+                break;
+            }
+
+            printf ("server send %d\n", ret); 
 
 #  ifdef USE_DISCONN
             addr.sin_family = AF_UNSPEC; 
@@ -109,6 +121,20 @@ int main (int argc, char *argv[])
             printf ("disconnect that socket ok\n"); 
             dump_addr (fd); 
 #  endif 
+#else 
+            // can use only sendto
+#  if 1
+            ret = sendto (fd, dbuf, strlen (dbuf), 0, (struct sockaddr *)&addr, len); 
+#  else
+            // will got EDESTADDRREG (89)
+            ret = send (fd, dbuf, strlen (dbuf), 0); 
+#  endif
+            if (ret <= 0) { 
+                printf ("send[to] call failed, errno %d\n", errno); 
+                break;
+            }
+
+            printf ("server sendto %d\n", ret); 
 #endif
 
             //sleep (10); 

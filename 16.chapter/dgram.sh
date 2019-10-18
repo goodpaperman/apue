@@ -1,9 +1,8 @@
 #! /bin/sh 
+./dgrams 1024 &
+sleep 1
 ./dgramc 1024 &
-sleep 3
 ./dgramc 1024 &
-sleep 3
 ./dgramc 1024 &
-./dgrams 1024
 
 
