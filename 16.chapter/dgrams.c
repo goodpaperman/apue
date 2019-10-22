@@ -6,6 +6,7 @@
 
 //#define USE_CONN
 #define USE_DISCONN
+#define USE_SENDMSG
 
 void dump_addr (int fd)
 {
@@ -99,12 +100,42 @@ int main (int argc, char *argv[])
             printf ("connect to that socket ok\n"); 
             dump_addr (fd); 
 
+#  ifdef USE_SENDMSG
+            int i = 0; 
+            ptr = dbuf; 
+            const int IOVSIZE = 3; 
+            struct iovec iv[IOVSIZE]; 
+            for (i=0; i<IOVSIZE; ++ i)
+            {
+                iv[i].iov_base = ptr; 
+                sprintf (ptr, "this is part %d", i); 
+                iv[i].iov_len = strlen (ptr) + 1; 
+                ptr = ptr + strlen (ptr) + 1; 
+            }
+
+            struct msghdr mh = { 0 }; 
+            // should be sockaddr_in*, otherwise got EINVAL (22)
+            mh.msg_name = 0; //"hello"; 
+            mh.msg_namelen = 0; // strlen (mh.msg_name);
+            mh.msg_iov = iv; 
+            mh.msg_iovlen = IOVSIZE;
+            mh.msg_control = 0; 
+            mh.msg_controllen = 0; 
+            mh.msg_flags = 0; 
+
+            ret = sendmsg (fd, &mh, 0); 
+            if (ret <= 0) { 
+                printf ("sendmsg call failed, errno %d\n", errno); 
+                break;
+            }
+#  else
             // can use send now.
             ret = send (fd, dbuf, strlen (dbuf), 0); 
             if (ret <= 0) { 
                 printf ("send call failed, errno %d\n", errno); 
                 break;
             }
+#  endif
 
             printf ("server send %d\n", ret); 
 
@@ -121,10 +152,40 @@ int main (int argc, char *argv[])
             printf ("disconnect that socket ok\n"); 
             dump_addr (fd); 
 #  endif 
-#else 
-            // can use only sendto
+#else // USE_CONN
 #  if 1
+            // can use only sendto
+#    ifdef USE_SENDMSG
+            int i = 0; 
+            ptr = dbuf; 
+            const int IOVSIZE = 3; 
+            struct iovec iv[IOVSIZE]; 
+            for (i=0; i<IOVSIZE; ++ i)
+            {
+                iv[i].iov_base = ptr; 
+                sprintf (ptr, "this is part %d", i); 
+                iv[i].iov_len = strlen (ptr) + 1;  // contain tailing 0
+                ptr = ptr + strlen (ptr) + 1; 
+            }
+
+            struct msghdr mh = { 0 }; 
+            mh.msg_name = &addr; 
+            mh.msg_namelen = len; 
+            mh.msg_iov = iv; 
+            mh.msg_iovlen = IOVSIZE;
+            mh.msg_control = 0; 
+            mh.msg_controllen = 0; 
+            mh.msg_flags = 0; 
+
+            ret = sendmsg (fd, &mh, 0); 
+            if (ret <= 0) { 
+                printf ("sendmsg call failed, errno %d\n", errno); 
+                break;
+            }
+#    else
+            // can use send now.
             ret = sendto (fd, dbuf, strlen (dbuf), 0, (struct sockaddr *)&addr, len); 
+#    endif
 #  else
             // will got EDESTADDRREG (89)
             ret = send (fd, dbuf, strlen (dbuf), 0); 
