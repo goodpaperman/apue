@@ -6,6 +6,7 @@
 
 #define BUFLEN 128
 #define QLEN 10
+//#define USE_POPEN
 
 int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 {
@@ -13,20 +14,20 @@ int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
     int err = 0; 
     fd = socket (addr->sa_family, type, 0); 
     if (fd < 0) { 
-        syslog (LOG_ERR, "socket failed"); 
+        syslog (LOG_ERR, "socket failed %d", errno); 
         return -1; 
     }
 
     if (bind (fd, addr, alen) < 0) { 
         err = errno; 
-        syslog (LOG_ERR, "bind error"); 
+        syslog (LOG_ERR, "bind error %d", err); 
         goto errout; 
     }
 
     if (type == SOCK_STREAM || type == SOCK_SEQPACKET) { 
         if (listen (fd, qlen) < 0) { 
             err = errno; 
-            syslog (LOG_ERR, "listen error"); 
+            syslog (LOG_ERR, "listen error %d", err); 
             goto errout; 
         }
     }
@@ -43,7 +44,10 @@ void serve (int sockfd)
 {
     int ret; 
     int clfd; 
+    int status; 
+
     FILE *fp; 
+    pid_t pid; 
     char buf[BUFLEN]; 
 
     for (;;) { 
@@ -59,6 +63,7 @@ void serve (int sockfd)
             exit (1); 
         }
 
+#ifdef USE_POPEN
         fp = popen ("/usr/bin/uptime", "r"); 
         if (fp == NULL) { 
             sprintf (buf, "error: %s\n", strerror (errno)); 
@@ -70,13 +75,39 @@ void serve (int sockfd)
                 ret = send (clfd, buf, strlen (buf), 0); 
                 // very amazing, add these log will lead to accept failed with EOPNOTSUPP (95)
                 // maybe syslog used dgram socket confuse us..
-                //syslog (LOG_ERR, "write back %d", ret); 
+                syslog (LOG_ERR, "write back %d", ret); 
             }
 
             pclose (fp); 
         }
 
         close (clfd); 
+#else
+        pid = fork (); 
+        if (pid < 0) { 
+            syslog (LOG_ERR, "fork error: %s", strerror (errno)); 
+            exit (1); 
+        }
+        else if (pid == 0) { 
+            // child
+            if ((dup2 (clfd, STDOUT_FILENO) != STDOUT_FILENO) ||
+                (dup2 (clfd, STDERR_FILENO) != STDERR_FILENO)) 
+            { 
+                syslog (LOG_ERR, "redirect stdout/err to socket failed"); 
+                exit (1); 
+            }
+            
+            close (clfd); 
+            execl ("/usr/bin/uptime", "uptime", (char *)0); 
+            syslog (LOG_ERR, "unexpected return from exec: %s", strerror (errno)); 
+        }
+        else 
+        {
+            close (clfd); 
+            waitpid (pid, &status, 0); 
+        }
+
+#endif 
     }
 }
 
