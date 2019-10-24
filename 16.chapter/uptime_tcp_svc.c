@@ -6,7 +6,7 @@
 
 #define BUFLEN 128
 #define QLEN 10
-//#define USE_POPEN
+#define USE_POPEN
 
 int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 {
@@ -53,7 +53,7 @@ void serve (int sockfd)
     for (;;) { 
         clfd = accept (sockfd, NULL, NULL); 
         if (clfd < 0) { 
-            syslog (LOG_ERR, "ruptimed: accept error: %d, %s", errno, strerror (errno)); 
+            syslog (LOG_ERR, "accept error: %d, %s", errno, strerror (errno)); 
             //if (errno == EOPNOTSUPP)
             //{
             //    syslog (LOG_INFO, "retry.."); 
