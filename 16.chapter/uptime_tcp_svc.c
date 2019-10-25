@@ -4,9 +4,16 @@
 #include <syslog.h> 
 #include <sys/socket.h> 
 
+#define MAXADDRLEN 256
 #define BUFLEN 128
 #define QLEN 10
+
 #define USE_POPEN
+
+// can only define USE_UDP with USE_POPEN
+#ifdef USE_POPEN
+#  define USE_UDP
+#endif 
 
 int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 {
@@ -49,8 +56,19 @@ void serve (int sockfd)
     FILE *fp; 
     pid_t pid; 
     char buf[BUFLEN]; 
+    //char abuf[MAXADDRLEN]; 
+    struct sockaddr_in addr; 
+    socklen_t alen; // = sizeof (addr); 
 
     for (;;) { 
+#ifdef USE_UDP
+        alen = sizeof (addr); 
+        ret = recvfrom (sockfd, buf, BUFLEN, 0, (struct sockaddr *)&addr, &alen); 
+        if (ret < 0) { 
+            syslog (LOG_ERR, "recvfrom error: %s", strerror (errno)); 
+            exit (1); 
+        }
+#else
         clfd = accept (sockfd, NULL, NULL); 
         if (clfd < 0) { 
             syslog (LOG_ERR, "accept error: %d, %s", errno, strerror (errno)); 
@@ -62,20 +80,29 @@ void serve (int sockfd)
 
             exit (1); 
         }
+#endif
 
 #ifdef USE_POPEN
         fp = popen ("/usr/bin/uptime", "r"); 
         if (fp == NULL) { 
             sprintf (buf, "error: %s\n", strerror (errno)); 
+#  ifdef USE_UDP
+            ret = sendto (sockfd, buf, strlen (buf), 0, (struct sockaddr *)&addr, alen); 
+#  else
             ret = send (clfd, buf, strlen (buf), 0); 
+#  endif 
             //syslog (LOG_ERR, "write back %d for error", ret); 
         } else { 
             while (fgets (buf, BUFLEN, fp) != NULL) 
             {
+#  ifdef USE_UDP
+                ret = sendto (sockfd, buf, strlen (buf), 0, (struct sockaddr *)&addr, alen); 
+#  else
                 ret = send (clfd, buf, strlen (buf), 0); 
+#  endif
                 // very amazing, add these log will lead to accept failed with EOPNOTSUPP (95)
                 // maybe syslog used dgram socket confuse us..
-                syslog (LOG_ERR, "write back %d", ret); 
+                //syslog (LOG_ERR, "write back %d", ret); 
             }
 
             pclose (fp); 
@@ -164,7 +191,11 @@ int main (int argc, char *argv[])
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = INADDR_ANY; 
     addr.sin_port = htons (4201); 
+#  ifdef USE_UDP
+    sockfd = initserver (SOCK_DGRAM, (const struct sockaddr *)&addr, sizeof (addr), 0); 
+#  else
     sockfd = initserver (SOCK_STREAM, (const struct sockaddr *)&addr, sizeof (addr), QLEN); 
+#  endif
     if (sockfd >= 0)
         serve (sockfd); 
     else 

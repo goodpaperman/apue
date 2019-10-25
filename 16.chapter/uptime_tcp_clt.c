@@ -9,6 +9,17 @@
 #define MAXADDRLEN 256
 #define BUFLEN 128
 
+#define USE_UDP
+
+#ifdef USE_UDP
+#define TIMEOUT 20
+
+void sigalrm (int signo)
+{
+}
+
+#else 
+
 int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
 {
     int nsec; 
@@ -26,16 +37,39 @@ int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
     return -1; 
 }
 
+#endif 
 
 void print_uptime (int sockfd)
 {
     int n; 
     char buf[BUFLEN]; 
+#ifdef USE_UDP
+    struct sockaddr_in addr = { 0 }; 
+    addr.sin_family = AF_INET; 
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+    addr.sin_port = htons (4201); 
+    if (sendto (sockfd, buf, 1, 0, (struct sockaddr *)&addr, sizeof (addr)) < 0)
+        err_sys ("sendto error"); 
+
+    alarm (TIMEOUT); 
+    n = recvfrom (sockfd, buf, BUFLEN, 0, NULL, NULL); 
+    if (n < 0)
+    {
+        if (errno != EINTR)
+            alarm (0); 
+
+        err_sys ("recvfrom error"); 
+    }
+
+    alarm (0); 
+    write (STDOUT_FILENO, buf, n); 
+#else
     while ((n = recv (sockfd, buf, BUFLEN, 0)) > 0)
         write (STDOUT_FILENO, buf, n); 
 
     if (n < 0)
         err_sys ("recv error"); 
+#endif
 }
 
 
@@ -80,16 +114,29 @@ int main (int argc, char *argv[])
 
     fprintf (stderr, "can't connect to %s: %s\n", argv[1], strerror (err)); 
 #else
+#  ifdef USE_UDP
+    struct sigaction sa; 
+    sa.sa_handler = sigalrm; 
+    sa.sa_flags = 0; 
+    sigemptyset (&sa.sa_mask); 
+    if (sigaction (SIGALRM, &sa, NULL) < 0)
+        err_sys ("sigaction error"); 
+
+    sockfd = socket (AF_INET, SOCK_DGRAM, 0); 
+#  else
+    sockfd = socket (AF_INET, SOCK_STREAM, 0); 
+#endif
+    if (sockfd < 0)
+        err_sys ("socket failed"); 
+
+#  ifndef USE_UDP
     struct sockaddr_in addr = { 0 }; 
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
     addr.sin_port = htons (4201); 
-    sockfd = socket (AF_INET, SOCK_STREAM, 0); 
-    if (sockfd < 0)
-        err_sys ("socket failed"); 
-
     if (connect_retry (sockfd, (struct sockaddr *) &addr, sizeof (addr)) < 0)
         err_sys ("connect failed"); 
+#  endif
 
     print_uptime (sockfd); 
     close (sockfd); 
