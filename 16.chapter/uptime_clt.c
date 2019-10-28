@@ -9,7 +9,7 @@
 #define MAXADDRLEN 256
 #define BUFLEN 128
 
-#define USE_UDP
+//#define USE_UDP
 
 #ifdef USE_UDP
 #define TIMEOUT 20

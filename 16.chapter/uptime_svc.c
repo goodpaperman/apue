@@ -3,12 +3,13 @@
 #include <errno.h> 
 #include <syslog.h> 
 #include <sys/socket.h> 
+#include <sys/wait.h> 
 
 #define MAXADDRLEN 256
 #define BUFLEN 128
 #define QLEN 10
 
-#define USE_POPEN
+//#define USE_POPEN
 
 // can only define USE_UDP with USE_POPEN
 #ifdef USE_POPEN
@@ -23,6 +24,13 @@ int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
     if (fd < 0) { 
         syslog (LOG_ERR, "socket failed %d", errno); 
         return -1; 
+    }
+
+    int reuse = 1; 
+    if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof (reuse)) < 0) { 
+        err = errno; 
+        syslog (LOG_ERR, "setsockopt error %d", err); 
+        goto errout; 
     }
 
     if (bind (fd, addr, alen) < 0) { 
@@ -91,6 +99,8 @@ void serve (int sockfd)
 #  else
             ret = send (clfd, buf, strlen (buf), 0); 
 #  endif 
+
+            // see comments below
             //syslog (LOG_ERR, "write back %d for error", ret); 
         } else { 
             while (fgets (buf, BUFLEN, fp) != NULL) 
@@ -100,6 +110,7 @@ void serve (int sockfd)
 #  else
                 ret = send (clfd, buf, strlen (buf), 0); 
 #  endif
+
                 // very amazing, add these log will lead to accept failed with EOPNOTSUPP (95)
                 // maybe syslog used dgram socket confuse us..
                 //syslog (LOG_ERR, "write back %d", ret); 
@@ -109,7 +120,9 @@ void serve (int sockfd)
         }
 
         close (clfd); 
-#else
+
+#else  // USE_POPEN
+
         pid = fork (); 
         if (pid < 0) { 
             syslog (LOG_ERR, "fork error: %s", strerror (errno)); 
