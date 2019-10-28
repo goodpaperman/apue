@@ -1,15 +1,15 @@
-all: hostent addrinfo bind dgrams dgramc uptime_tcp_svc uptime_tcp_clt
+all: hostent addrinfo bind dgrams dgramc uptime_svc uptime_clt
 
-uptime_tcp_clt: uptime_tcp_clt.o apue.o 
+uptime_clt: uptime_clt.o apue.o 
 	gcc -Wall -g $^ -o $@
 
-uptime_tcp_clt.o: uptime_tcp_clt.c ../apue.h
+uptime_clt.o: uptime_clt.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-uptime_tcp_svc: uptime_tcp_svc.o apue.o 
+uptime_svc: uptime_svc.o apue.o 
 	gcc -Wall -g $^ -o $@
 
-uptime_tcp_svc.o: uptime_tcp_svc.c ../apue.h
+uptime_svc.o: uptime_svc.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 dgramc: dgramc.o apue.o 
@@ -50,7 +50,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp hostent addrinfo bind dgrams dgramc uptime_tcp_svc uptime_tcp_clt
+	-rm -f *.o core.* *.log *~ *.swp hostent addrinfo bind dgrams dgramc uptime_svc uptime_clt
 	@echo "end clean"
 
 .PHONY: clean
