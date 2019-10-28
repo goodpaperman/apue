@@ -1,7 +1,6 @@
 #include "../apue.h" 
 #include <netdb.h> 
 #include <errno.h> 
-//#include <syslog.h> 
 #include <sys/socket.h> 
 #include <arpa/inet.h> 
 
@@ -9,7 +8,11 @@
 #define MAXADDRLEN 256
 #define BUFLEN 128
 
-#define USE_UDP
+//#define USE_UDP
+
+#ifndef USE_UDP
+#  define OOB_SND
+#endif
 
 #ifdef USE_UDP
 #define TIMEOUT 20
@@ -42,6 +45,7 @@ int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
 void print_uptime (int sockfd)
 {
     int n; 
+    int ret; 
     char buf[BUFLEN]; 
 #ifdef USE_UDP
     struct sockaddr_in addr = { 0 }; 
@@ -64,6 +68,16 @@ void print_uptime (int sockfd)
     alarm (0); 
     write (STDOUT_FILENO, buf, n); 
 #else
+
+#  ifdef OOB_SND
+    buf[0] = 'h'; 
+    buf[1] = 'w'; 
+    if ((ret = send (sockfd, buf, 2, MSG_OOB)) < 0)
+        err_sys ("send oob failed"); 
+    else 
+        printf ("send oob %d\n", ret); 
+#  endif 
+
     while ((n = recv (sockfd, buf, BUFLEN, 0)) > 0)
         write (STDOUT_FILENO, buf, n); 
 

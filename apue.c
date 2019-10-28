@@ -1258,9 +1258,10 @@ void print_lg_sockopt (int fd, char const* optstr, int option)
         return; 
     }
 
-    printf ("%s [%d]: %d, %d\n", optstr, len, val.l_onoff, val.l_linger); 
 #ifdef USE_DAEMON
-    syslog (LOG_INFO, "%s [%d]: %d, %d\n", optstr, len, val.l_onoff, val.l_linger); 
+    syslog (LOG_INFO, "%s [%d]: %d, %d", optstr, len, val.l_onoff, val.l_linger); 
+#else
+    printf ("%s [%d]: %d, %d\n", optstr, len, val.l_onoff, val.l_linger); 
 #endif
 }
 
@@ -1275,9 +1276,10 @@ void print_tm_sockopt (int fd, char const* optstr, int option)
         return; 
     }
 
-    printf ("%s [%d]: %d, %d\n", optstr, len, val.tv_sec, val.tv_usec); 
 #ifdef USE_DAEMON
-    syslog (LOG_INFO, "%s [%d]: %d, %d\n", optstr, len, val.tv_sec, val.tv_usec); 
+    syslog (LOG_INFO, "%s [%d]: %d, %d", optstr, len, val.tv_sec, val.tv_usec); 
+#else
+    printf ("%s [%d]: %d, %d\n", optstr, len, val.tv_sec, val.tv_usec); 
 #endif
 }
 
@@ -1292,17 +1294,19 @@ void print_int_sockopt (int fd, char const* optstr, int option)
         return; 
     }
 
-    printf ("%s [%d]: %d\n", optstr, len, val); 
 #ifdef USE_DAEMON
-    syslog (LOG_INFO, "%s [%d]: %d\n", optstr, len, val); 
+    syslog (LOG_INFO, "%s [%d]: %d", optstr, len, val); 
+#else
+    printf ("%s [%d]: %d\n", optstr, len, val); 
 #endif
 }
 
 void print_sockopt (int fd, char const* prompt)
 {
-    printf ("%s options:\n", prompt); 
 #ifdef USE_DAEMON
-    syslog (LOG_INFO, "%s options:\n", prompt); 
+    syslog (LOG_INFO, "%s options:", prompt); 
+#else
+    printf ("%s options:\n", prompt); 
 #endif
 
     print_int_sockopt (fd, "SO_ACCEPTCONN", SO_ACCEPTCONN); 
@@ -1321,5 +1325,12 @@ void print_sockopt (int fd, char const* prompt)
     print_int_sockopt (fd, "SO_SNDLOWAT", SO_SNDLOWAT); 
     print_tm_sockopt (fd, "SO_SNDTIMEO", SO_SNDTIMEO); 
     print_int_sockopt (fd, "SO_TYPE", SO_TYPE); 
+
+    int owner = fcntl (fd, F_GETOWN, 0); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "socket owner %d", owner); 
+#else
+    printf ("socket owner %d\n", owner); 
+#endif
 }
 
