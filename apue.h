@@ -110,4 +110,6 @@ ssize_t writen (int fd, void const* buf, size_t len);
 FILE* apue_popen (char const* cmdstr, char const* type); 
 int apue_pclose (FILE *fp); 
 
+void print_sockopt (int fd, char const* prompt); 
+
 #endif 

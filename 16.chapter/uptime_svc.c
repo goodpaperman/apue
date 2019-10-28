@@ -9,7 +9,8 @@
 #define BUFLEN 128
 #define QLEN 10
 
-//#define USE_POPEN
+//#define USE_DAEMON
+#define USE_POPEN
 
 // can only define USE_UDP with USE_POPEN
 #ifdef USE_POPEN
@@ -88,6 +89,8 @@ void serve (int sockfd)
 
             exit (1); 
         }
+
+        print_sockopt (clfd, "new accepted client"); 
 #endif
 
 #ifdef USE_POPEN
@@ -101,7 +104,9 @@ void serve (int sockfd)
 #  endif 
 
             // see comments below
-            //syslog (LOG_ERR, "write back %d for error", ret); 
+#  ifndef USE_DAEMON
+            syslog (LOG_ERR, "write back %d for error", ret); 
+#  endif
         } else { 
             while (fgets (buf, BUFLEN, fp) != NULL) 
             {
@@ -111,9 +116,11 @@ void serve (int sockfd)
                 ret = send (clfd, buf, strlen (buf), 0); 
 #  endif
 
+#  ifndef USE_DAEMON
                 // very amazing, add these log will lead to accept failed with EOPNOTSUPP (95)
                 // maybe syslog used dgram socket confuse us..
-                //syslog (LOG_ERR, "write back %d", ret); 
+                syslog (LOG_ERR, "write back %d", ret); 
+#  endif
             }
 
             pclose (fp); 
@@ -172,7 +179,9 @@ int main (int argc, char *argv[])
         err_sys ("gethostname error"); 
 
     syslog (LOG_INFO, "get hostname: %s\n", host); 
+#ifdef USE_DAEMON
     daemonize ("ruptimed"); 
+#endif
 
 #if 0
     int err = 0; 
@@ -209,6 +218,7 @@ int main (int argc, char *argv[])
 #  else
     sockfd = initserver (SOCK_STREAM, (const struct sockaddr *)&addr, sizeof (addr), QLEN); 
 #  endif
+    print_sockopt (sockfd, "server socket"); 
     if (sockfd >= 0)
         serve (sockfd); 
     else 

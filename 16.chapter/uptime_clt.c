@@ -9,7 +9,7 @@
 #define MAXADDRLEN 256
 #define BUFLEN 128
 
-//#define USE_UDP
+#define USE_UDP
 
 #ifdef USE_UDP
 #define TIMEOUT 20
@@ -129,6 +129,7 @@ int main (int argc, char *argv[])
     if (sockfd < 0)
         err_sys ("socket failed"); 
 
+    print_sockopt (sockfd, "created client"); 
 #  ifndef USE_UDP
     struct sockaddr_in addr = { 0 }; 
     addr.sin_family = AF_INET; 

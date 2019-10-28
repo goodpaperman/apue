@@ -14,6 +14,8 @@
 #include <fcntl.h> 
 #include <poll.h>
 #include <sys/sem.h> 
+#include <sys/types.h>
+#include <sys/socket.h> 
 
 
 static void err_doit (int, int, const char *, va_list); 
@@ -1244,3 +1246,80 @@ int apue_pclose (FILE *fp)
     return stat; 
 
 }
+
+void print_lg_sockopt (int fd, char const* optstr, int option)
+{
+    struct linger val; 
+    socklen_t len = sizeof (val); 
+    int ret = getsockopt (fd, SOL_SOCKET, option, &val, &len); 
+    if (ret < 0)
+    {
+        err_ret ("getsockopt for %s failed, errno %d", optstr, errno); 
+        return; 
+    }
+
+    printf ("%s [%d]: %d, %d\n", optstr, len, val.l_onoff, val.l_linger); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "%s [%d]: %d, %d\n", optstr, len, val.l_onoff, val.l_linger); 
+#endif
+}
+
+void print_tm_sockopt (int fd, char const* optstr, int option)
+{
+    struct timeval val; 
+    socklen_t len = sizeof (val); 
+    int ret = getsockopt (fd, SOL_SOCKET, option, &val, &len); 
+    if (ret < 0)
+    {
+        err_ret ("getsockopt for %s failed, errno %d", optstr, errno); 
+        return; 
+    }
+
+    printf ("%s [%d]: %d, %d\n", optstr, len, val.tv_sec, val.tv_usec); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "%s [%d]: %d, %d\n", optstr, len, val.tv_sec, val.tv_usec); 
+#endif
+}
+
+void print_int_sockopt (int fd, char const* optstr, int option)
+{
+    int val = 0; 
+    socklen_t len = sizeof (val); 
+    int ret = getsockopt (fd, SOL_SOCKET, option, &val, &len); 
+    if (ret < 0)
+    {
+        err_ret ("getsockopt for %s failed, errno %d", optstr, errno); 
+        return; 
+    }
+
+    printf ("%s [%d]: %d\n", optstr, len, val); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "%s [%d]: %d\n", optstr, len, val); 
+#endif
+}
+
+void print_sockopt (int fd, char const* prompt)
+{
+    printf ("%s options:\n", prompt); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "%s options:\n", prompt); 
+#endif
+
+    print_int_sockopt (fd, "SO_ACCEPTCONN", SO_ACCEPTCONN); 
+    print_int_sockopt (fd, "SO_BROADCAST", SO_BROADCAST); 
+    print_int_sockopt (fd, "SO_DEBUG", SO_DEBUG); 
+    print_int_sockopt (fd, "SO_DONTROUTE", SO_DONTROUTE); 
+    print_int_sockopt (fd, "SO_ERROR", SO_ERROR); 
+    print_int_sockopt (fd, "SO_KEEPALIVE", SO_KEEPALIVE); 
+    print_lg_sockopt (fd, "SO_LINGER", SO_LINGER); 
+    print_int_sockopt (fd, "SO_OOBINLINE", SO_OOBINLINE); 
+    print_int_sockopt (fd, "SO_RCVBUF", SO_RCVBUF); 
+    print_int_sockopt (fd, "SO_RCVLOWAT", SO_RCVLOWAT); 
+    print_tm_sockopt (fd, "SO_RCVTIMEO", SO_RCVTIMEO); 
+    print_int_sockopt (fd, "SO_REUSEADDR", SO_REUSEADDR); 
+    print_int_sockopt (fd, "SO_SNDBUF", SO_SNDBUF); 
+    print_int_sockopt (fd, "SO_SNDLOWAT", SO_SNDLOWAT); 
+    print_tm_sockopt (fd, "SO_SNDTIMEO", SO_SNDTIMEO); 
+    print_int_sockopt (fd, "SO_TYPE", SO_TYPE); 
+}
+
