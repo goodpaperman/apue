@@ -27,8 +27,14 @@
 int g_fd = 0; 
 void on_urg (int signo)
 {
+    int ret = 0; 
     char buf[BUFLEN] = { 0 }; 
-    int ret = recv (g_fd, buf, sizeof (buf), MSG_OOB); 
+    ret = recv (g_fd, buf, sizeof (buf), MSG_OOB); 
+    if (ret > 0)
+        buf[ret] = 0; 
+    else 
+        strcpy (buf, "n/a"); 
+
     //syslog (LOG_INFO, "got urgent data on signal %d, len %d, %s\n", signo, ret, buf); 
     printf ("got urgent data on signal %d, len %d, %s\n", signo, ret, buf); 
 
@@ -153,18 +159,35 @@ void serve (int sockfd)
         print_sockopt (clfd, "new accepted client"); 
 #  ifdef OOB_RCV
         ret = recv (clfd, buf, sizeof(buf), 0); 
-        buf[ret] = 0; 
-        printf ("recv %d: %c\n", ret, buf); 
+        if (ret > 0)
+            buf[ret] = 0; 
+        else 
+            strcpy (buf, "n/a"); 
 
+        printf ("recv %d: %s\n", ret, buf); 
+#  if 1 //def OOB_INLINE
         if (sockatmark (clfd))
         {
             printf ("has oob!\n"); 
             ret = recv (clfd, buf, sizeof(buf), MSG_OOB); 
-            buf[ret] = 0; 
+            if (ret > 0)
+                buf[ret] = 0; 
+            else 
+                strcpy (buf, "n/a"); 
+
             printf ("recv %d: %s\n", ret, buf); 
         }
         else 
             printf ("no oob!\n"); 
+#  endif
+
+        ret = recv (clfd, buf, sizeof(buf), 0); 
+        if (ret > 0)
+            buf[ret] = 0; 
+        else 
+            strcpy (buf, "n/a"); 
+
+        printf ("recv %d: %s\n", ret, buf); 
 #  endif
 #endif
 
