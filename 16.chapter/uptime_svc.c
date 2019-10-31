@@ -24,13 +24,14 @@
 #endif
 
 #ifndef OOB_INLINE
+int g_fd = 0; 
 void on_urg (int signo)
 {
-#  ifdef USE_DAEMON
-    syslog (LOG_INFO, "got urgent data on signal %d!\n", signo); 
-#  else
-    printf ("got urgent data on signal %d!\n", signo); 
-#  endif
+    char buf[BUFLEN] = { 0 }; 
+    int ret = recv (g_fd, buf, sizeof (buf), MSG_OOB); 
+    //syslog (LOG_INFO, "got urgent data on signal %d, len %d, %s\n", signo, ret, buf); 
+    printf ("got urgent data on signal %d, len %d, %s\n", signo, ret, buf); 
+
 }
 #endif
 
@@ -40,22 +41,16 @@ int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
     int err = 0; 
     fd = socket (addr->sa_family, type, 0); 
     if (fd < 0) { 
-#ifdef USE_DAEMON
-        syslog (LOG_ERR, "socket failed %d", errno); 
-#else 
+        //syslog (LOG_ERR, "socket failed %d", errno); 
         printf ("socket failed %d\n", errno); 
-#endif 
         return -1; 
     }
 
     int reuse = 1; 
     if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof (reuse)) < 0) { 
         err = errno; 
-#ifdef USE_DAEMON
-        syslog (LOG_ERR, "setsockopt error %d", err); 
-#else 
+        //syslog (LOG_ERR, "setsockopt error %d", err); 
         printf ("setsockopt error %d\n", err); 
-#endif 
         goto errout; 
     }
 
@@ -63,46 +58,41 @@ int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
     int oil = 1; 
     if (setsockopt (fd, SOL_SOCKET, SO_OOBINLINE, &oil, sizeof (oil)) < 0) { 
         err = errno; 
-#  ifdef USE_DAEMON
-        syslog (LOG_ERR, "setsockopt error %d", err); 
-#  else 
+        //syslog (LOG_ERR, "setsockopt error %d", err); 
         printf ("setsockopt error %d\n", err); 
-#  endif 
         goto errout; 
     }
 #else
+
+#  if 0
     // use signal
     signal (SIGURG, on_urg);
-#  ifdef USE_DAEMON
-    syslog (LOG_INFO, "setup SIGURG for oob data\n"); 
-#  else
+#  else 
+    struct sigaction sa; 
+    sa.sa_handler = on_urg; 
+    sa.sa_flags |= SA_RESTART; 
+    sigemptyset (&sa.sa_mask); 
+    sigaction (SIGURG, &sa, NULL); 
+#  endif 
+
+    //syslog (LOG_INFO, "setup SIGURG for oob data\n"); 
     printf ("setup SIGURG for oob data\n"); 
-#  endif
 #endif
 
-#ifdef USE_DAEMON
-    syslog (LOG_INFO, "setown to %d", getpid ()); 
-#else 
+    //syslog (LOG_INFO, "setown to %d", getpid ()); 
     printf ("setown to %d\n", getpid ()); 
-#endif
     if (bind (fd, addr, alen) < 0) { 
         err = errno; 
-#ifdef USE_DAEMON
-        syslog (LOG_ERR, "bind error %d", err); 
-#else
+        //syslog (LOG_ERR, "bind error %d", err); 
         printf ("bind error %d\n", err); 
-#endif
         goto errout; 
     }
 
     if (type == SOCK_STREAM || type == SOCK_SEQPACKET) { 
         if (listen (fd, qlen) < 0) { 
             err = errno; 
-#ifdef USE_DAEMON
-            syslog (LOG_ERR, "listen error %d", err); 
-#else
+            //syslog (LOG_ERR, "listen error %d", err); 
             printf ("listen error %d\n", err); 
-#endif
             goto errout; 
         }
     }
@@ -133,21 +123,15 @@ void serve (int sockfd)
         alen = sizeof (addr); 
         ret = recvfrom (sockfd, buf, BUFLEN, 0, (struct sockaddr *)&addr, &alen); 
         if (ret < 0) { 
-#  ifdef USE_DAEMON
-            syslog (LOG_ERR, "recvfrom error: %s", strerror (errno)); 
-#  else
+            //syslog (LOG_ERR, "recvfrom error: %s", strerror (errno)); 
             printf ("recvfrom error: %s\n", strerror (errno)); 
-#  endif
             exit (1); 
         }
 #else
         clfd = accept (sockfd, NULL, NULL); 
         if (clfd < 0) { 
-#  ifdef USE_DAEMON
-            syslog (LOG_ERR, "accept error: %d, %s", errno, strerror (errno)); 
-#  else
+            //syslog (LOG_ERR, "accept error: %d, %s", errno, strerror (errno)); 
             printf ("accept error: %d, %s\n", errno, strerror (errno)); 
-#  endif
             //if (errno == EOPNOTSUPP)
             //{
             //    syslog (LOG_INFO, "retry.."); 
@@ -157,23 +141,27 @@ void serve (int sockfd)
             exit (1); 
         }
 
+#ifndef OOB_INLINE
+        g_fd = clfd; 
         if (fcntl (clfd, F_SETOWN, getpid ()) < 0) { 
-#ifdef USE_DAEMON
-            //syslog (LOG_ERR, "fcntl SETOWN error %d", errno); 
-#else
+            ////syslog (LOG_ERR, "fcntl SETOWN error %d", errno); 
             printf ("fcntl SETOWN error %d\n", errno); 
-#endif
             exit (1); 
         }
+#endif
 
         print_sockopt (clfd, "new accepted client"); 
 #  ifdef OOB_RCV
+        ret = recv (clfd, buf, sizeof(buf), 0); 
+        buf[ret] = 0; 
+        printf ("recv %d: %c\n", ret, buf); 
+
         if (sockatmark (clfd))
         {
             printf ("has oob!\n"); 
-            char byte = 0; 
-            ret = recv (clfd, &byte, 1, 0); 
-            printf ("recv %d: %c\n", ret, byte); 
+            ret = recv (clfd, buf, sizeof(buf), MSG_OOB); 
+            buf[ret] = 0; 
+            printf ("recv %d: %s\n", ret, buf); 
         }
         else 
             printf ("no oob!\n"); 
@@ -191,11 +179,8 @@ void serve (int sockfd)
 #  endif 
 
             // see comments below
-#  ifdef USE_DAEMON
-            //syslog (LOG_ERR, "write back %d for error", ret); 
-#  else 
+            ////syslog (LOG_ERR, "write back %d for error", ret); 
             printf ("write back %d for error\n", ret); 
-#  endif
         } else { 
             while (fgets (buf, BUFLEN, fp) != NULL) 
             {
@@ -205,13 +190,10 @@ void serve (int sockfd)
                 ret = send (clfd, buf, strlen (buf), 0); 
 #  endif
 
-#  ifdef USE_DAEMON
                 // very amazing, add these log will lead to accept failed with EOPNOTSUPP (95)
                 // maybe syslog used dgram socket confuse us..
-                //syslog (LOG_ERR, "write back %d", ret); 
-#  else
+                ////syslog (LOG_ERR, "write back %d", ret); 
                 printf ("write back %d\n", ret); 
-#  endif
             }
 
             pclose (fp); 
@@ -223,11 +205,8 @@ void serve (int sockfd)
 
         pid = fork (); 
         if (pid < 0) { 
-#  ifdef USE_DAEMON
-            syslog (LOG_ERR, "fork error: %s", strerror (errno)); 
-#  else
+            //syslog (LOG_ERR, "fork error: %s", strerror (errno)); 
             printf ("fork error: %s\n", strerror (errno)); 
-#  endif
             exit (1); 
         }
         else if (pid == 0) { 
@@ -235,21 +214,15 @@ void serve (int sockfd)
             if ((dup2 (clfd, STDOUT_FILENO) != STDOUT_FILENO) ||
                 (dup2 (clfd, STDERR_FILENO) != STDERR_FILENO)) 
             { 
-#  ifdef USE_DAEMON
-                syslog (LOG_ERR, "redirect stdout/err to socket failed"); 
-#  else
+                //syslog (LOG_ERR, "redirect stdout/err to socket failed"); 
                 printf ("redirect stdout/err to socket failed\n"); 
-#  endif
                 exit (1); 
             }
             
             close (clfd); 
             execl ("/usr/bin/uptime", "uptime", (char *)0); 
-#  ifdef USE_DAEMON
-            syslog (LOG_ERR, "unexpected return from exec: %s", strerror (errno)); 
-#  else
+            //syslog (LOG_ERR, "unexpected return from exec: %s", strerror (errno)); 
             printf ("unexpected return from exec: %s\n", strerror (errno)); 
-#  endif
         }
         else 
         {
@@ -273,11 +246,8 @@ int main (int argc, char *argv[])
     if (n < 0)
         err_quit ("no _SC_HOST_NAME_MAX defined"); 
 
-#ifdef USE_DAEMON
-    syslog (LOG_INFO, "hostname length: %d", n); 
-#else
+    //syslog (LOG_INFO, "hostname length: %d", n); 
     printf ("hostname length: %d\n", n); 
-#endif
     host = malloc (n); 
     if (host == NULL)
         err_sys ("malloc error"); 
@@ -286,11 +256,10 @@ int main (int argc, char *argv[])
         err_sys ("gethostname error"); 
 
 #ifdef USE_DAEMON
-    syslog (LOG_INFO, "get hostname: %s\n", host); 
     daemonize ("ruptimed"); 
-#else
-    printf ("get hostname: %s\n", host); 
 #endif
+    //syslog (LOG_INFO, "get hostname: %s\n", host); 
+    printf ("get hostname: %s\n", host); 
 
 #if 0
     int err = 0; 
@@ -331,11 +300,8 @@ int main (int argc, char *argv[])
     if (sockfd >= 0)
         serve (sockfd); 
     else  {
-#  ifdef USE_DAEMON
-        syslog (LOG_ERR, "init server socket failed"); 
-#  else
+        //syslog (LOG_ERR, "init server socket failed"); 
         printf ("init server socket failed\n"); 
-#  endif
     }
 #endif
 

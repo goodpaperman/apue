@@ -70,12 +70,22 @@ void print_uptime (int sockfd)
 #else
 
 #  ifdef OOB_SND
-    buf[0] = 'h'; 
-    buf[1] = 'w'; 
-    if ((ret = send (sockfd, buf, 2, MSG_OOB)) < 0)
+    strcpy(buf, "hello"); 
+    if ((ret = send (sockfd, buf, 1, 0)) < 0)
+        err_sys ("send normal head failed"); 
+    else 
+        printf ("send normal head %d\n", ret); 
+
+    if ((ret = send (sockfd, buf+1, 1, MSG_OOB)) < 0)
         err_sys ("send oob failed"); 
     else 
         printf ("send oob %d\n", ret); 
+
+    if ((ret = send (sockfd, buf+2, 1, 0)) < 0)
+        err_sys ("send normal tail failed"); 
+    else 
+        printf ("send normal tail %d\n", ret); 
+
 #  endif 
 
     while ((n = recv (sockfd, buf, BUFLEN, 0)) > 0)
