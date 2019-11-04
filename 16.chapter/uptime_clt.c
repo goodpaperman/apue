@@ -12,7 +12,7 @@
 
 #ifndef USE_UDP
 #  define CONN_SND
-//#  define OOB_SND
+#  define OOB_SND
 #endif
 
 #ifdef USE_UDP

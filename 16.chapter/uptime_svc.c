@@ -20,7 +20,7 @@
 
 #ifndef USE_UDP
 #  define OOB_RCV
-//#  define OOB_INLINE
+#  define OOB_INLINE
 #endif
 
 #ifndef OOB_INLINE
@@ -165,11 +165,15 @@ void serve (int sockfd)
             strcpy (buf, "n/a"); 
 
         printf ("recv %d: %s\n", ret, buf); 
-#  if 1 //def OOB_INLINE
         if (sockatmark (clfd))
         {
             printf ("has oob!\n"); 
+#  ifdef OOB_INLINE
+            // no MSG_OOB, as OOB are treated as common data
+            ret = recv (clfd, buf, sizeof(buf), 0); 
+#  else
             ret = recv (clfd, buf, sizeof(buf), MSG_OOB); 
+#  endif
             if (ret > 0)
                 buf[ret] = 0; 
             else 
@@ -179,7 +183,6 @@ void serve (int sockfd)
         }
         else 
             printf ("no oob!\n"); 
-#  endif
 
         ret = recv (clfd, buf, sizeof(buf), 0); 
         if (ret > 0)
