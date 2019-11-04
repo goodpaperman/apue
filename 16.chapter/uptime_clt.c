@@ -78,12 +78,17 @@ void print_uptime (int sockfd)
         printf ("send normal head %d\n", ret); 
 
     ptr += 2; 
-    if ((ret = send (sockfd, ptr, 2, MSG_OOB)) < 0)
+#    if 0
+    n = 2; 
+#    else 
+    n = 1; 
+#    endif
+    if ((ret = send (sockfd, ptr, n, MSG_OOB)) < 0)
         err_sys ("send oob failed"); 
     else 
         printf ("send oob %d\n", ret); 
 
-    ptr += 2; 
+    ptr += n; 
     if ((ret = send (sockfd, ptr, 2, 0)) < 0)
         err_sys ("send normal tail failed"); 
     else 
