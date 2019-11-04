@@ -1332,5 +1332,13 @@ void print_sockopt (int fd, char const* prompt)
 #else
     printf ("socket owner %d\n", owner); 
 #endif
+
+    int flags = fcntl (fd, F_GETFL); 
+#ifdef USE_DAEMON
+    syslog (LOG_INFO, "socket flags 0x%08x", flags); 
+#else
+    printf ("socket flags 0x%08x\n", flags); 
+#endif
+
 }
 

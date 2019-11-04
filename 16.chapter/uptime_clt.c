@@ -11,7 +11,8 @@
 //#define USE_UDP
 
 #ifndef USE_UDP
-#  define OOB_SND
+#  define CONN_SND
+//#  define OOB_SND
 #endif
 
 #ifdef USE_UDP
@@ -69,7 +70,7 @@ void print_uptime (int sockfd)
     write (STDOUT_FILENO, buf, n); 
 #else
 
-#  ifdef OOB_SND
+#  ifdef CONN_SND
     strcpy(buf, "abcdefghijklmn"); 
     char const* ptr = buf; 
     if ((ret = send (sockfd, ptr, 2, 0)) < 0)
@@ -78,17 +79,19 @@ void print_uptime (int sockfd)
         printf ("send normal head %d\n", ret); 
 
     ptr += 2; 
-#    if 0
-    n = 2; 
-#    else 
+#    ifdef OOB_SND
     n = 1; 
-#    endif
+#      if 0
+    n = 2; 
+#      endif
+
     if ((ret = send (sockfd, ptr, n, MSG_OOB)) < 0)
         err_sys ("send oob failed"); 
     else 
         printf ("send oob %d\n", ret); 
 
     ptr += n; 
+#    endif
     if ((ret = send (sockfd, ptr, 2, 0)) < 0)
         err_sys ("send normal tail failed"); 
     else 
