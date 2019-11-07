@@ -14,12 +14,14 @@
 // seems to be no effect
 #define QLEN 10
 
-//#define USE_POPEN
 #define OOB_INLINE
+// note select not support POPEN implement
+// use following macro to do parallel & sequencial test switch
 //#define USE_WAIT
 #define FD_SIZE 1024
 
 fd_set cltds; 
+#ifndef USE_WAIT
 int clfd_to_pid [FD_SIZE]; 
 
 void sig_cld (int signo)
@@ -55,6 +57,7 @@ void sig_cld (int signo)
     close (clfd); 
     clfd_to_pid[clfd] = -1; 
 }
+#endif
 
 int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 {
@@ -107,35 +110,6 @@ errout:
 void do_uptime (int clfd)
 {
     int ret = 0; 
-#ifdef USE_POPEN
-    char buf[BUFLEN]; 
-    FILE *fp = popen ("/usr/bin/uptime", "r"); 
-    if (fp == NULL) { 
-        sprintf (buf, "error: %s\n", strerror (errno)); 
-        ret = send (clfd, buf, strlen (buf), 0); 
-
-        // see comments below
-        printf ("write back %d for error\n", ret); 
-    } else { 
-        // it seems no effect, as listen will automatically
-        // accept new connection and client will send ok...
-#  if 0
-        // to test handle multiple connection once..
-        sleep (10); 
-#  endif
-        while (fgets (buf, BUFLEN, fp) != NULL) 
-        {
-            ret = send (clfd, buf, strlen (buf), 0); 
-            printf ("write back %d\n", ret); 
-        }
-
-        pclose (fp); 
-    }
-
-    close (clfd); 
-
-#else  // USE_POPEN
-
     pid_t pid = fork (); 
     if (pid < 0) { 
         printf ("fork error: %s\n", strerror (errno)); 
@@ -152,34 +126,27 @@ void do_uptime (int clfd)
         
         // it seems no effect, as listen will automatically
         // accept new connection and client will send ok...
-#  if 1
+#if 1
         // to test handle multiple connection once..
         sleep (10); 
-#  endif
+#endif
 
         close (clfd); 
-#  if 0
-        // to test handle multiple connection once..
-        system ("sleep 10 & uptime"); 
-#  else
         execl ("/usr/bin/uptime", "uptime", (char *)0); 
-#  endif
         printf ("unexpected return from exec: %s\n", strerror (errno)); 
     }
     else 
     {
-#  if USE_WAIT
+#ifdef USE_WAIT
         close (clfd); 
         int status = 0; 
         ret = waitpid (pid, &status, 0); 
         printf ("wait child %d return %d: %d\n", pid, ret, status); 
-#  else
+#else
         clfd_to_pid[clfd] = pid; 
         printf ("goto serve next client..\n"); 
-#  endif
+#endif
     }
-
-#endif 
 }
 
 void serve (int sockfd)
@@ -210,6 +177,7 @@ void serve (int sockfd)
         ret = select (FD_SIZE+1, &rdds, NULL, &exds, NULL); 
         // will clear allds & tv after this call.
 		if (ret == -1) { 
+#ifndef USE_WAIT
             if (errno == EINTR)
             {
                 printf ("interrupted by signal, some child process done ?\n"); 
@@ -218,6 +186,7 @@ void serve (int sockfd)
                 ////usleep (10000); 
                 continue; 
             }
+#endif
 
             err_sys ("select error"); 
         } else if (ret == 0){ 
@@ -286,7 +255,10 @@ void serve (int sockfd)
                         // let clfd cleared in sig_cld
                        do_uptime (clfd); 
                     }
-                    else {
+#ifndef USE_WAIT
+                    else 
+#endif
+                    {
                         FD_CLR(clfd, &cltds); 
                         printf ("remove %d from client set\n", clfd); 
                     }
@@ -306,15 +278,19 @@ int main (int argc, char *argv[])
     if (argc != 1) 
         err_quit ("usage: ruptimed"); 
 
+#ifndef USE_WAIT
     struct sigaction act; 
     sigemptyset (&act.sa_mask); 
     act.sa_handler = sig_cld; 
     act.sa_flags = 0; 
     sigaction (SIGCHLD, &act, 0); 
     printf ("setup handler for SIGCHLD ok\n"); 
+#endif
 
+#ifndef USE_WAIT
     for (n=0; n<FD_SIZE; ++ n)
         clfd_to_pid[n] = -1; 
+#endif
 
     n = sysconf (_SC_HOST_NAME_MAX); 
     if (n < 0)
