@@ -13,7 +13,7 @@
 // seems to be no effect
 #define QLEN 10
 
-#define USE_POPEN
+//#define USE_POPEN
 #define OOB_INLINE
 #define FD_SIZE 1024
 
@@ -80,7 +80,7 @@ void do_uptime (int clfd)
     } else { 
         // it seems no effect, as listen will automatically
         // accept new connection and client will send ok...
-#  if 1
+#  if 0
         // to test handle multiple connection once..
         sleep (10); 
 #  endif
@@ -93,9 +93,7 @@ void do_uptime (int clfd)
         pclose (fp); 
     }
 
-    // no active close, left client to close the socket, 
-    // to allow we handle all the data on that connecion..
-    //close (clfd); 
+    close (clfd); 
 
 #else  // USE_POPEN
 
@@ -115,20 +113,23 @@ void do_uptime (int clfd)
         
         // it seems no effect, as listen will automatically
         // accept new connection and client will send ok...
-#  if 1
+#  if 0
         // to test handle multiple connection once..
         sleep (10); 
 #  endif
 
         close (clfd); 
+#  if 0
+        // to test handle multiple connection once..
+        system ("sleep 10 & uptime"); 
+#  else
         execl ("/usr/bin/uptime", "uptime", (char *)0); 
+#  endif
         printf ("unexpected return from exec: %s\n", strerror (errno)); 
     }
     else 
     {
-        // no active close, left client to close the socket, 
-        // to allow we handle all the data on that connecion..
-        //close (clfd); 
+        close (clfd); 
         int status = 0; 
         ret = waitpid (pid, &status, 0); 
         printf ("wait child %d return %d: %d\n", pid, ret, status); 
@@ -230,16 +231,15 @@ void serve (int sockfd)
                     printf ("recv %d from %d on urgent: %s\n", ret, clfd, buf); 
                     if (ret > 0) 
                        do_uptime (clfd); 
-                   else  {
-                        FD_CLR(clfd, &cltds); 
-                        printf ("remove %d from client set\n", clfd); 
-                    }
+
+                    // after do_uptime, clfd is closed
+                    FD_CLR(clfd, &cltds); 
+                    printf ("remove %d from client set\n", clfd); 
                 }
                 else 
                     printf ("no oob!\n"); 
             }
         }
-
     }
 }
 
@@ -273,9 +273,8 @@ int main (int argc, char *argv[])
     print_sockopt (sockfd, "server socket"); 
     if (sockfd >= 0)
         serve (sockfd); 
-    else  {
+    else
         printf ("init server socket failed\n"); 
-    }
 
     free (host); 
     exit (1); 
