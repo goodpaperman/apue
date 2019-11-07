@@ -2,6 +2,7 @@
 #include <netdb.h> 
 #include <errno.h> 
 #include <signal.h>
+#include <unistd.h> 
 #include <sys/socket.h> 
 #include <sys/wait.h> 
 #include <sys/select.h>
@@ -15,7 +16,45 @@
 
 //#define USE_POPEN
 #define OOB_INLINE
+//#define USE_WAIT
 #define FD_SIZE 1024
+
+fd_set cltds; 
+int clfd_to_pid [FD_SIZE]; 
+
+void sig_cld (int signo)
+{
+    printf ("SIGCHLD received\n"); 
+    int status = 0; 
+    pid_t pid = wait (&status); 
+    if (pid < 0)
+    {
+        printf ("wait in signal failed, errno %d", errno); 
+        return; 
+    }
+
+    printf ("wait child %d return %d\n", pid, status); 
+    // find connection fd for this child process
+    int clfd=0; 
+    for (; clfd<FD_SIZE; ++ clfd)
+    {
+        if (clfd_to_pid [clfd] != -1
+            && clfd_to_pid[clfd] == pid)
+            break; 
+    }
+
+    if (clfd == FD_SIZE)
+    {
+        printf ("connection fd not find for that pid\n"); 
+        return; 
+    }
+
+    printf ("find clfd %d for that pid\n", clfd); 
+    FD_CLR(clfd, &cltds); 
+    printf ("remove %d from client set\n", clfd); 
+    close (clfd); 
+    clfd_to_pid[clfd] = -1; 
+}
 
 int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 {
@@ -113,7 +152,7 @@ void do_uptime (int clfd)
         
         // it seems no effect, as listen will automatically
         // accept new connection and client will send ok...
-#  if 0
+#  if 1
         // to test handle multiple connection once..
         sleep (10); 
 #  endif
@@ -129,10 +168,15 @@ void do_uptime (int clfd)
     }
     else 
     {
+#  if USE_WAIT
         close (clfd); 
         int status = 0; 
         ret = waitpid (pid, &status, 0); 
         printf ("wait child %d return %d: %d\n", pid, ret, status); 
+#  else
+        clfd_to_pid[clfd] = pid; 
+        printf ("goto serve next client..\n"); 
+#  endif
     }
 
 #endif 
@@ -144,7 +188,7 @@ void serve (int sockfd)
     int clfd; 
 
     char buf[BUFLEN]; 
-    fd_set cltds, rdds, exds; 
+    fd_set rdds, exds; 
     FD_ZERO(&cltds); 
     FD_ZERO(&rdds); 
     FD_ZERO(&exds); 
@@ -166,6 +210,15 @@ void serve (int sockfd)
         ret = select (FD_SIZE+1, &rdds, NULL, &exds, NULL); 
         // will clear allds & tv after this call.
 		if (ret == -1) { 
+            if (errno == EINTR)
+            {
+                printf ("interrupted by signal, some child process done ?\n"); 
+                // no need to sleep here, as select return error after sig_cld run over everytime.
+                //// sleep a while to let sig_cld remove the closed fd.
+                ////usleep (10000); 
+                continue; 
+            }
+
             err_sys ("select error"); 
         } else if (ret == 0){ 
 		    printf ("select over but no event\n"); 
@@ -229,12 +282,14 @@ void serve (int sockfd)
                        sprintf (buf, "errno %d", errno); 
 
                     printf ("recv %d from %d on urgent: %s\n", ret, clfd, buf); 
-                    if (ret > 0) 
+                    if (ret > 0) {
+                        // let clfd cleared in sig_cld
                        do_uptime (clfd); 
-
-                    // after do_uptime, clfd is closed
-                    FD_CLR(clfd, &cltds); 
-                    printf ("remove %d from client set\n", clfd); 
+                    }
+                    else {
+                        FD_CLR(clfd, &cltds); 
+                        printf ("remove %d from client set\n", clfd); 
+                    }
                 }
                 else 
                     printf ("no oob!\n"); 
@@ -250,6 +305,16 @@ int main (int argc, char *argv[])
 
     if (argc != 1) 
         err_quit ("usage: ruptimed"); 
+
+    struct sigaction act; 
+    sigemptyset (&act.sa_mask); 
+    act.sa_handler = sig_cld; 
+    act.sa_flags = 0; 
+    sigaction (SIGCHLD, &act, 0); 
+    printf ("setup handler for SIGCHLD ok\n"); 
+
+    for (n=0; n<FD_SIZE; ++ n)
+        clfd_to_pid[n] = -1; 
 
     n = sysconf (_SC_HOST_NAME_MAX); 
     if (n < 0)
