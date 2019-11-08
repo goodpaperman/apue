@@ -143,6 +143,7 @@ void do_uptime (int clfd)
         ret = waitpid (pid, &status, 0); 
         printf ("wait child %d return %d: %d\n", pid, ret, status); 
 #else
+        printf ("start worker process %d\n", pid); 
         clfd_to_pid[clfd] = pid; 
         printf ("goto serve next client..\n"); 
 #endif
