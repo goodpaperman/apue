@@ -7,6 +7,7 @@
 
 //#define USE_FILE 1
 #define MAXLINE 128
+#define USE_FSPIPE
 
 int s_pipe (int fd[2])
 {
@@ -22,18 +23,29 @@ int main (int argc, char *argv[])
         return 0; 
     }
 
-    int n, fd[2];
+    int n;
     if (signal (SIGPIPE, sig_pipe) == SIG_ERR) {
         printf ("signal error\n"); 
 		return 0; 
 	}
 
+	int fd[2]; 
     if (s_pipe (fd) < 0) {
         printf ("pipe error\n"); 
 		return 0; 
 	}
 
+#ifdef USE_FSPIPE
+	if (fattach (fd[1], "./pipe") < 0) {
+		printf ("fattach error\n"); 
+		return 0; 
+	}
+
+	printf ("attach to file pipe ok\n"); 
+#endif
+
     char line[MAXLINE]; 
+#ifndef USE_FSPIPE
     pid_t pid = fork (); 
     if (pid < 0) {
         printf ("fork error\n"); 
@@ -41,23 +53,31 @@ int main (int argc, char *argv[])
 	}
     else if (pid > 0)
     {
+#endif
         close (fd[1]); 
 #ifdef USE_FILE
-        FILE* fp1 = fdopen (fd1[1], "w"); 
-        FILE* fp2 = fdopen (fd2[0], "r"); 
-        if (fp1 == NULL || fp2 == NULL)
-            err_sys ("open filep on fd failed"); 
+        FILE* fp1 = fdopen (fd[0], "w"); 
+        FILE* fp2 = fdopen (fd[0], "r"); 
+        if (fp1 == NULL || fp2 == NULL) {
+            printf ("open filep on fd failed\n"); 
+			return 0; 
+		}
 #endif 
 
         while (fgets (line, MAXLINE, stdin) != NULL) { 
             n = strlen (line); 
 #ifdef USE_FILE
-            if (fwrite (line, 1, n, fp1) != n)
-                err_sys ("fwrite error to pipe"); 
+            if (fwrite (line, 1, n, fp1) != n) {
+                printf ("fwrite error to pipe"); 
+				return 0; 
+			}
+
             fflush (fp1); 
             printf ("waiting reply\n"); 
-            if (fgets (line, MAXLINE, fp2) == NULL)
-                err_sys ("fread error from pipe"); 
+            if (fgets (line, MAXLINE, fp2) == NULL) {
+                printf ("fread error from pipe"); 
+				return 0; 
+			}
 #else
             if (write (fd[0], line, n) != n){
                 printf ("write error to pipe\n"); 
@@ -85,7 +105,17 @@ int main (int argc, char *argv[])
 			return 0; 
 		}
 
+#ifdef USE_FSPIPE
+		if (fdetach ("./pipe") < 0) {
+			printf ("fdetach error\n"); 
+			return 0; 
+		}
+
+		printf ("detach from file pipe ok\n"); 
+#endif
+
         return 0; 
+#ifndef USE_FSPIPE
     }
     else { 
         close (fd[0]); 
@@ -105,20 +135,21 @@ int main (int argc, char *argv[])
             close (fd[1]); 
         }
 
-#if 0
+#  if 0
         // not work after exec
         if (setvbuf (stdin, NULL, _IOLBF, 0) != 0)
             err_sys ("setvbuf error"); 
         if (setvbuf (stdout, NULL, _IOLBF, 0) != 0)
             err_sys ("setvbuf error"); 
-#endif 
-        if (execl (argv[1], "add2", (char *)0) < 0) {
+#  endif 
+        if (execl (argv[1], argv[2], (char *)0) < 0) {
             printf ("execl error\n"); 
 			return 0; 
 		}
     }
 
     return 0; 
+#endif
 }
 
 static void sig_pipe (int signo)
