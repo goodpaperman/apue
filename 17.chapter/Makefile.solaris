@@ -1,4 +1,16 @@
-all: padd2 add2
+all: padd2 add2 padd3 add3
+
+add3: add3.o 
+	gcc -Wall -g $^ -o $@
+
+add3.o: add3.c 
+	gcc -Wall -g -c $< -o $@
+
+padd3: padd3.o 
+	gcc -Wall -g $^ -o $@
+
+padd3.o: padd3.c 
+	gcc -Wall -g -c $< -o $@
 
 add2: add2.o 
 	gcc -Wall -g $^ -o $@
@@ -14,7 +26,7 @@ padd2.o: padd2.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp padd2 add2
+	-rm -f *.o core.* *.log *~ *.swp padd2 add2 padd3 add3
 	@echo "end clean"
 
 .PHONY: clean

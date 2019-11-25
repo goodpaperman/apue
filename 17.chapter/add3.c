@@ -1,4 +1,4 @@
-
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h> 
@@ -33,11 +33,12 @@ int main (void)
 
 	printf ("attach to file pipe ok\n"); 
 
-	int n = 0; 
+	int n = 0, int1 = 0, int2 = 0; 
     char line[MAXLINE]; 
     close (fd[1]);
     while ((n = read (fd[0], line, MAXLINE)) > 0) { 
         line[n] = 0; 
+		printf ("source: %s\n", line); 
         if (sscanf (line, "%d%d", &int1, &int2) == 2) { 
             sprintf (line, "%d\n", int1 + int2); 
             n = strlen (line); 
@@ -45,7 +46,7 @@ int main (void)
                 printf ("write error\n"); 
 				return 0; 
 			}
-			printf ("i am working on %s\n", line); 
+			printf ("i am working on %d + %d = %s\n", int1, int2, line); 
         }
         else { 
             if (write (fd[0], "invalid args\n", 13) != 13) {

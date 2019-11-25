@@ -1,5 +1,4 @@
 //#include "../apue.h"  
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h> 
@@ -10,12 +9,12 @@
 
 int main (int argc, char *argv[])
 {
-    if (argc < 2) { 
-        printf ("usage: padd3 <add3-program>\n"); 
+    if (argc != 1 && argc != 3) { 
+        printf ("usage: padd3 <int1> <int2>\n"); 
         return 0; 
     }
 
-    int fdin, fdout, n, int1, int2; 
+    int fdin, fdout, n; 
     char line[MAXLINE]; 
 	fdin = open ("./pipe", O_RDWR); 
 	if (fdin < 0) {
@@ -26,11 +25,22 @@ int main (int argc, char *argv[])
 	printf ("open file pipe ok, fd = %d\n", fdin); 
 	fdout = fdin; 
 
+	if (argc == 1) {
+    	if ((n = read (STDIN_FILENO, line, MAXLINE)) < 0) {
+        	printf ("read error from stdin\n"); 
+			return 0; 
+		}
+	}
+	else {
+		sprintf (line, "%s %s", argv[1], argv[2]); 
+	}
+
     n = strlen (line); 
     if (write (fdout, line, n) != n){
         printf ("write error to pipe\n"); 
 		return 0; 
 	}
+
     if ((n = read (fdin, line, MAXLINE)) < 0) {
         printf ("read error from pipe\n"); 
 		return 0; 
