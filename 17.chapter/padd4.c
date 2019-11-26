@@ -6,6 +6,21 @@
 
 #define MAXLINE 128
  
+int cli_conn(const char *name)
+{
+	int fd; 
+	if ((fd = open (name, O_RDWR)) < 0) {
+		printf ("open pipe file failed\n"); 
+		return -1; 
+	}
+
+	if (isastream (fd) == 0) { 
+		close (fd); 
+		return -2; 
+	}
+
+	return fd; 
+}
 
 int main (int argc, char *argv[])
 {
@@ -16,11 +31,9 @@ int main (int argc, char *argv[])
 
     int fdin, fdout, n; 
     char line[MAXLINE]; 
-	fdin = open ("./pipe", O_RDWR); 
-	if (fdin < 0) {
-		printf ("open file pipe failed\n"); 
+	fdin = cli_conn ("./pipe"); 
+	if (fdin < 0)
 		return 0; 
-	}
 
 	printf ("open file pipe ok, fd = %d\n", fdin); 
 	fdout = fdin; 
