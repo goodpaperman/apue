@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <stdio.h> 
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h> 
+#include <stropts.h>
 
 #define MAXLINE 128
 
@@ -79,8 +82,10 @@ int main (void)
 	int acceptfd = 0; 
 	int n = 0, int1 = 0, int2 = 0; 
 	char line[MAXLINE]; 
+	uid_t uid = 0; 
 	while ((acceptfd = serv_accept (listenfd, &uid)) >= 0)
 	{
+		printf ("accept a client, fd = %d, uid = %ld\n", acceptfd, uid); 
     	while ((n = read (acceptfd, line, MAXLINE)) > 0) { 
     	    line[n] = 0; 
 			printf ("source: %s\n", line); 

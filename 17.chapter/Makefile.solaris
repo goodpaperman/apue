@@ -1,4 +1,16 @@
-all: padd2 add2 padd3 add3
+all: padd2 add2 padd3 add3 padd4 add4
+
+add4: add4.o 
+	gcc -Wall -g $^ -o $@
+
+add4.o: add4.c 
+	gcc -Wall -g -c $< -o $@
+
+padd4: padd4.o 
+	gcc -Wall -g $^ -o $@
+
+padd4.o: padd4.c 
+	gcc -Wall -g -c $< -o $@
 
 add3: add3.o 
 	gcc -Wall -g $^ -o $@

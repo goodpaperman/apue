@@ -14,7 +14,7 @@ int main (int argc, char *argv[])
         return 0; 
     }
 
-    int fdin, fdout, n; 
+    int fdin, fdout, n, m; 
     char line[MAXLINE]; 
 	fdin = open ("./pipe", O_RDWR); 
 	if (fdin < 0) {
@@ -41,7 +41,9 @@ int main (int argc, char *argv[])
 		return 0; 
 	}
 
-    if ((n = read (fdin, line, MAXLINE)) < 0) {
+	strcat (line, " = "); 
+	m = strlen (line); 
+    if ((n = read (fdin, line + m, MAXLINE - m)) < 0) {
         printf ("read error from pipe\n"); 
 		return 0; 
 	}
@@ -51,7 +53,7 @@ int main (int argc, char *argv[])
 		return 0; 
     }
 
-    line[n] = 0; 
+    line[m+n] = 0; 
     if (fputs (line, stdout) == EOF) {
         printf ("fputs error\n"); 
 		return 0; 
