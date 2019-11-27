@@ -26,6 +26,7 @@ int main (void)
 
     while ((n = read (fdin, line, MAXLINE)) > 0) { 
         line[n] = 0; 
+	printf ("source: %s\n", line); 
         if (sscanf (line, "%d%d", &int1, &int2) == 2) { 
             sprintf (line, "%d\n", int1 + int2); 
             n = strlen (line); 

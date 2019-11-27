@@ -4,6 +4,7 @@
 #include <unistd.h> 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 int main (int argc, char *argv[])
 {
@@ -39,7 +40,7 @@ int main (int argc, char *argv[])
 
 	list.sl_nmods = nmods; 
 	if (ioctl (fd, I_LIST, &list) < 0) { 
-		fprintf (stderr,"I_LIST error for list\n"); 
+		fprintf (stderr,"I_LIST error for list, errno %d\n", errno); 
 		free (list.sl_modlist); 
 		exit (1); 
 	}
