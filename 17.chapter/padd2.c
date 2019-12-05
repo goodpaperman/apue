@@ -4,14 +4,24 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#if !defined(__sun) && !defined(sun)
+#include <sys/socket.h>
+#endif
 
 //#define USE_FILE 1
 #define MAXLINE 128
-#define USE_FSPIPE
+#if defined(__sun) || defined(sun)
+#  define USE_FSPIPE
+#endif
 
 int s_pipe (int fd[2])
 {
+#if defined(__sun) || defined (sun)
+	// on solaris
 	return (pipe(fd)); 
+#else
+	return socketpair (AF_UNIX, SOCK_STREAM, 0, fd); 
+#endif
 }
 
 static void sig_pipe (int); 

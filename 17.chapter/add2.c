@@ -4,7 +4,9 @@
 #include <fcntl.h>
 
 #define MAXLINE 128
-#define USE_FSPIPE
+#if defined(__sun) || defined(sun)
+#  define USE_FSPIPE
+#endif
 
 int main (void)
 {

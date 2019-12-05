@@ -1,9 +1,15 @@
-all: hostent 
+all: padd2 add2
 
-hostent: hostent.o apue.o 
+add2: add2.o apue.o 
 	gcc -Wall -g $^ -o $@
 
-hostent.o: hostent.c ../apue.h
+add2.o: add2.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+padd2: padd2.o apue.o 
+	gcc -Wall -g $^ -o $@
+
+padd2.o: padd2.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 log.o: ../log.c ../log.h
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp hostent 
+	-rm -f *.o core.* *.log *~ *.swp padd2 add2
 	@echo "end clean"
 
 .PHONY: clean
