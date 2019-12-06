@@ -1,4 +1,16 @@
-all: padd2 add2 padd3 add3 padd4 add4
+all: padd2 add2 padd3 add3 padd4 add4 padd5 add5
+
+add5: add5.o 
+	gcc -Wall -g $^ -o $@ -lsocket
+
+add5.o: add5.c 
+	gcc -Wall -g -c $< -o $@
+
+padd5: padd5.o 
+	gcc -Wall -g $^ -o $@ -lsocket
+
+padd5.o: padd5.c 
+	gcc -Wall -g -c $< -o $@
 
 add4: add4.o 
 	gcc -Wall -g $^ -o $@

@@ -8,12 +8,8 @@
 #include <errno.h>
 #include <time.h>
 #include <stddef.h> 
-#if 0
-#  include <stropts.h>
-#else
-#  include <sys/socket.h> 
-#  include <sys/un.h> 
-#endif
+#include <sys/socket.h> 
+#include <sys/un.h> 
 
 #define QLEN 10
 #define STALE 30

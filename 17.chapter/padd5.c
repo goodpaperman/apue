@@ -5,11 +5,11 @@
 #include <fcntl.h>
 #include <errno.h> 
 #include <stddef.h> 
-#if 0
+#include <sys/socket.h> 
+#include <sys/un.h> 
+#if defined(__sun) || defined(sun) 
 #  include <stropts.h>
-#else
-#  include <sys/socket.h> 
-#  include <sys/un.h> 
+#  include <sys/stat.h>
 #endif
 
 #define CLI_PATH "/var/tmp/"
