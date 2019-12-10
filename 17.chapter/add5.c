@@ -14,6 +14,8 @@
 #define QLEN 10
 #define STALE 30
 #define MAXLINE 128
+// note this check is mannually, not necessary for the connection establish
+#define CONN_CHECK
 
 static void sig_pipe (int);
 
@@ -75,6 +77,8 @@ int serv_accept (int listenfd, uid_t *uidptr)
     len -= offsetof (struct sockaddr_un, sun_path); 
     un.sun_path[len] = 0; 
     printf ("accept %s ok\n", un.sun_path); 
+
+#ifdef CONN_CHECK
     if (stat (un.sun_path, &statbuf) < 0) {
         err = errno; 
         printf ("stat failed\n"); 
@@ -110,6 +114,7 @@ int serv_accept (int listenfd, uid_t *uidptr)
     printf ("and has nearly time\n"); 
     if (uidptr != NULL)
         *uidptr = statbuf.st_uid; 
+#endif
 
     unlink (un.sun_path); 
     return clifd; 

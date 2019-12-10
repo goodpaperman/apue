@@ -15,6 +15,8 @@
 #define CLI_PATH "/var/tmp/"
 #define CLI_PERM S_IRWXU
 #define MAXLINE 128
+// note this check is mannually, not necessary for the connection establish
+#define CONN_CHECK
  
 int cli_conn(const char *name)
 {
@@ -27,6 +29,8 @@ int cli_conn(const char *name)
     }
 
     printf ("create socket ok\n"); 
+
+#ifdef CONN_CHECK
     memset (&un, 0, sizeof (un)); 
     un.sun_family = AF_UNIX; 
     sprintf (un.sun_path, "%s%05d", CLI_PATH, getpid ()); 
@@ -49,6 +53,8 @@ int cli_conn(const char *name)
     }
 
     printf ("change temp file mode ok\n"); 
+#endif 
+
     memset (&un, 0, sizeof (un)); 
     un.sun_family = AF_UNIX; 
     strcpy (un.sun_path, name); 
