@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include "spipe_fd.h"
 
 #define MAXLINE 128
 
@@ -28,7 +29,7 @@ int main (int argc, char *argv[])
 		return 0; 
 	}
 
-	int fd[2]; 
+	int fd[2], fd_to_send, fd_to_recv; 
     if (s_pipe (fd) < 0) {
         printf ("pipe error\n"); 
 		return 0; 
@@ -42,22 +43,45 @@ int main (int argc, char *argv[])
 	}
     else if (pid > 0)
     {
-        close (fd[1]); 
+        //close (fd[1]); 
         while (fgets (line, MAXLINE, stdin) != NULL) { 
             n = strlen (line); 
-            if (write (fd[0], line, n) != n){
-                printf ("write error to pipe\n"); 
-				return 0; 
-			}
-            if ((n = read (fd[0], line, MAXLINE)) < 0) {
-                printf ("read error from pipe\n"); 
+			// create temp file and write requet into it !
+			
+            if (write (fd_to_send, line, n) != n){
+                printf ("write error to file\n"); 
 				return 0; 
 			}
 
+			n = send_fd (fd[0], fd_to_send); 
+			if (n < 0) { 
+				printf ("send fd to peer failed, error %d\n", n); 
+				return -1; 
+			}
+			else 
+				// after send, fd_to_send is close automatically 
+				printf ("send fd %d to peer\n", fd_to_send); 
+
+			fd_to_recv = recv_fd (fd[1], write); 
+			if (fd_to_recv < 0) {
+				printf ("recv fd from peer failed, error %d\n", fd_to_recv); 
+				return -1; 
+			}
+			else 
+				printf ("recv fd %d from peer\n", fd_to_recv); 	
+
+			// read response by receving the new fd!
+            if ((n = read (fd_to_recv, line, MAXLINE)) < 0) {
+                printf ("read error from file\n"); 
+				return 0; 
+			}
+
+			close (fd_to_recv); 
             if (n == 0) { 
                 printf ("child closed pipe\n"); 
                 break;
             }
+
             line[n] = 0; 
             if (fputs (line, stdout) == EOF) {
                 printf ("fputs error\n"); 
