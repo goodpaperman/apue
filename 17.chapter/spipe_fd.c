@@ -1,11 +1,18 @@
 #include "spipe_fd.h" 
 #include <stropts.h> 
+#include <string.h> 
+#include <unistd.h> 
+#include <stdio.h>
+//#include <sys/types.h>  // for ssize_t 
+
+#define MAXLINE 128
 
 int send_err (int fd, int errcode, const char *msg)
 {
 	int n; 
 	if ((n = strlen (msg)) > 0)
-		if (writen (fd, msg, n) != n)
+		//if (writen (fd, msg, n) != n)
+		if (write (fd, msg, n) != n)
 			return -1; 
 
 	if (errcode >= 0)
