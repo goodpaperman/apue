@@ -16,6 +16,14 @@ int s_pipe (int fd[2])
 
 static void sig_pipe (int); 
 
+int get_temp_fd ()
+{
+	char fname[128] = "/tmp/outXXXXXX"; 
+	int fd = mkstemp (fname); 
+	printf ("create temp file %s with fd %d\n", fname, fd); 
+	return fd; 
+}
+
 int main (int argc, char *argv[])
 {
     if (argc < 2) { 
@@ -34,6 +42,7 @@ int main (int argc, char *argv[])
         printf ("pipe error\n"); 
 		return 0; 
 	}
+	printf ("create pipe %d.%d\n", fd[0], fd[1]); 
 
     char line[MAXLINE]; 
     pid_t pid = fork (); 
@@ -43,10 +52,15 @@ int main (int argc, char *argv[])
 	}
     else if (pid > 0)
     {
-        //close (fd[1]); 
+        close (fd[1]); 
         while (fgets (line, MAXLINE, stdin) != NULL) { 
             n = strlen (line); 
 			// create temp file and write requet into it !
+			fd_to_send = get_temp_fd (); 
+			if (fd_to_send < 0) {
+				printf ("get temp fd failed\n"); 
+				return 0; 
+			}
 			
             if (write (fd_to_send, line, n) != n){
                 printf ("write error to file\n"); 
@@ -54,15 +68,15 @@ int main (int argc, char *argv[])
 			}
 
 			n = send_fd (fd[0], fd_to_send); 
+			// after send, fd_to_send is close automatically 
 			if (n < 0) { 
 				printf ("send fd to peer failed, error %d\n", n); 
 				return -1; 
 			}
 			else 
-				// after send, fd_to_send is close automatically 
 				printf ("send fd %d to peer\n", fd_to_send); 
 
-			fd_to_recv = recv_fd (fd[1], write); 
+			fd_to_recv = recv_fd (fd[0], write); 
 			if (fd_to_recv < 0) {
 				printf ("recv fd from peer failed, error %d\n", fd_to_recv); 
 				return -1; 
@@ -103,7 +117,7 @@ int main (int argc, char *argv[])
                 printf ("dup2 error to stdin\n"); 
 				return 0; 
 			}
-            close (fd[0]); 
+            //close (fd[0]); 
         }
 
         if (fd[1] != STDOUT_FILENO) { 
@@ -114,7 +128,7 @@ int main (int argc, char *argv[])
             close (fd[1]); 
         }
 
-        if (execl (argv[1], argv[2], (char *)0) < 0) {
+        if (execl (argv[1], argv[1], (char *)0) < 0) {
             printf ("execl error\n"); 
 			return 0; 
 		}
