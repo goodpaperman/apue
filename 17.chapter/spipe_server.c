@@ -67,6 +67,11 @@ int main (int argc, char *argv[])
 				return 0; 
 			}
 
+			if (fsync (fd_to_send) < 0)
+				printf ("sync file failed\n"); 
+			else 
+				printf ("sync data to file\n"); 
+
 			n = send_fd (fd[0], fd_to_send); 
 			// after send, fd_to_send is close automatically 
 			if (n < 0) { 

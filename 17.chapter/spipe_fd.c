@@ -77,6 +77,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
 	status = -1; 
 	for (;;) { 
+#if 0
 		dat.buf = buf; 
 		dat.maxlen = MAXLINE; 
 		flag = 0; 
@@ -86,12 +87,16 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 		}
 
 		nread = dat.len; 
+#else
+		nread = read(fd, buf, MAXLINE); 
+#endif
 		if (nread == 0) {
-			fprintf (stderr, "%u: connection closed by server, errno %d\n", getpid (), errno); 
+			fprintf (stderr, "%u: connection closed by server, fd %d, errno %d\n", getpid (), fd, errno); 
+			sleep (60); 
 			return -1; 
 		}
 
-		fprintf (stderr, "%u: recv %d from peer\n", getpid (), dat.len); 
+		fprintf (stderr, "%u: recv %d from peer\n", getpid (), nread); 
 		for (ptr = buf; ptr < &buf[nread]; ) {
 			if (*ptr ++ == 0) { 
 				if (ptr != &buf[nread-1]) {

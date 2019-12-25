@@ -63,6 +63,7 @@ int main (void)
 		fprintf (stderr, "send fd %d\n", fdout); 
     }
 
+	fprintf(stderr, "no more data\n"); 
 	close (fdin); 
     return 0; 
 }
