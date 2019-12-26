@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
 				return -1; 
 			}
 			else 
-				printf ("recv fd %d from peer, position %u\n", fd_to_recv, tell(fd)); 	
+				printf ("recv fd %d from peer, position %u\n", fd_to_recv, tell(fd_to_recv)); 	
 
 			// read response by receving the new fd!
             if ((n = read (fd_to_recv, line, MAXLINE)) < 0) {

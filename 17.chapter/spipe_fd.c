@@ -45,14 +45,14 @@ int send_fd (int fd, int fd_to_send)
 		return -1; 
 	}
 
-	fprintf (stderr, "%u: send first 2 bytes ok\n", getpid ()); 
+	//fprintf (stderr, "%u: send first 2 bytes ok\n", getpid ()); 
 	if (fd_to_send >= 0) {
 		if (ioctl (fd, I_SENDFD, fd_to_send) < 0) {
 			fprintf (stderr, "%u: send fd itself failed\n", getpid ()); 
 			return -1; 
 		}
 		else 
-			fprintf (stderr, "%u: send fd itself ok\n", getpid ()); 
+			;//fprintf (stderr, "%u: send fd itself ok\n", getpid ()); 
 	}
 
 	return 0; 
@@ -96,7 +96,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 			return -1; 
 		}
 
-		fprintf (stderr, "%u: recv %d from peer\n", getpid (), nread); 
+		//fprintf (stderr, "%u: recv %d from peer\n", getpid (), nread); 
 		for (ptr = buf; ptr < &buf[nread]; ) {
 			if (*ptr ++ == 0) { 
 				if (ptr != &buf[nread-1]) {
@@ -104,7 +104,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 					return -1; 
 				}
 
-				fprintf (stderr, "%u: msg format ok\n", getpid ()); 
+				//fprintf (stderr, "%u: msg format ok\n", getpid ()); 
 				status = *ptr & 0xff; 
 				if (status == 0) {
 					if (ioctl (fd, I_RECVFD, &recvfd) < 0) {
@@ -112,11 +112,11 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 						return -1; 
 					}
 
-					fprintf (stderr, "%u: recv fd itself ok, fd = %d\n", getpid (), recvfd.fd); 
+					//fprintf (stderr, "%u: recv fd itself ok, fd = %d\n", getpid (), recvfd.fd); 
 					newfd = recvfd.fd; 
 				}
 				else {
-					fprintf (stderr, "%u: recv error code %d ok\n", getpid (), -status); 
+					//fprintf (stderr, "%u: recv error code %d ok\n", getpid (), -status); 
 					newfd = -status; 
 				}
 

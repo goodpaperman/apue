@@ -22,6 +22,7 @@ int main (void)
 	//fdin = STDIN_FILENO; 
 	//fdout = STDOUT_FILENO; 
 
+	while (1) {
 	fdin = recv_fd (STDIN_FILENO, write); 
 	if (fdin < 0) {
 		fprintf (stderr, "recv_fd failed, error %d\n", fdin); 
@@ -68,8 +69,11 @@ int main (void)
 		// fdout will be automatically closed by send_fd
 		fprintf (stderr, "send fd %d\n", fdout); 
     }
+	else
+		fprintf (stderr, "no more data\n"); 
 
-	fprintf(stderr, "no more data\n"); 
 	close (fdin); 
+	}
+
     return 0; 
 }
