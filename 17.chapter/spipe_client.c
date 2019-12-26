@@ -55,10 +55,12 @@ int main (void)
 			}
         }
 
+#if 1
 		if (lseek (fdout, 0, SEEK_SET) < 0)
 			fprintf (stderr, "seek to begin failed\n"); 
 		else 
 			fprintf (stderr, "seek to head\n"); 
+#endif
 
 		ret = send_fd (STDOUT_FILENO, fdout); 
 		if (ret < 0) {

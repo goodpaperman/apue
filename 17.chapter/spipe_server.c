@@ -72,7 +72,9 @@ int main (int argc, char *argv[])
 				printf ("sync file failed\n"); 
 			else 
 				printf ("sync data to file\n"); 
-#else
+#endif
+
+#if 1
 			if (lseek (fd_to_send, 0, SEEK_SET) < 0)
 				printf ("seek to begin failed\n"); 	
 			else

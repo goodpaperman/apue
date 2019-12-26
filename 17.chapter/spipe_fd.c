@@ -77,7 +77,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
 	status = -1; 
 	for (;;) { 
-#if 0
+#if 1
 		dat.buf = buf; 
 		dat.maxlen = MAXLINE; 
 		flag = 0; 
