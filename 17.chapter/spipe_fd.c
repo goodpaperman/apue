@@ -92,7 +92,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 #endif
 		if (nread == 0) {
 			fprintf (stderr, "%u: connection closed by server, fd %d, errno %d\n", getpid (), fd, errno); 
-			sleep (60); 
+			//sleep (60); 
 			return -1; 
 		}
 

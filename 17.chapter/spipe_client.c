@@ -28,14 +28,15 @@ int main (void)
 		return -1; 
 	}
 
-	fprintf (stderr, "recv fd %d\n", fdin); 
+	fprintf (stderr, "recv fd %d, position %u\n", fdin, tell(fdin)); 
 	fdout = get_temp_fd (); 
 	if (fdout < 0) { 
 		fprintf (stderr, "get temp fd failed\n"); 
 		return -1; 
 	}
 
-    while ((n = read (fdin, line, MAXLINE)) > 0) { 
+    n = read (fdin, line, MAXLINE);
+	if (n > 0) {
         line[n] = 0; 
 		fprintf (stderr, "source: %s\n", line); 
         if (sscanf (line, "%d%d", &int1, &int2) == 2) { 
@@ -52,6 +53,11 @@ int main (void)
 				return 0; 
 			}
         }
+
+		if (lseek (fdout, 0, SEEK_SET) < 0)
+			fprintf (stderr, "seek to begin failed\n"); 
+		else 
+			fprintf (stderr, "seek to head\n"); 
 
 		ret = send_fd (STDOUT_FILENO, fdout); 
 		if (ret < 0) {

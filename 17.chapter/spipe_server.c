@@ -67,10 +67,17 @@ int main (int argc, char *argv[])
 				return 0; 
 			}
 
+#if 0
 			if (fsync (fd_to_send) < 0)
 				printf ("sync file failed\n"); 
 			else 
 				printf ("sync data to file\n"); 
+#else
+			if (lseek (fd_to_send, 0, SEEK_SET) < 0)
+				printf ("seek to begin failed\n"); 	
+			else
+				printf ("seek to head\n"); 
+#endif
 
 			n = send_fd (fd[0], fd_to_send); 
 			// after send, fd_to_send is close automatically 
@@ -87,7 +94,7 @@ int main (int argc, char *argv[])
 				return -1; 
 			}
 			else 
-				printf ("recv fd %d from peer\n", fd_to_recv); 	
+				printf ("recv fd %d from peer, position %u\n", fd_to_recv, tell(fd)); 	
 
 			// read response by receving the new fd!
             if ((n = read (fd_to_recv, line, MAXLINE)) < 0) {
