@@ -20,6 +20,7 @@ int get_temp_fd ()
 {
 	char fname[128] = "/tmp/outXXXXXX"; 
 	int fd = mkstemp (fname); 
+	unlink (fname);  // remove after close fd
 	printf ("create temp file %s with fd %d\n", fname, fd); 
 	return fd; 
 }

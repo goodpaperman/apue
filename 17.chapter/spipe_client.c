@@ -11,6 +11,7 @@ int get_temp_fd ()
 {
     char fname[128] = "/tmp/inXXXXXX";
     int fd = mkstemp (fname);
+	unlink (fname); // remove temp file after close fd
     fprintf (stderr, "create temp file %s with fd %d\n", fname, fd);
     return fd;
 }
