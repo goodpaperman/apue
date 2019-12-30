@@ -1,4 +1,19 @@
-all: padd2 add2 add5 padd5
+all: padd2 add2 add5 padd5 spipe_server spipe_client
+
+spipe_client: spipe_client.o spipe_fd.o
+	gcc -Wall -g $^ -o $@
+
+spipe_client.o: spipe_client.c 
+	gcc -Wall -g -c $< -o $@
+
+spipe_server: spipe_server.o spipe_fd.o
+	gcc -Wall -g $^ -o $@
+
+spipe_server.o: spipe_server.c 
+	gcc -Wall -g -c $< -o $@
+
+spipe_fd.o: spipe_fd.c 
+	gcc -Wall -g -c $< -o $@
 
 padd5: padd5.o apue.o 
 	gcc -Wall -g $^ -o $@

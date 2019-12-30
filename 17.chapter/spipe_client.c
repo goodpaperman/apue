@@ -30,7 +30,7 @@ int main (void)
 		return -1; 
 	}
 
-	fprintf (stderr, "recv fd %d, position %u\n", fdin, tell(fdin)); 
+	fprintf (stderr, "recv fd %d, position %u\n", fdin, lseek(fdin, 0, SEEK_CUR)); 
 	fdout = get_temp_fd (); 
 	if (fdout < 0) { 
 		fprintf (stderr, "get temp fd failed\n"); 

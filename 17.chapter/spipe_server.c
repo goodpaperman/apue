@@ -5,13 +5,21 @@
 #include <unistd.h>
 #include <string.h>
 #include "spipe_fd.h"
+#if defined(__sun) || defined(sun)
+#else
+#include <sys/socket.h>
+#endif
 
 #define MAXLINE 128
 
 int s_pipe (int fd[2])
 {
+#if defined(__sun) || defined(sun)
 	// on solaris
 	return (pipe(fd)); 
+#else
+    return socketpair(AF_UNIX, SOCK_STREAM, 0, fd); 
+#endif
 }
 
 static void sig_pipe (int); 
@@ -97,7 +105,7 @@ int main (int argc, char *argv[])
 				return -1; 
 			}
 			else 
-				printf ("recv fd %d from peer, position %u\n", fd_to_recv, tell(fd_to_recv)); 	
+				printf ("recv fd %d from peer, position %u\n", fd_to_recv, lseek(fd_to_recv, 0, SEEK_CUR)); 	
 
 			// read response by receving the new fd!
             if ((n = read (fd_to_recv, line, MAXLINE)) < 0) {

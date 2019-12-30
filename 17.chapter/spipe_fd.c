@@ -1,12 +1,15 @@
 #include "spipe_fd.h" 
-#include <stropts.h> 
 #include <string.h> 
 #include <unistd.h> 
+#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 //#include <sys/types.h>  // for ssize_t 
 
 #define MAXLINE 128
+
+#if defined(__sun) || defined(sun)
+#include <stropts.h> 
 
 int send_err (int fd, int errcode, const char *msg)
 {
@@ -77,7 +80,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
 	status = -1; 
 	for (;;) { 
-#if 1
+#if defined(__sun) || defined (sun)
 		dat.buf = buf; 
 		dat.maxlen = MAXLINE; 
 		flag = 0; 
@@ -134,3 +137,121 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
 	return -1; 
 }
+
+#else
+
+#include <sys/socket.h>
+
+#define CONTROLLEN CMSG_LEN(sizeof (int))
+static struct cmsghdr *cmptr = NULL; 
+
+int send_fd (int fd, int fd_to_send)
+{
+    struct iovec iov[1]; 
+    struct msghdr msg; 
+    char buf[2]; 
+
+    iov[0].iov_base = buf; 
+    iov[0].iov_len = 2; 
+
+    msg.msg_iov = iov; 
+    msg.msg_iovlen = 1; 
+    msg.msg_name = NULL; 
+    msg.msg_namelen = 0; 
+
+    if (fd_to_send < 0) {
+        msg.msg_control = NULL; 
+        msg.msg_controllen = 0; 
+        buf[1] = -fd_to_send; 
+        if (buf[1] == 0)
+            buf[1] = 1; 
+    } else {
+        if (cmptr == NULL && (cmptr = malloc(CONTROLLEN)) == NULL)
+            return -1; 
+
+        cmptr->cmsg_level = SOL_SOCKET; 
+        cmptr->cmsg_type = SCM_RIGHTS; 
+        cmptr->cmsg_len = CONTROLLEN; 
+
+        msg.msg_control = cmptr; 
+        msg.msg_controllen = CONTROLLEN; 
+        *(int *) CMSG_DATA(cmptr) = fd_to_send; 
+        buf[1] = 0; 
+    }
+
+    buf[0] = 0; 
+    if (sendmsg(fd, &msg, 0) != 2)
+        return -1; 
+
+    return 0; 
+}
+
+int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
+{
+    int newfd, nr, status; 
+    char *ptr; 
+    char buf[MAXLINE]; 
+    struct iovec iov[1]; 
+    struct msghdr msg; 
+
+    status = -1; 
+    for (;;) {
+        iov[0].iov_base = buf; 
+        iov[0].iov_len = sizeof (buf); 
+
+        msg.msg_iov = iov; 
+        msg.msg_iovlen = 1; 
+        msg.msg_name = NULL; 
+        msg.msg_namelen = 0; 
+
+        if (cmptr == NULL && (cmptr = malloc (CONTROLLEN)) == NULL) {
+            fprintf (stderr, "malloc error\n"); 
+            return -1; 
+        }
+
+        msg.msg_control = cmptr; 
+        msg.msg_controllen = CONTROLLEN; 
+
+        if ((nr = recvmsg (fd, &msg, 0)) < 0) { 
+            fprintf (stderr, "recvmsg error\n"); 
+            return -1; 
+        } else if (nr == 0) {
+            fprintf (stderr, "connection closed by server\n"); 
+            return -1; 
+        }
+
+        for (ptr = buf; ptr < &buf[nr]; ) {
+            if (*ptr ++ == 0) {
+                if (ptr != &buf[nr-1]) {
+                    fprintf (stderr, "message format error"); 
+                    return -1; 
+                }
+
+                status = *ptr & 0xff; 
+                if (status == 0) {
+                    if (msg.msg_controllen != CONTROLLEN) { 
+                        fprintf (stderr, "status = 0 but no fd\n"); 
+                        return -1; 
+                    }
+
+                    newfd = *(int *) CMSG_DATA(cmptr); 
+                } else { 
+                    newfd = -status; 
+                }
+
+                nr -= 2; 
+            }
+        }
+
+        if (nr > 0 && (*userfunc)(STDERR_FILENO, buf, nr) != nr)
+            return -1; 
+
+        if (status >= 0)
+            return newfd; 
+    }
+
+    return -1; 
+}
+
+
+#endif
