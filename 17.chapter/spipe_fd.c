@@ -6,6 +6,7 @@
 #include <errno.h>
 //#include <sys/types.h>  // for ssize_t 
 
+#define USE_CRED
 #define MAXLINE 128
 
 #if defined(__sun) || defined(sun)
@@ -141,15 +142,37 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 #else
 
 #include <sys/socket.h>
+#include <sys/un.h>
 
-#define CONTROLLEN CMSG_LEN(sizeof (int))
 static struct cmsghdr *cmptr = NULL; 
+
+#ifdef USE_CRED
+#  if defined(SCM_CREDS) // on BSD
+#  define CREDSTRUCT cmsgcred
+#  define SCM_CREDTYPE SCM_CREDS
+#  elif defined(SCM_CREDENTIALS)  // on linux
+#  define CREDSTRUCT ucred
+#  define SCM_CREDTYPE SCM_CREDENTIALS
+#  else
+#  error passing credentials is unsupported!
+#  endif
+
+#  define RIGHTSLEN CMSG_LEN(sizeof(int))
+#  define CREDSLEN CMSG_LEN(sizeof(struct CREDSTRUCT))
+#  define CONTROLLEN (RIGHTSLEN+CREDSLEN)
+#else
+#  define CONTROLLEN CMSG_LEN(sizeof (int))
+#endif
 
 int send_fd (int fd, int fd_to_send)
 {
     struct iovec iov[1]; 
     struct msghdr msg; 
     char buf[2]; 
+#ifdef USE_CRED
+    struct CREDSTRUCT *credp; 
+    struct cmsghdr *cmp; 
+#endif
 
     iov[0].iov_base = buf; 
     iov[0].iov_len = 2; 
@@ -158,6 +181,7 @@ int send_fd (int fd, int fd_to_send)
     msg.msg_iovlen = 1; 
     msg.msg_name = NULL; 
     msg.msg_namelen = 0; 
+    msg.msg_flags = 0; 
 
     if (fd_to_send < 0) {
         msg.msg_control = NULL; 
@@ -169,13 +193,35 @@ int send_fd (int fd, int fd_to_send)
         if (cmptr == NULL && (cmptr = malloc(CONTROLLEN)) == NULL)
             return -1; 
 
+        msg.msg_control = cmptr; 
+        msg.msg_controllen = CONTROLLEN; 
+
+#ifdef USE_CRED
+        cmp = cmptr; 
+        cmp->cmsg_level = SOL_SOCKET; 
+        cmp->cmsg_type = SCM_RIGHTS; 
+        cmp->cmsg_len = RIGHTSLEN; 
+        *(int *) CMSG_DATA(cmp) = fd_to_send; 
+
+        cmp = CMSG_NXTHDR(&msg, cmp); 
+        cmp->cmsg_level = SOL_SOCKET; 
+        cmp->cmsg_type = SCM_CREDTYPE; 
+        cmp->cmsg_len = CREDSLEN; 
+
+        credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
+#  if defined(SCM_CREDENTIALS)
+        // only linux need to set members of this struct !
+        credp->uid = getuid (); 
+        credp->gid = getegid (); 
+        credp->pid = getpid (); 
+#  endif
+#else
         cmptr->cmsg_level = SOL_SOCKET; 
         cmptr->cmsg_type = SCM_RIGHTS; 
         cmptr->cmsg_len = CONTROLLEN; 
 
-        msg.msg_control = cmptr; 
-        msg.msg_controllen = CONTROLLEN; 
         *(int *) CMSG_DATA(cmptr) = fd_to_send; 
+#endif
         buf[1] = 0; 
     }
 

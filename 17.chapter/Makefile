@@ -13,7 +13,7 @@ spipe_server.o: spipe_server.c
 	gcc -Wall -g -c $< -o $@
 
 spipe_fd.o: spipe_fd.c 
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE
 
 padd5: padd5.o apue.o 
 	gcc -Wall -g $^ -o $@
