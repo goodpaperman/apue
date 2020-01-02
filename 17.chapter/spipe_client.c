@@ -18,19 +18,20 @@ int get_temp_fd ()
 
 int main (void)
 {
+    uid_t uid; 
     int ret, fdin, fdout, n, int1, int2; 
     char line[MAXLINE]; 
 	//fdin = STDIN_FILENO; 
 	//fdout = STDOUT_FILENO; 
 
 	while (1) {
-	fdin = recv_fd (STDIN_FILENO, write); 
+	fdin = recv_fd (STDIN_FILENO, &uid, write); 
 	if (fdin < 0) {
 		fprintf (stderr, "recv_fd failed, error %d\n", fdin); 
 		return -1; 
 	}
 
-	fprintf (stderr, "recv fd %d, position %u\n", fdin, lseek(fdin, 0, SEEK_CUR)); 
+	fprintf (stderr, "recv fd %d, uid %d, position %u\n", fdin, uid, lseek(fdin, 0, SEEK_CUR)); 
 	fdout = get_temp_fd (); 
 	if (fdout < 0) { 
 		fprintf (stderr, "get temp fd failed\n"); 

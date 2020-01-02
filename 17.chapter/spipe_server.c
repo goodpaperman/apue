@@ -46,6 +46,7 @@ int main (int argc, char *argv[])
 		return 0; 
 	}
 
+    uid_t uid; 
 	int fd[2], fd_to_send, fd_to_recv; 
     if (s_pipe (fd) < 0) {
         printf ("pipe error\n"); 
@@ -99,13 +100,13 @@ int main (int argc, char *argv[])
 			else 
 				printf ("send fd %d to peer\n", fd_to_send); 
 
-			fd_to_recv = recv_fd (fd[0], write); 
+			fd_to_recv = recv_fd (fd[0], &uid, write); 
 			if (fd_to_recv < 0) {
 				printf ("recv fd from peer failed, error %d\n", fd_to_recv); 
 				return -1; 
 			}
 			else 
-				printf ("recv fd %d from peer, position %u\n", fd_to_recv, lseek(fd_to_recv, 0, SEEK_CUR)); 	
+				printf ("recv fd %d, uid %d from peer, position %u\n", fd_to_recv, uid, lseek(fd_to_recv, 0, SEEK_CUR)); 	
 
 			// read response by receving the new fd!
             if ((n = read (fd_to_recv, line, MAXLINE)) < 0) {

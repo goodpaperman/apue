@@ -71,7 +71,7 @@ struct strrecvfd {
 }; 
 */
 
-int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
+int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_t))
 {
 	int newfd, nread, flag, status; 
 	char *ptr; 
@@ -118,6 +118,8 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
 					//fprintf (stderr, "%u: recv fd itself ok, fd = %d\n", getpid (), recvfd.fd); 
 					newfd = recvfd.fd; 
+                    if (uidptr)
+                        *uidptr = recvfd.uid; 
 				}
 				else {
 					//fprintf (stderr, "%u: recv error code %d ok\n", getpid (), -status); 
@@ -144,14 +146,17 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 #include <sys/socket.h>
 #include <sys/un.h>
 
-static struct cmsghdr *cmptr = NULL; 
 
 #ifdef USE_CRED
 #  if defined(SCM_CREDS) // on BSD
 #  define CREDSTRUCT cmsgcred
+#  define CR_UID cmcred_uid
+#  define CREDOPT LOCAL_PEERCRED
 #  define SCM_CREDTYPE SCM_CREDS
 #  elif defined(SCM_CREDENTIALS)  // on linux
 #  define CREDSTRUCT ucred
+#  define CR_UID uid
+#  define CREDOPT SO_PASSCRED
 #  define SCM_CREDTYPE SCM_CREDENTIALS
 #  else
 #  error passing credentials is unsupported!
@@ -172,6 +177,7 @@ int send_fd (int fd, int fd_to_send)
 #ifdef USE_CRED
     struct CREDSTRUCT *credp; 
     struct cmsghdr *cmp; 
+    struct cmsghdr *cmptr = NULL; 
 #endif
 
     iov[0].iov_base = buf; 
@@ -190,20 +196,27 @@ int send_fd (int fd, int fd_to_send)
         if (buf[1] == 0)
             buf[1] = 1; 
     } else {
-        if (cmptr == NULL && (cmptr = malloc(CONTROLLEN)) == NULL)
+        // add some extra space to prevent CMSG_NXTHDR return null
+        int extra = 5; 
+        if ((cmptr = malloc(CONTROLLEN+extra)) == NULL) {
+            fprintf (stderr, "malloc memory failed\n"); 
             return -1; 
+        }
 
         msg.msg_control = cmptr; 
-        msg.msg_controllen = CONTROLLEN; 
+        msg.msg_controllen = CONTROLLEN+extra; 
 
 #ifdef USE_CRED
         cmp = cmptr; 
+        fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_RIGHTS; 
         cmp->cmsg_len = RIGHTSLEN; 
         *(int *) CMSG_DATA(cmp) = fd_to_send; 
 
         cmp = CMSG_NXTHDR(&msg, cmp); 
+        fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
+        fprintf (stderr, "cmp = %p\n", cmp); 
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_CREDTYPE; 
         cmp->cmsg_len = CREDSLEN; 
@@ -214,6 +227,7 @@ int send_fd (int fd, int fd_to_send)
         credp->uid = getuid (); 
         credp->gid = getegid (); 
         credp->pid = getpid (); 
+        fprintf (stderr, "set uid %d, gid %d, pid %d\n", credp->uid, credp->gid, credp->pid);
 #  endif
 #else
         cmptr->cmsg_level = SOL_SOCKET; 
@@ -226,14 +240,21 @@ int send_fd (int fd, int fd_to_send)
     }
 
     buf[0] = 0; 
-    if (sendmsg(fd, &msg, 0) != 2)
+    if (sendmsg(fd, &msg, 0) != 2) {
+        free (cmptr); 
         return -1; 
+    }
 
+    free (cmptr); 
     return 0; 
 }
 
-int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
+int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_t))
 {
+    struct cmsghdr *cmp; 
+    struct CREDSTRUCT *credp; 
+    const int on = -1; 
+
     int newfd, nr, status; 
     char *ptr; 
     char buf[MAXLINE]; 
@@ -241,6 +262,16 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
     struct msghdr msg; 
 
     status = -1; 
+    newfd = -1; 
+
+#ifdef USE_CRED
+    struct cmsghdr *cmptr = NULL; 
+    if (setsockopt (fd, SOL_SOCKET, CREDOPT, &on, sizeof(int)) < 0) {
+        fprintf (stderr, "setsockopt for %d failed\n", CREDOPT); 
+        return -1; 
+    }
+#endif
+
     for (;;) {
         iov[0].iov_base = buf; 
         iov[0].iov_len = sizeof (buf); 
@@ -250,7 +281,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
         msg.msg_name = NULL; 
         msg.msg_namelen = 0; 
 
-        if (cmptr == NULL && (cmptr = malloc (CONTROLLEN)) == NULL) {
+        if ((cmptr = malloc (CONTROLLEN)) == NULL) {
             fprintf (stderr, "malloc error\n"); 
             return -1; 
         }
@@ -260,9 +291,11 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
 
         if ((nr = recvmsg (fd, &msg, 0)) < 0) { 
             fprintf (stderr, "recvmsg error\n"); 
+            free (cmptr); 
             return -1; 
         } else if (nr == 0) {
             fprintf (stderr, "connection closed by server\n"); 
+            free (cmptr); 
             return -1; 
         }
 
@@ -270,6 +303,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
             if (*ptr ++ == 0) {
                 if (ptr != &buf[nr-1]) {
                     fprintf (stderr, "message format error"); 
+                    free (cmptr); 
                     return -1; 
                 }
 
@@ -277,10 +311,34 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
                 if (status == 0) {
                     if (msg.msg_controllen != CONTROLLEN) { 
                         fprintf (stderr, "status = 0 but no fd\n"); 
+                        free (cmptr); 
                         return -1; 
                     }
 
+#ifdef USE_CRED
+                    for (cmp = CMSG_FIRSTHDR(&msg); cmp != NULL; cmp = CMSG_NXTHDR(&msg, cmp)) { 
+                        if (cmp->cmsg_level != SOL_SOCKET) {
+                            fprintf (stderr, "ignore unknown socket level %d\n", cmp->cmsg_level); 
+                            continue; 
+                        }
+
+                        fprintf (stderr, "msg level %d, type %d\n", cmp->cmsg_level, cmp->cmsg_type); 
+                        switch (cmp->cmsg_type) {
+                            case SCM_RIGHTS:
+                                newfd = *(int *) CMSG_DATA(cmp); 
+                                break; 
+                            case SCM_CREDTYPE:
+                                credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
+                                *uidptr = credp->CR_UID; 
+                                break; 
+                            default:
+                                fprintf (stderr, "ignore unknown msg type %d\n", cmp->cmsg_type); 
+                                break; 
+                        }
+                    }
+#else
                     newfd = *(int *) CMSG_DATA(cmptr); 
+#endif
                 } else { 
                     newfd = -status; 
                 }
@@ -289,6 +347,7 @@ int recv_fd (int fd, ssize_t (*userfunc) (int, const void*, size_t))
             }
         }
 
+        free(cmptr); 
         if (nr > 0 && (*userfunc)(STDERR_FILENO, buf, nr) != nr)
             return -1; 
 
