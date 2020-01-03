@@ -6,7 +6,7 @@
 #include <errno.h>
 //#include <sys/types.h>  // for ssize_t 
 
-#define USE_CRED
+//#define USE_CRED
 #define MAXLINE 128
 
 #if defined(__sun) || defined(sun)
@@ -205,11 +205,11 @@ int send_fd (int fd, int fd_to_send)
 {
     struct iovec iov[1]; 
     struct msghdr msg; 
+    struct cmsghdr *cmptr = NULL; 
     char buf[2]; 
 #ifdef USE_CRED
     struct CREDSTRUCT *credp; 
     struct cmsghdr *cmp; 
-    struct cmsghdr *cmptr = NULL; 
 #endif
 
     iov[0].iov_base = buf; 
@@ -291,9 +291,7 @@ int send_fd (int fd, int fd_to_send)
 
 int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_t))
 {
-    struct cmsghdr *cmp; 
-    struct CREDSTRUCT *credp; 
-    const int on = -1; 
+    struct cmsghdr *cmptr = NULL; 
 
     int newfd, nr, status; 
     char *ptr; 
@@ -305,7 +303,9 @@ int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_
     newfd = -1; 
 
 #ifdef USE_CRED
-    struct cmsghdr *cmptr = NULL; 
+    const int on = -1; 
+    struct cmsghdr *cmp; 
+    struct CREDSTRUCT *credp; 
     if (setsockopt (fd, SOL_SOCKET, CREDOPT, &on, sizeof(int)) < 0) {
         fprintf (stderr, "setsockopt for %d failed\n", CREDOPT); 
         return -1; 
@@ -362,7 +362,7 @@ int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_
                             continue; 
                         }
 
-                        fprintf (stderr, "msg level %d, type %d\n", cmp->cmsg_level, cmp->cmsg_type); 
+                        //fprintf (stderr, "msg level %d, type %d\n", cmp->cmsg_level, cmp->cmsg_type); 
                         switch (cmp->cmsg_type) {
                             case SCM_RIGHTS:
                                 newfd = *(int *) CMSG_DATA(cmp); 
