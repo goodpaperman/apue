@@ -169,6 +169,38 @@ int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_
 #  define CONTROLLEN CMSG_LEN(sizeof (int))
 #endif
 
+#if 0
+struct cmsghdr *my_cmsg_nxthdr (struct msghdr *__mhdr, struct cmsghdr *__cmsg)
+{
+  if ((size_t) __cmsg->cmsg_len < sizeof (struct cmsghdr)) {
+    /* The kernel header does this so there may be a reason.  */
+      fprintf (stderr, "in step1\n"); 
+    return 0;
+  }
+
+  fprintf (stderr, "%p: cmsg_len %u, cmsg_level %d, cmsg_type %d\n", __cmsg, __cmsg->cmsg_len, __cmsg->cmsg_level, __cmsg->cmsg_type); 
+  __cmsg = (struct cmsghdr *) (((unsigned char *) __cmsg)
+			       + CMSG_ALIGN (__cmsg->cmsg_len));
+  if ((unsigned char *) (__cmsg + 1) > ((unsigned char *) __mhdr->msg_control
+					+ __mhdr->msg_controllen)) {
+      fprintf (stderr, "in step2\n"); 
+      return 0; 
+  }
+
+  fprintf (stderr, "%p: cmsg_len %u, cmsg_level %d, cmsg_type %d\n", __cmsg, __cmsg->cmsg_len, __cmsg->cmsg_level, __cmsg->cmsg_type); 
+  if (((unsigned char *) __cmsg + CMSG_ALIGN (__cmsg->cmsg_len)
+	  > ((unsigned char *) __mhdr->msg_control + __mhdr->msg_controllen))) {
+    /* No more entries.  */
+      fprintf (stderr, "in step3\n"); 
+      fprintf (stderr, "msg len %d, after align %d, msg control %d\n", __cmsg->cmsg_len, CMSG_ALIGN(__cmsg->cmsg_len), __mhdr->msg_controllen); 
+    return 0;
+  }
+
+  fprintf (stderr, "in final step\n"); 
+  return __cmsg;
+}
+#endif
+
 int send_fd (int fd, int fd_to_send)
 {
     struct iovec iov[1]; 
@@ -197,29 +229,37 @@ int send_fd (int fd, int fd_to_send)
             buf[1] = 1; 
     } else {
         // add some extra space to prevent CMSG_NXTHDR return null
-        int extra = 5; 
+        int extra = 0; //5; 
         if ((cmptr = malloc(CONTROLLEN+extra)) == NULL) {
             fprintf (stderr, "malloc memory failed\n"); 
             return -1; 
         }
 
+        // important on linux, garbage data may mess cmsg_len fields, 
+        // and cause CMSG_NXTHDR return null on protection.
+        memset (cmptr, 0, CONTROLLEN+extra); 
         msg.msg_control = cmptr; 
         msg.msg_controllen = CONTROLLEN+extra; 
 
 #ifdef USE_CRED
         cmp = cmptr; 
-        fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_RIGHTS; 
         cmp->cmsg_len = RIGHTSLEN; 
         *(int *) CMSG_DATA(cmp) = fd_to_send; 
+        //fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
+        //fprintf (stderr, "cmsghdr = %d, cmsglen = %d, after align = %d, control len = %d\n", sizeof(struct cmsghdr), CREDSLEN, CMSG_ALIGN(CREDSLEN), CONTROLLEN); 
 
+#  if 1
         cmp = CMSG_NXTHDR(&msg, cmp); 
-        fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
-        fprintf (stderr, "cmp = %p\n", cmp); 
+#  else
+        cmp = my_cmsg_nxthdr(&msg, cmp); 
+#  endif
+        //fprintf (stderr, "cmp = %p\n", cmp); 
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_CREDTYPE; 
         cmp->cmsg_len = CREDSLEN; 
+        //fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
 
         credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
 #  if defined(SCM_CREDENTIALS)
