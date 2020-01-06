@@ -6,7 +6,7 @@
 #include <errno.h>
 //#include <sys/types.h>  // for ssize_t 
 
-//#define USE_CRED
+#define USE_CRED
 #define MAXLINE 128
 
 #if defined(__sun) || defined(sun)
@@ -247,7 +247,7 @@ int send_fd (int fd, int fd_to_send)
         cmp->cmsg_type = SCM_RIGHTS; 
         cmp->cmsg_len = RIGHTSLEN; 
         *(int *) CMSG_DATA(cmp) = fd_to_send; 
-        //fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
+        fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
         //fprintf (stderr, "cmsghdr = %d, cmsglen = %d, after align = %d, control len = %d\n", sizeof(struct cmsghdr), CREDSLEN, CMSG_ALIGN(CREDSLEN), CONTROLLEN); 
 
 #  if 1
@@ -259,7 +259,7 @@ int send_fd (int fd, int fd_to_send)
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_CREDTYPE; 
         cmp->cmsg_len = CREDSLEN; 
-        //fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
+        fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
 
         credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
 #  if defined(SCM_CREDENTIALS)
