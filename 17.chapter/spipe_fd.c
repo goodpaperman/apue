@@ -9,9 +9,6 @@
 #define USE_CRED
 #define MAXLINE 128
 
-#if defined(__sun) || defined(sun)
-#include <stropts.h> 
-
 int send_err (int fd, int errcode, const char *msg)
 {
 	int n; 
@@ -31,6 +28,9 @@ int send_err (int fd, int errcode, const char *msg)
 
 	return 0; 	
 }
+
+#if defined(__sun) || defined(sun)
+#include <stropts.h> 
 
 int send_fd (int fd, int fd_to_send)
 {
@@ -247,7 +247,7 @@ int send_fd (int fd, int fd_to_send)
         cmp->cmsg_type = SCM_RIGHTS; 
         cmp->cmsg_len = RIGHTSLEN; 
         *(int *) CMSG_DATA(cmp) = fd_to_send; 
-        fprintf (stderr, "add fd with len %d\n", RIGHTSLEN); 
+        fprintf (stderr, "add fd %d with len %d\n", fd_to_send, RIGHTSLEN); 
         //fprintf (stderr, "cmsghdr = %d, cmsglen = %d, after align = %d, control len = %d\n", sizeof(struct cmsghdr), CREDSLEN, CMSG_ALIGN(CREDSLEN), CONTROLLEN); 
 
 #  if 1
@@ -259,7 +259,7 @@ int send_fd (int fd, int fd_to_send)
         cmp->cmsg_level = SOL_SOCKET; 
         cmp->cmsg_type = SCM_CREDTYPE; 
         cmp->cmsg_len = CREDSLEN; 
-        fprintf (stderr, "add credential with len %d\n", CREDSLEN); 
+        fprintf (stderr, "add credential uid %d with len %d\n", getuid (), CREDSLEN); 
 
         credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
 #  if defined(SCM_CREDENTIALS)
@@ -366,10 +366,14 @@ int recv_fd (int fd, uid_t *uidptr, ssize_t (*userfunc) (int, const void*, size_
                         switch (cmp->cmsg_type) {
                             case SCM_RIGHTS:
                                 newfd = *(int *) CMSG_DATA(cmp); 
+                                fprintf (stderr, "recv fd %d\n", newfd); 
                                 break; 
                             case SCM_CREDTYPE:
                                 credp = (struct CREDSTRUCT *) CMSG_DATA(cmp); 
-                                *uidptr = credp->CR_UID; 
+                                if (uidptr)
+                                    *uidptr = credp->CR_UID; 
+
+                                fprintf (stderr, "recv cred uid %d\n", credp->CR_UID); 
                                 break; 
                             default:
                                 fprintf (stderr, "ignore unknown msg type %d\n", cmp->cmsg_type); 
