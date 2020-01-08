@@ -3,76 +3,14 @@
 #include <unistd.h>
 #include <string.h> 
 #include <fcntl.h>
-#include <errno.h> 
 #include <stddef.h> 
-#include <sys/socket.h> 
-#include <sys/un.h> 
 #if defined(__sun) || defined(sun) 
 #  include <stropts.h>
 #  include <sys/stat.h>
 #endif
 
-#define CLI_PATH "/var/tmp/"
-#define CLI_PERM S_IRWXU
+#include "spipe.h"
 #define MAXLINE 128
-// note this check is mannually, not necessary for the connection establish
-#define CONN_CHECK
- 
-int cli_conn(const char *name)
-{
-    int fd, len, err, rval; 
-    struct sockaddr_un un; 
-
-    if ((fd = socket (AF_UNIX, SOCK_STREAM, 0)) < 0) { 
-        printf ("create socket failed\n"); 
-        return -1; 
-    }
-
-    printf ("create socket ok\n"); 
-
-#ifdef CONN_CHECK
-    memset (&un, 0, sizeof (un)); 
-    un.sun_family = AF_UNIX; 
-    sprintf (un.sun_path, "%s%05d", CLI_PATH, getpid ()); 
-    len = offsetof (struct sockaddr_un, sun_path) + strlen (un.sun_path); 
-    unlink (un.sun_path); 
-
-    if (bind (fd, (struct sockaddr *)&un, len) < 0) { 
-        err = errno; 
-        printf ("bind failed\n"); 
-        rval = -2; 
-        goto errout; 
-    }
-
-    printf ("bind socket to temp file ok\n"); 
-    if (chmod (un.sun_path, CLI_PERM) < 0) { 
-        err = errno; 
-        printf ("chmod failed\n"); 
-        rval = -3; 
-        goto errout; 
-    }
-
-    printf ("change temp file mode ok\n"); 
-#endif 
-
-    memset (&un, 0, sizeof (un)); 
-    un.sun_family = AF_UNIX; 
-    strcpy (un.sun_path, name); 
-    len = offsetof (struct sockaddr_un, sun_path) + strlen (name); 
-    if (connect (fd, (struct sockaddr *)&un, len) < 0) {
-        err = errno; 
-        printf ("connect failed\n"); 
-        rval = -4; 
-        goto errout; 
-    }
-
-    printf ("connect to server ok\n"); 
-    return fd;
-errout:
-    close (fd); 
-    errno = err; 
-    return rval;
-}
 
 int main (int argc, char *argv[])
 {

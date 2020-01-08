@@ -30,16 +30,19 @@ spipe_server.o: spipe_server.c
 spipe_fd.o: spipe_fd.c 
 	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE
 
-padd5: padd5.o apue.o 
+padd5: padd5.o spipe.o apue.o 
 	gcc -Wall -g $^ -o $@
 
-padd5.o: padd5.c ../apue.h
+padd5.o: padd5.c spipe.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-add5: add5.o apue.o 
+add5: add5.o spipe.o apue.o 
 	gcc -Wall -g $^ -o $@
 
-add5.o: add5.c ../apue.h
+add5.o: add5.c spipe.h ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+spipe.o: spipe.c spipe.h 
 	gcc -Wall -g -c $< -o $@
 
 add2: add2.o apue.o 
