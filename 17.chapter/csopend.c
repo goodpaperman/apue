@@ -66,7 +66,11 @@ void request (char *buf, int nread, int fd)
     if (send_fd (fd, newfd) < 0)
         err_sys ("send_fd error"); 
 
+#if 1
+    // to see if handle not closed after send..
+    // yes, it is. on solaris with streams you may not need, but unix domain socket need it !!
     close (newfd); 
+#endif
 }
 
 int main (void)
