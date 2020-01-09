@@ -1,4 +1,13 @@
-all: padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend
+all: padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend csopenc2
+
+csopenc2: csopenc2.o csopen2.o spipe.o spipe_fd.o apue.o
+	gcc -Wall -g $^ -o $@
+
+csopenc2.o: csopenc.c csopen2.h spipe.h spipe_fd.h ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+csopen2.o: csopen2.c csopen2.h ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 csopend: csopend.o spipe_fd.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -65,7 +74,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend
+	-rm -f *.o core.* *.log *~ *.swp padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend csopenc2
 	@echo "end clean"
 
 .PHONY: clean
