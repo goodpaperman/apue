@@ -41,6 +41,12 @@ void err_exit (int, const char *, ...);
 void err_ret (const char *, ...); 
 void err_sys (const char *, ...); 
 
+void log_msg (const char *, ...); 
+void log_open (const char *, int, int); 
+void log_quit (const char *, ...); 
+void log_ret (const char *, ...); 
+void log_sys (const char *, ...); 
+
 char* path_alloc (int *sizep); 
 long open_max (void); 
 
