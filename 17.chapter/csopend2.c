@@ -2,11 +2,14 @@
 #include "spipe.h"
 #include "spipe_fd.h"
 #include <errno.h>
+#include <sys/select.h>
+#include <syslog.h>
 
 #define CL_OPEN "open"
-#define CS_OPEN "/var/opend"
+#define CS_OPEN "/tmp/opend"
 #define MAXARGC 50
 #define WHITE " \t\n"
+#define NALLOC 10
 
 int debug = 0; 
 int oflag = 0; 
@@ -22,40 +25,126 @@ typedef struct {
 
 Client *client = NULL; 
 
-void request (char *buf, int nread, int fd)
+static void client_alloc (void)
+{
+    int i = 0; 
+    if (client == NULL)
+        client = malloc (NALLOC * sizeof (Client)); 
+    else 
+        client = realloc (client, (client_size + NALLOC) * sizeof(Client)); 
+
+    if (client == NULL)
+        log_sys ("can't alloc for client array"); 
+
+    for (i = client_size; i < client_size + NALLOC; ++ i)
+        client[i].fd = -1; 
+
+    client_size += NALLOC; 
+}
+
+
+int client_add (int fd, uid_t uid)
+{
+    int i = 0; 
+    if (client == NULL)
+        client_alloc (); 
+
+    while (1)
+    {
+        for (i = 0; i<client_size; ++ i) { 
+            if (client[i].fd == -1) { 
+                client[i].fd = fd; 
+                client[i].uid = uid; 
+                return i; 
+            }
+        }
+
+        client_alloc (); 
+    }
+
+    return -1; 
+}
+
+void client_del (int fd)
+{
+    int i = 0; 
+    for (i = 0; i<client_size; ++ i) {
+        if (client[i].fd == fd) { 
+            client[i].fd = -1; 
+            return; 
+        }
+    }
+
+    log_quit ("can't find client entry for fd %d", fd); 
+}
+
+int cli_args (int argc, char **argv)
+{
+    if (argc != 3 || strcmp (argv[0], CL_OPEN) != 0) {
+        strcpy (errmsg, "usage: open <pathname> <oflag>\n"); 
+        return -1; 
+    }
+
+    pathname = argv[1]; 
+    oflag = atoi (argv[2]); 
+    return 0; 
+}
+
+int buf_args (char *buf, int (*optfunc)(int, char **))
+{
+    char *ptr, *argv[MAXARGC]; 
+    int argc = 0; 
+
+    if (strtok (buf, WHITE) == NULL) return -1; 
+
+    argv[argc] = buf; 
+    while ((ptr = strtok (NULL, WHITE)) != NULL) {
+        if (++ argc >= MAXARGC-1)
+            return -1; 
+
+        argv[argc] = ptr; 
+    }
+
+    argv[++argc] = NULL; 
+    return optfunc(argc, argv); 
+}
+
+void request (char *buf, int nread, int fd, uid_t uid)
 {
     int newfd; 
     if (buf[nread-1] != 0) { 
-        sprintf (errmsg, "request not null terminated: %*.*s\n", nread, nread, buf); 
+        sprintf (errmsg, "request from uid %d not null terminated: %*.*s\n", uid, nread, nread, buf); 
         send_err (fd, -1, errmsg); 
+        log_msg (errmsg); 
         return; 
     }
 
+    log_msg ("request: %s, from uid %d", buf, uid); 
     if (buf_args(buf, cli_args) < 0) {
         send_err (fd, -1, errmsg); 
+        log_msg (errmsg); 
         return; 
     }
 
     if ((newfd = open (pathname, oflag)) < 0) {
         sprintf (errmsg, "can't open %s: %s\n", pathname, strerror (errno)); 
         send_err (fd, -1, errmsg); 
+        log_msg (errmsg); 
         return; 
     }
 
     if (send_fd (fd, newfd) < 0)
-        err_sys ("send_fd error"); 
+        log_sys ("send_fd error"); 
 
-#if 1
-    // to see if handle not closed after send..
-    // yes, it is. on solaris with streams you may not need, but unix domain socket need it !!
+    log_msg ("sent fd %d over fd %d for %s", newfd, fd, pathname); 
     close (newfd); 
-#endif
 }
 
 void loop ()
 {
     fd_set rset, allset; 
     FD_ZERO(&allset); 
+    char buf[MAXLINE]; 
 
     int listenfd = serv_listen (CS_OPEN); 
     if (listenfd < 0)

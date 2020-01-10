@@ -1,4 +1,10 @@
-all: padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend csopenc2
+all: padd2 add2 add5 padd5 spipe_server spipe_client csopenc csopend csopenc2 csopend2
+
+csopend2: csopend2.o csopen2.o spipe.o spipe_fd.o apue.o
+	gcc -Wall -g $^ -o $@
+
+csopend2.o: csopend2.c csopen2.h spipe.h spipe_fd.h ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 csopenc2: csopenc2.o csopen2.o spipe.o spipe_fd.o apue.o
 	gcc -Wall -g $^ -o $@
