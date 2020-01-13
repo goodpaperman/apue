@@ -17,6 +17,14 @@
 
 // note this check is mannually, not necessary for the connection establish
 //#define CONN_CHECK
+
+// to allow printf redirected into syslog
+//#define USE_APUE
+
+#ifdef USE_APUE
+#include "../apue.h"
+#define printf log_msg
+#endif
  
 int cli_conn(const char *name)
 {
