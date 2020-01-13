@@ -16,7 +16,7 @@
 #define STALE 30
 
 // note this check is mannually, not necessary for the connection establish
-#define CONN_CHECK
+//#define CONN_CHECK
  
 int cli_conn(const char *name)
 {

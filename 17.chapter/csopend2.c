@@ -5,6 +5,12 @@
 #include <sys/select.h>
 #include <syslog.h>
 
+//#define USE_SELECT
+
+#ifndef USE_SELECT
+#include <poll.h>
+#endif
+
 #define CL_OPEN "open"
 #define CS_OPEN "/tmp/opend"
 #define MAXARGC 50
@@ -142,14 +148,14 @@ void request (char *buf, int nread, int fd, uid_t uid)
 
 void loop ()
 {
-    fd_set rset, allset; 
-    FD_ZERO(&allset); 
     char buf[MAXLINE]; 
-
     int listenfd = serv_listen (CS_OPEN); 
     if (listenfd < 0)
         log_sys ("serv_listen error"); 
 
+#ifdef USE_SELECT
+    fd_set rset, allset; 
+    FD_ZERO(&allset); 
     FD_SET(listenfd, &allset); 
     int maxfd = listenfd; 
     int maxi = -1; 
@@ -200,6 +206,66 @@ void loop ()
             }
         }
     }
+#else
+    struct pollfd *pollfd = malloc (open_max () * sizeof (struct pollfd)); 
+    if (pollfd == NULL)
+        log_sys ("malloc error"); 
+
+    client_add (listenfd, 0); // [0] as listener
+    pollfd[0].fd = listenfd; 
+    pollfd[0].events = POLLIN; 
+
+    uid_t uid = 0; 
+    int i = 0, maxi = 0, clifd = 0, nread = 0, need_close = 0; 
+
+    for (;;) {
+        if (poll (pollfd, maxi + 1, -1) < 0)
+            log_sys ("poll error"); 
+
+        if (pollfd[0].revents & POLLIN) {
+            // accept new client request
+            clifd = serv_accept (listenfd, &uid); 
+            if (clifd < 0)
+                log_sys ("serv_accept error: %d", clifd); 
+
+            i = client_add (clifd, uid); 
+            pollfd[i].fd = clifd; 
+            pollfd[i].events = POLLIN; 
+            if (i > maxi)
+                maxi = i; 
+
+            log_msg ("new connection: uid %d, fd %d", uid, clifd); 
+        }
+
+        for (i=1; i<=maxi; ++ i) {
+            if (client[i].fd < 0)
+                continue; 
+
+            need_close = 0; 
+            clifd = client[i].fd; 
+            if (pollfd[i].revents & POLLHUP) {
+                need_close = 1; 
+            } else if (pollfd[i].revents & POLLIN) {
+                nread = read (clifd, buf, MAXLINE); 
+                if (nread < 0) 
+                    log_sys ("read error on fd %d", clifd); 
+                else if (nread == 0)
+                    need_close = 1; 
+                else 
+                    request (buf, nread, clifd, client[i].uid); 
+            }
+
+
+            if (need_close) {
+                log_msg ("closed: uid %d, fd %d", client[i].uid, clifd); 
+                client_del (clifd); 
+                pollfd[i].fd = -1; 
+                close (clifd); 
+            }
+        }
+    }
+
+#endif
 }
 
 int main (int argc, char *argv[])
