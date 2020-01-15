@@ -13,7 +13,7 @@
 
 #define CL_OPEN "open"
 #define CS_OPEN "/tmp/opend"
-#define MAXARGC 50
+//#define MAXARGC 50
 #define WHITE " \t\n"
 #define NALLOC 10
 
@@ -22,6 +22,7 @@ int oflag = 0;
 int client_size = 0; 
 char *pathname = 0; 
 char errmsg[MAXLINE]; 
+int NARGC = 1; 
 extern int log_to_stderr; 
 
 typedef struct {
@@ -98,21 +99,33 @@ int cli_args (int argc, char **argv)
 
 int buf_args (char *buf, int (*optfunc)(int, char **))
 {
-    char *ptr, *argv[MAXARGC]; 
+    char *ptr/*, *argv[MAXARGC]*/; 
+    char ** argv = (char **)malloc (sizeof (char *) * (NARGC+1)); 
     int argc = 0; 
 
     if (strtok (buf, WHITE) == NULL) return -1; 
 
     argv[argc] = buf; 
     while ((ptr = strtok (NULL, WHITE)) != NULL) {
-        if (++ argc >= MAXARGC-1)
-            return -1; 
+        //if (++ argc >= MAXARGC-1)
+        if (++ argc >= NARGC) {
+            // full
+            argv = (char **)realloc (argv, sizeof (char *) * (++ NARGC + 1)); 
+            if (argv == NULL) {
+                strcpy (errmsg, "memory full\n"); 
+                return -1; 
+            }
+
+            log_msg ("realloc memory for argv to %d", NARGC); 
+        }
 
         argv[argc] = ptr; 
     }
 
     argv[++argc] = NULL; 
-    return optfunc(argc, argv); 
+    int ret = optfunc(argc, argv); 
+    free (argv); 
+    return ret; 
 }
 
 void request (char *buf, int nread, int fd, uid_t uid)
