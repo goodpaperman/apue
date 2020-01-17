@@ -19,7 +19,7 @@
 //#define CONN_CHECK
 
 // to allow printf redirected into syslog
-//#define USE_APUE
+#define USE_APUE
 
 #ifdef USE_APUE
 #include "../apue.h"
@@ -108,10 +108,22 @@ int serv_listen (const char *name)
     }
 
     printf ("bind socket to path ok\n"); 
+#if 0
+    // no effect
+    int opt = 1; 
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&opt, sizeof(opt)) < 0) {
+        err = errno; 
+        printf ("setsockopt failed\n"); 
+        rval = -3; 
+        goto errout; 
+    }
+
+    printf ("set socket option ok\n"); 
+#endif
     if (listen (fd, QLEN) < 0) { 
         err = errno; 
-        printf ("listen failed\n"); 
-        rval = -3; 
+        printf ("listen failed, errno %d\n", err); 
+        rval = -4; 
         goto errout; 
     }
 
