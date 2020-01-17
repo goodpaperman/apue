@@ -19,7 +19,7 @@
 //#define CONN_CHECK
 
 // to allow printf redirected into syslog
-#define USE_APUE
+//#define USE_APUE
 
 #ifdef USE_APUE
 #include "../apue.h"
