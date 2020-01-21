@@ -22,7 +22,7 @@ print_cflag.o: print_cflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 print_cflag.c: print_flag.awk cflag.sym
-	awk -v FUNC_NAME=control -v MACRO_FILE=cflag.sym -f print_flag.awk > print_cflag.c
+	./print_flag.awk -v FUNC_NAME=control -v MACRO_FILE=cflag.sym > print_cflag.c
 
 print_lflag.o: print_lflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
@@ -34,7 +34,7 @@ print_cchar.o: print_cchar.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 print_cchar.c: print_char.awk cchar.sym
-	./print_char.awk > print_cchar.c
+	./print_char.awk -v FUNC_NAME=control -v MACRO_FILE=cchar.sym > print_cchar.c
 
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@

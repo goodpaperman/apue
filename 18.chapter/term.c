@@ -5,7 +5,7 @@ extern void print_input_flag (tcflag_t flag);
 extern void print_output_flag (tcflag_t flag); 
 extern void print_control_flag (tcflag_t flag); 
 extern void print_local_flag (tcflag_t flag); 
-extern void print_local_char (cc_t* cc, int len); 
+extern void print_control_char (cc_t* cc, int len); 
 
 int main (void)
 {
