@@ -13,10 +13,10 @@ while (getline < MACRO_FILE > 0) {
 printf("#ifdef %s\n", $1)
 printf("    if (flag & %s)\n", $1)
 printf("        printf (\"    %s\\n\"); \n", $1)
-printf("    else\n")
-printf("        printf (\"    %s not in\\n\"); \n", $1)
+printf("//    else\n")
+printf("//        printf (\"    %s not in\\n\"); \n", $1)
 printf("#else\n")
-printf("    printf (\"    %s not defined\\n\"); \n", $1)
+printf("//    printf (\"    %s not defined\\n\"); \n", $1)
 printf("#endif\n")
 }
 close (MACRO_FILE)

@@ -1,4 +1,10 @@
-all: term 
+all: term cchar
+
+cchar: cchar.o apue.o
+	gcc -Wall -g $^ -o $@
+
+cchar.o: cchar.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 term: term.o print_iflag.o print_oflag.o print_cflag.o print_lflag.o print_cchar.o apue.o 
 	gcc -Wall -g $^ -o $@
@@ -44,7 +50,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp term 
+	-rm -f *.o core.* *.log *~ *.swp term cchar
 	@echo "end clean"
 
 .PHONY: clean
