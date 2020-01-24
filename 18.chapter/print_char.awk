@@ -12,7 +12,7 @@ FS=":"
 while (getline < MACRO_FILE > 0) {
 printf("#ifdef %s\n", $1)
 printf("    if (%s >= 0 && %s < len)\n", $1, $1)
-printf("        printf (\"    cc[%s=%%d] = %%d (%%c)\\n\", %s, cc[%s], cc[%s]); \n", $1, $1, $1, $1)
+printf("        printf (\"    cc[%s=%%d] = %%d (CTRL+%%c)\\n\", %s, cc[%s], 'A'+cc[%s]-1); \n", $1, $1, $1, $1)
 printf("    else \n")
 printf("        printf (\"    %s out of index\\n\"); \n", $1)
 printf("#else\n")
