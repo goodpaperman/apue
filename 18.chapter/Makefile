@@ -1,4 +1,10 @@
-all: term cchar
+all: term cchar size
+
+size: size.o apue.o
+	gcc -Wall -g $^ -o $@
+
+size.o: size.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 cchar: cchar.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -50,7 +56,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp term cchar
+	-rm -f *.o core.* *.log *~ *.swp term cchar size
 	@echo "end clean"
 
 .PHONY: clean
