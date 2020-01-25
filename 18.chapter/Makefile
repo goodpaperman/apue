@@ -1,4 +1,16 @@
-all: term cchar size
+all: term cchar size break uclc
+
+uclc: uclc.o apue.o
+	gcc -Wall -g $^ -o $@
+
+uclc.o: uclc.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+break: break.o apue.o
+	gcc -Wall -g $^ -o $@
+
+break.o: break.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 size: size.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -56,7 +68,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp term cchar size
+	-rm -f *.o core.* *.log *~ *.swp term cchar size break uclc
 	@echo "end clean"
 
 .PHONY: clean
