@@ -37,6 +37,7 @@ int main (void)
     term.c_cc[VSTOP] = vdisable; 
     term.c_cc[VSTART] = vdisable; 
 #  else
+    term.c_cc[VSTOP] = 16; /* Ctrl+P */
     term.c_cc[VSTART] = 20; /* Ctrl+T */
 #  endif
 #endif
