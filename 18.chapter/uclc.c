@@ -1,7 +1,7 @@
 #include "../apue.h"
 #include <termios.h> 
 
-//#define UC2LC
+#define UC2LC
 
 int main (void)
 {
