@@ -74,7 +74,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp term cchar size break uclc stop
+	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c term cchar size break uclc stop
 	@echo "end clean"
 
 .PHONY: clean
