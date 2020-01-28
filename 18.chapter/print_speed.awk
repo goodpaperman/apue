@@ -7,7 +7,7 @@ printf("#include <termios.h> \n")
 printf("\n")
 printf("void print_speed (char const* prompt, speed_t s)\n")
 printf("{\n")
-printf("    printf (\"%%s %%d\\n\", prompt, s); \n")
+printf("    printf (\"%%s    \", prompt); \n")
 printf("    switch (s)\n")
 printf("    {\n")
 FS=":"

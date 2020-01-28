@@ -16,6 +16,11 @@ void print_baudrate (const struct termios *tmios)
   print_speed ("output speed", s); 
 }
 
+void print_baudrate_raw (const struct termios *tmios)
+{
+    printf ("input %d, output %d\n", tmios->c_ispeed, tmios->c_ospeed); 
+}
+
 int main (void)
 {
     struct termios term; 
@@ -26,6 +31,7 @@ int main (void)
         err_sys ("tcgetattr error"); 
 
     print_baudrate (&term); 
+    print_baudrate_raw (&term); 
     print_input_flag (term.c_iflag); 
     print_output_flag (term.c_oflag); 
     print_control_flag (term.c_cflag); 
