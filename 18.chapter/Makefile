@@ -30,7 +30,7 @@ cchar: cchar.o apue.o
 cchar.o: cchar.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-term: term.o print_iflag.o print_oflag.o print_cflag.o print_lflag.o print_cchar.o apue.o 
+term: term.o print_iflag.o print_oflag.o print_cflag.o print_lflag.o print_cchar.o print_speed.o apue.o 
 	gcc -Wall -g $^ -o $@
 
 term.o: term.c ../apue.h
@@ -66,6 +66,12 @@ print_cchar.o: print_cchar.c ../apue.h
 print_cchar.c: print_char.awk cchar.sym
 	./print_char.awk -v FUNC_NAME=control -v MACRO_FILE=cchar.sym > print_cchar.c
 
+print_speed.o: print_speed.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
+print_speed.c: print_speed.awk speed.sym
+	./print_speed.awk -v MACRO_FILE=speed.sym > print_speed.c
+
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@
 
@@ -74,7 +80,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c term cchar size break uclc stop
+	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c print_speed.c term cchar size break uclc stop
 	@echo "end clean"
 
 .PHONY: clean
