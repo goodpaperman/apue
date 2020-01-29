@@ -1,4 +1,10 @@
-all: term cchar size break uclc stop baudrate
+all: term cchar size break uclc stop baudrate linectl
+
+linectl: linectl.o apue.o
+	gcc -Wall -g $^ -o $@
+
+linectl.o: linectl.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 baudrate: baudrate.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -86,7 +92,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c print_speed.c term cchar size break uclc stop baudrate
+	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c print_speed.c term cchar size break uclc stop baudrate linectl
 	@echo "end clean"
 
 .PHONY: clean
