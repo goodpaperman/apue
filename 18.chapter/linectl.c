@@ -10,7 +10,7 @@ int main (void)
     if (isatty (STDIN_FILENO) == 0)
         err_quit ("standard input is not a terminal device"); 
 
-    printf ("demo output\n"); 
+    printf ("termid: %s, ttyname: %s\n", ctermid(NULL), ttyname(STDIN_FILENO)); 
     if (tcdrain (STDIN_FILENO) < 0)
         err_quit ("drain stdout failed, errno %d\n", errno); 
 
