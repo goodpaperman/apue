@@ -30,6 +30,7 @@ int main (void)
       break; 
 
     printf ("%o\n", c); 
+    //printf ("%d\n", c); 
   }
 
   if (tty_reset (STDIN_FILENO) < 0)
@@ -45,6 +46,7 @@ int main (void)
   while ((i = read (STDIN_FILENO, &c, 1)) == 1) {
     c &= 255; 
     printf ("%o\n", c); 
+    //printf ("%d\n", c); 
   }
 
   if (tty_reset (STDIN_FILENO) < 0)
