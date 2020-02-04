@@ -1,4 +1,4 @@
-all: term cchar size break uclc stop baudrate linectl restart isatty ttyname getpass ttymode winsz
+all: term cchar size break uclc stop baudrate linectl restart isatty ttyname getpass ttymode winsz ttyraw
 
 winsz: winsz.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -114,6 +114,12 @@ print_speed.o: print_speed.c ../apue.h
 print_speed.c: print_speed.awk speed.sym
 	./print_speed.awk -v MACRO_FILE=speed.sym > print_speed.c
 
+ttyraw: ttyraw.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
+	gcc -Wall -g $^ -o $@
+
+ttyraw.o: ttyraw.c tty.h ../apue.h
+	gcc -Wall -g -c $< -o $@
+
 ttymode: ttymode.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
 	gcc -Wall -g $^ -o $@
 
@@ -131,7 +137,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c print_speed.c term cchar size break uclc stop baudrate linectl restart isatty ttyname getpass ttymode winsz
+	-rm -f *.o core.* *.log *~ *.swp print_*flag.c print_cchar.c print_speed.c term cchar size break uclc stop baudrate linectl restart isatty ttyname getpass ttymode winsz ttyraw
 	@echo "end clean"
 
 .PHONY: clean
