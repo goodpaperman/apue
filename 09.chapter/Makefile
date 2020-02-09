@@ -69,16 +69,16 @@ telnety.o: telnet/telnety.c
 telnets: telnets.o pty_fun.o apue.o
 	gcc -Wall -g $^ -o $@
 
-telnets.o: telnet/telnets.c telnet/pty_fun.h
+telnets.o: telnet/telnets.c ../pty_fun.h
 	gcc -Wall -g -c $< -o $@ #-std=c99
 
 telnetd: telnetd.o pty_fun.o apue.o
 	gcc -Wall -g $^ -o $@
 
-telnetd.o: telnet/telnetd.c telnet/pty_fun.h
+telnetd.o: telnet/telnetd.c ../pty_fun.h
 	gcc -Wall -g -c $< -o $@ #-std=c99
 
-pty_fun.o: telnet/pty_fun.c telnet/pty_fun.h
+pty_fun.o: ../pty_fun.c ../pty_fun.h
 	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE #-std=c99
 
 pty: pty.o apue.o

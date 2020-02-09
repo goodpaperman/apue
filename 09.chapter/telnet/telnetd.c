@@ -18,7 +18,7 @@
 #include <getopt.h>   
 #include <pthread.h>   
 #include <strings.h> 
-#include "pty_fun.h"   
+#include "../../pty_fun.h"   
   
 #define DEFAULTIP         "127.0.0.1"   
 #define DEFAULTPORT       "23" //"20013"   

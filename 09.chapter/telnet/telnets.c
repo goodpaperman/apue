@@ -20,7 +20,7 @@
 #include <strings.h> 
 #include <sys/select.h> 
 #include <sys/time.h> 
-#include "pty_fun.h"   
+#include "../../pty_fun.h"   
   
 #define DEFAULTIP         "127.0.0.1"   
 #define DEFAULTPORT       "10028" //"23" //"20013"   
