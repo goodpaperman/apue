@@ -29,6 +29,10 @@
 #define DEFAULTLOG        "/tmp/telnet-server.log"   
 #define PTY_NAME_SIZE     20   
 #define MAX_BUFSIZE       512   
+
+#ifndef MAX
+#define MAX(a,b) (((a) < (b)) ? (b) : (a))
+#endif
   
 //typedef struct thread_arg  
 //{  

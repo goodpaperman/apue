@@ -6,8 +6,13 @@
 #include <string.h>   
 #include <unistd.h>   
 #include <sys/types.h>   
+#if defined(__sun) || defined(sun)
+#include <stropts.h>
+#else
 #include <linux/limits.h>   
 #include <features.h>   
+#endif
+
 #include <termios.h>   
 #include <sys/ioctl.h>   
 #include <fcntl.h>   

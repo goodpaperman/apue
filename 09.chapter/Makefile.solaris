@@ -1,0 +1,23 @@
+all:telnetd telnets 
+
+telnets: telnets.o pty_fun.o
+	gcc -Wall -g $^ -o $@ -lsocket -lnsl
+
+telnets.o: telnet/telnets.c ../pty_fun.h
+	gcc -Wall -g -c $< -o $@ #-std=c99
+
+telnetd: telnetd.o pty_fun.o
+	gcc -Wall -g $^ -o $@ -lsocket -lnsl
+
+telnetd.o: telnet/telnetd.c ../pty_fun.h
+	gcc -Wall -g -c $< -o $@ #-std=c99
+
+pty_fun.o: ../pty_fun.c ../pty_fun.h
+	gcc -Wall -g -c $< -o $@ -D_GNU_SOURCE #-std=c99
+
+clean: 
+	@echo "start clean..."
+	-rm -f *.o core.* *.log *~ *.swp telnetd telnets
+	@echo "end clean"
+
+.PHONY: clean

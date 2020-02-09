@@ -12,10 +12,12 @@ int ptym_open(char *pts_name, int pts_namesz)
     if ((fdm = open (pts_name, O_RDWR)) < 0)
         return -1; 
 
+#if 0
     if (grandpt (fdm) < 0) { 
         close (fdm); 
         return -2; 
     }
+#endif
 
     if (unlockpt (fdm) <0) {
         close (fdm); 
