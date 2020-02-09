@@ -4,6 +4,33 @@
   
 int ptym_open(char *pts_name, int pts_namesz)  
 {  
+#if defined (__sun) || defined (sun)
+	char *ptr = 0; 
+	int fdm = 0; 
+    strncpy (pts_name, "/dev/ptmx", pts_namesz); 
+    pts_name[pts_namesz - 1] = '\0'; 
+    if ((fdm = open (pts_name, O_RDWR)) < 0)
+        return -1; 
+
+    if (grandpt (fdm) < 0) { 
+        close (fdm); 
+        return -2; 
+    }
+
+    if (unlockpt (fdm) <0) {
+        close (fdm); 
+        return -3; 
+    }
+
+    if ((ptr = ptsname (fdm)) == NULL) {
+        close (fdm); 
+        return -4; 
+    }
+
+    strncpy (pts_name, ptr, pts_namesz); 
+    pts_name[pts_namesz - 1] = '\0'; 
+    return fdm; 
+#else // common linux
     char *ptr = 0;  
     char fdm = 0;  
     /* 
@@ -37,11 +64,40 @@ int ptym_open(char *pts_name, int pts_namesz)
     pts_name[pts_namesz - 1] = '\0';  
   
     return fdm;  
-  
+#endif 
 }  
   
 int ptys_open(char *pts_name)  
 {  
+#if defined (__sun) || defined (sun)
+    int fds, setup; 
+    if ((fds = open (pts_name, O_RDWR)) < 0)
+        return -5; 
+
+    if ((setup = ioctl (fds, I_FIND, "ldterm")) < 0) {
+        close (fds); 
+        return -6; 
+    }
+
+    if (setup == 0) {
+        if (ioctl (fds, I_PUSH, "ptem") < 0) { 
+            close (fds); 
+            return -7; 
+        }
+
+        if (ioctl (fds, I_PUSH, "ldterm") < 0) {
+            close (fds); 
+            return -8; 
+        }
+
+        if (ioctl (fds, I_PUSH, "ttcompat") < 0) {
+            close (fds); 
+            return -9; 
+        }
+    }
+
+    return fds; 
+#else 
     int fds;  
     // if open O_NOCTTY flag, open pts will not automatically 
     // set it to default tty, you must call 
@@ -50,6 +106,7 @@ int ptys_open(char *pts_name)
     if ((fds = open(pts_name, O_RDWR /*| O_NOCTTY*/)) < 0)  
         return OPEN_PTYS_ERR;  
     return fds;  
+#endif
 }  
 
 void test_tty_exist ()
