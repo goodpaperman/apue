@@ -1,4 +1,4 @@
-#include "../apue.h"
+#include "apue.h"
 #include <termios.h>
 #include <errno.h>
 
@@ -8,10 +8,12 @@ static struct termios save_termios;
 static int ttysavefd = -1; 
 static enum { RESET, RAW, CBREAK } ttystate = RESET; 
 
+#ifdef PRINT_FLAG
 extern void print_local_flag (tcflag_t flag);
 extern void print_input_flag (tcflag_t flag); 
 extern void print_control_flag (tcflag_t flag); 
 extern void print_output_flag (tcflag_t flag); 
+#endif
 
 int tty_cbreak (int fd)
 {
@@ -111,10 +113,12 @@ int tty_raw (int fd)
         buf.c_cc[VMIN], 
         buf.c_cc[VTIME]); 
 
+#ifdef PRINT_FLAG
     print_local_flag (buf.c_lflag); 
     print_input_flag (buf.c_iflag); 
     print_control_flag (buf.c_cflag); 
     print_output_flag (buf.c_oflag); 
+#endif
 
     tcsetattr (fd, TCSAFLUSH, &save_termios); 
     errno = EINVAL; 

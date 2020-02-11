@@ -1,12 +1,15 @@
-all: term 
+all: pty 
 
-ttymode: ttymode.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
+pty: pty.o tty.o apue.o pty_fun.o
 	gcc -Wall -g $^ -o $@
 
-ttymode.o: ttymode.c tty.h ../apue.h
+pty.o: pty.c ../tty.h ../pty_fun.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-tty.o: tty.c tty.h ../apue.h 
+tty.o: ../tty.c ../tty.h ../apue.h 
+	gcc -Wall -g -c $< -o $@
+
+pty_fun.o: ../pty_fun.c ../pty_fun.h ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
 log.o: ../log.c ../log.h
