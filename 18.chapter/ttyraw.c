@@ -1,5 +1,5 @@
 #include "../apue.h"
-#include "tty.h"
+#include "../tty.h"
 
 int main (void)
 {

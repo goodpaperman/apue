@@ -117,16 +117,16 @@ print_speed.c: print_speed.awk speed.sym
 ttyraw: ttyraw.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
 	gcc -Wall -g $^ -o $@
 
-ttyraw.o: ttyraw.c tty.h ../apue.h
+ttyraw.o: ttyraw.c ../tty.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 ttymode: ttymode.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
 	gcc -Wall -g $^ -o $@
 
-ttymode.o: ttymode.c tty.h ../apue.h
+ttymode.o: ttymode.c ../tty.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-tty.o: tty.c tty.h ../apue.h 
+tty.o: ../tty.c ../tty.h ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
 log.o: ../log.c ../log.h
