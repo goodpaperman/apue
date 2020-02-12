@@ -353,16 +353,16 @@ int main(int argc, char **argv)
             //memset(slave_name, 0, PTY_NAME_SIZE);  
             //ppid = -1;  
   
-            ret = pty_fork(&ptrfdm, slave_name, PTY_NAME_SIZE, &slave_termiors,  
-                    &slave_winsize, &ppid);  
+            ppid = pty_fork(&ptrfdm, slave_name, PTY_NAME_SIZE, &slave_termiors,  
+                    &slave_winsize, 0);  
   
-            if (ret < 0)  
+            if (ppid < 0)  
             {  
-                printf("pty_fork err ! ret = %d", ret);  
+                printf("pty_fork err ! ret = %d", ppid);  
                 return -1;  
             }  
   
-            if (ppid < 0)  
+            if (ptrfdm < 0)  
             {  
                 printf("pty_fork err !");  
                 return -1;  

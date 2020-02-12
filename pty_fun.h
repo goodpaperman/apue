@@ -67,6 +67,10 @@
 #define DUP_STDERR_ERR -12   
 #endif   
   
+#ifndef SET_ATTR_ERR   
+#define SET_ATTR_ERR -13
+#endif   
+  
 #include <sys/types.h>  
   
 void test_tty_exist (); 
@@ -75,8 +79,8 @@ int ptym_open(char *pts_name, int pts_namesz);
   
 int ptys_open(char *pts_name);  
   
-int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
+pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, pid_t *ppid, int verbose);  
+        const struct winsize *slave_winsize, int verbose);  
 
 #endif 

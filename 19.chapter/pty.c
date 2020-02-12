@@ -168,10 +168,10 @@ int main (int argc, char *argv[])
         else if (verbose)
             syslog (LOG_INFO, "TIOCGWINSZ for currrent tty ok, %d, %d\n", size.ws_row, size.ws_col); 
 
-        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), &orig_termios, &size, NULL, verbose); 
+        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), &orig_termios, &size, verbose); 
     }
     else 
-        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), NULL, NULL, NULL, verbose); 
+        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), NULL, NULL, verbose); 
 
     if (pid < 0)
         err_sys ("fork error"); 
@@ -191,6 +191,7 @@ int main (int argc, char *argv[])
     }
 
     // parent
+    syslog (LOG_INFO, "verbose = %d\n", verbose); 
     if (verbose) 
     {
         syslog (LOG_INFO, "slave name = %s\n", slave_name); 

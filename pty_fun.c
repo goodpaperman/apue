@@ -281,9 +281,9 @@ void test_tty_exist ()
     close (fdtty); 
 }
   
-int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
+pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, pid_t *ppid, int verbose)  
+        const struct winsize *slave_winsize, int verbose)  
 {  
     int fdm = 0, fds = 0;  
     pid_t pid = 0;  
@@ -293,11 +293,10 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
     if (verbose)
         test_tty_exist (); 
 
-    if ((fdm = ptym_open(pts_name, sizeof(pts_name))) < 0)  
-    {  
-        syslog (LOG_INFO, "ptym_open failed\n"); 
-        return fdm;  
-    }  
+    if ((fdm = ptym_open(pts_name, sizeof(pts_name))) < 0)  {
+        syslog (LOG_INFO, "can't open master pty: %s, error %d", pts_name, fdm); 
+        return OPEN_PTY_ERR; 
+    } 
   
     if (verbose)
         syslog (LOG_INFO, "ptym_open %d\n", fdm); 
@@ -315,34 +314,31 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
     }  
     else if (pid == 0)  
     {  
-        if (setsid() < 0)  
-        {  
-            syslog (LOG_INFO, "setsid failed\n"); 
-            return SETSID_ERR;  
-        }  
+        if (setsid() < 0)  {
+            syslog (LOG_INFO, "setsid error"); 
+            return SETSID_ERR; 
+        }
         else if (verbose)
             syslog (LOG_INFO, "setsid for pty_fork child ok\n"); 
 
         if (verbose)
             test_tty_exist (); 
 
-        if ((fds = ptys_open(pts_name)) < 0)  
-        {  
-            close(fdm);  
-            syslog (LOG_INFO, "ptys_open failed\n"); 
-            return OPEN_PTYS_ERR;  
-        }  
+        if ((fds = ptys_open(pts_name)) < 0)   {
+            syslog (LOG_INFO, "can't open slave pty"); 
+            return OPEN_PTYS_ERR; 
+        }
         else if (verbose)
             syslog (LOG_INFO, "ptys_open %s for pty_fork child ok\n", pts_name); 
 
+        close(fdm);  
         if (verbose)
             test_tty_exist (); 
 
 #ifdef TIOCSCTTY   
-        if (ioctl(fds, TIOCSCTTY, (char *) 0) < 0)  
-        {
-            syslog (LOG_INFO, "TIOCSCTTY failed\n"); 
-            return TIOCSCTTY_ERR;  
+        if (ioctl(fds, TIOCSCTTY, (char *) 0) < 0)  {
+            syslog (LOG_INFO, "TIOCSCTTY error"); 
+            return TIOCSCTTY_ERR; 
         }
         else if (verbose)
             syslog (LOG_INFO, "TIOCSCTTY for pty_fork child ok\n"); 
@@ -353,10 +349,9 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
 
         if (slave_termiors != NULL)   
         {   
-            if (tcsetattr(fds, TCSANOW, slave_termiors) < 0)   
-            {
-                syslog (LOG_INFO, "TCSANOW failed\n"); 
-                return INIT_ATTR_ERR;   
+            if (tcsetattr(fds, TCSANOW, slave_termiors) < 0)   {
+                syslog (LOG_INFO, "tcsetattr error on slave pty"); 
+                return INIT_ATTR_ERR; 
             }
             else if (verbose)
                 syslog (LOG_INFO, "TCSANOW for pty_fork child ok\n"); 
@@ -364,46 +359,39 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
 
         if (slave_winsize != NULL)   
         {   
-            if (ioctl(fds, TIOCSWINSZ, slave_winsize) < 0)   
-            {
-                syslog (LOG_INFO, "TIOCSWINSZ failed\n"); 
-                return INIT_ATTR_ERR;   
+            if (ioctl(fds, TIOCSWINSZ, slave_winsize) < 0)   {
+                syslog (LOG_INFO, "TIOCSWINSZ error on slave pty"); 
+                return SET_ATTR_ERR; 
             }
             else if (verbose)
                 syslog (LOG_INFO, "TIOCSWINSZ for pty_fork child ok\n"); 
         }   
   
-        if (dup2(fds, STDIN_FILENO) != STDIN_FILENO)  
-        {
-            syslog (LOG_INFO, "dup2 STDIN_FILENO failed\n"); 
+        if (dup2(fds, STDIN_FILENO) != STDIN_FILENO)  {
+            syslog (LOG_INFO, "dup2 error to stdin"); 
             return DUP_STDIN_ERR;  
         }
         else if (verbose)
             syslog (LOG_INFO, "dup2 STDIN_FILENO for pty_fork child ok\n"); 
 
-        if (dup2(fds, STDOUT_FILENO) != STDOUT_FILENO)  
-        {
-            syslog (LOG_INFO, "dup2 STDOUT_FILENO failed\n"); 
-            return DUP_STDOUT_ERR;  
+        if (dup2(fds, STDOUT_FILENO) != STDOUT_FILENO)  {
+            syslog (LOG_INFO, "dup2 error to stdout"); 
+            return DUP_STDOUT_ERR; 
         }
         else if (verbose)
             syslog (LOG_INFO, "dup2 STDOUT_FILENO for pty_fork child ok\n"); 
 
-        if (dup2(fds, STDERR_FILENO) != STDERR_FILENO)  
-        {
-            syslog (LOG_INFO, "dup2 STDERR_FILENO failed\n"); 
-            return DUP_STDERR_ERR;  
+        if (dup2(fds, STDERR_FILENO) != STDERR_FILENO)  {
+            syslog (LOG_INFO, "dup2 error to stderr"); 
+            return DUP_STDERR_ERR; 
         }
         else if (verbose)
             syslog (LOG_INFO, "dup2 STDERR_FILENO for pty_fork child ok\n"); 
 
         if (fds != STDIN_FILENO && fds != STDOUT_FILENO && fds != STDERR_FILENO)  
-        {  
             close(fds);  
-        }  
 
-        if (ppid)
-            *ppid = 0;  
+        // chilld should return 0 just like fork
         return 0;  
     }  
     else  
@@ -412,8 +400,6 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
             syslog (LOG_INFO, "%u fork %u ok\n", getpid (), pid); 
 
         *ptrfdm =fdm;  
-        if (ppid)
-            *ppid = pid;  
-        return 0;  
+        return pid;  
     }  
 }  
