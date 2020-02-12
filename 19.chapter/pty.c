@@ -54,7 +54,7 @@ void loop (int ptym, int ignoreeof, int verbose)
         if (ignoreeof == 0)
         {
             if (verbose)
-                syslog (LOG_INFO, "send SIGTERM to child\n"); 
+                syslog (LOG_INFO, "send SIGTERM to parent to notify our exit\n"); 
 
             kill (getppid (), SIGTERM); 
         }
@@ -198,6 +198,7 @@ int main (int argc, char *argv[])
             syslog (LOG_INFO, "driver = %s\n", driver); 
     }
 
+#if 1
     if (interactive && driver == NULL) {
         if (tty_raw (STDIN_FILENO) < 0)
             err_sys ("tty_raw error"); 
@@ -209,6 +210,7 @@ int main (int argc, char *argv[])
         else if (verbose)
             syslog (LOG_INFO, "register tty_atexit ok\n"); 
     }
+#endif
 
 #if 0
     if (driver)
