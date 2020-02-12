@@ -48,7 +48,9 @@ static void add (char *dirname)
     tail = ddp; 
   }
 
+#ifdef VERBOSE
   printf ("add %s\n", dirname); 
+#endif
 }
 
 static void cleanup (void)
@@ -98,7 +100,9 @@ static char* searchdir (char *dirname, struct stat *fdstatp)
 
     if (devstat.st_ino == fdstatp->st_ino && 
         devstat.st_dev == fdstatp->st_dev) {
+#ifdef VERBOSE
       printf ("find target %s with inode %d of device %d\n", pathname, devstat.st_ino, devstat.st_dev); 
+#endif
       closedir (dp); 
       return pathname; 
     }

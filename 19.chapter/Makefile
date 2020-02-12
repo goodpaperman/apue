@@ -10,7 +10,7 @@ tty.o: ../tty.c ../tty.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 pty_fun.o: ../pty_fun.c ../pty_fun.h ../apue.h 
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -D_XOPEN_SOURCE
 
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@

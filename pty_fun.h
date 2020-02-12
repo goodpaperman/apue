@@ -77,6 +77,6 @@ int ptys_open(char *pts_name);
   
 int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, pid_t *ppid);  
+        const struct winsize *slave_winsize, pid_t *ppid, int verbose);  
 
 #endif 

@@ -127,7 +127,7 @@ ttymode.o: ttymode.c ../tty.h ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 tty.o: ../tty.c ../tty.h ../apue.h 
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -DPRINT_FLAG
 
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@

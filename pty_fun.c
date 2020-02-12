@@ -1,7 +1,11 @@
 
 #include "pty_fun.h"
 #include <errno.h> 
+#include <syslog.h>
+//#include <stdlib.h>
+//#include <fcntl.h>
 
+int g_verbose = 0; 
 // emulate BSD system
 //#define __bsdi__
 
@@ -74,12 +78,15 @@ int unlockpt (int fdm)
 {
     return 0; 
 }
-#elif defined (__linux__)
+#elif 0 //defined (__linux__)
 #include <sys/stat.h> // chmod
 int posix_openpt (int oflag)
 {
     int fdm; 
     fdm = open ("/dev/ptmx", oflag); 
+    if (g_verbose)
+        syslog (LOG_INFO, "open /dev/ptmx return %d\n", fdm); 
+
     return fdm; 
 }
 
@@ -88,9 +95,15 @@ char *ptsname (int fdm)
     int sminor; 
     static char pts_name[16]; 
     if (ioctl (fdm, TIOCGPTN, &sminor) < 0)
+    {
+        syslog (LOG_INFO, "TIOCGPTN failed, errno %d\n", errno); 
         return NULL; 
+    }
 
     snprintf (pts_name, sizeof (pts_name), "/dev/pts/%d", sminor); 
+    if (g_verbose)
+        syslog (LOG_INFO, "got ptsname %s\n", pts_name); 
+
     return pts_name; 
 }
 
@@ -98,12 +111,18 @@ int grantpt (int fdm)
 {
     char *pts_name; 
     pts_name = ptsname (fdm); 
+    if (g_verbose)
+        syslog (LOG_INFO, "grantpt for %s", pts_name); 
+
     return chmod (pts_name, S_IRUSR | S_IWUSR | S_IWGRP); 
 }
 
 int unlockpt (int fdm)
 {
     int lock = 0; 
+    if (g_verbose)
+        syslog (LOG_INFO, "unimplement for unlockpt\n"); 
+
     return ioctl (fdm, TIOCSPTLCK, &lock); 
 }
 #endif
@@ -255,27 +274,34 @@ void test_tty_exist ()
 {
     int fdtty = open ("/dev/tty", O_RDWR); 
     if (fdtty == -1)
-        printf ("open default tty failed, errno = %d\n", errno); 
+        syslog (LOG_INFO, "open default tty failed, errno = %d\n", errno); 
     else 
-        printf ("open default tty OK, tty: %s, login: %s\n", ttyname(fdtty), getlogin ()); 
+        syslog (LOG_INFO, "open default tty OK, tty: %s, login: %s\n", ttyname(fdtty), getlogin ()); 
 
     close (fdtty); 
 }
   
 int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, pid_t *ppid)  
+        const struct winsize *slave_winsize, pid_t *ppid, int verbose)  
 {  
     int fdm = 0, fds = 0;  
     pid_t pid = 0;  
     char pts_name[20] = { 0 };  
+    g_verbose = verbose; 
   
-    test_tty_exist (); 
+    if (verbose)
+        test_tty_exist (); 
+
     if ((fdm = ptym_open(pts_name, sizeof(pts_name))) < 0)  
     {  
+        syslog (LOG_INFO, "ptym_open failed\n"); 
         return fdm;  
     }  
   
+    if (verbose)
+        syslog (LOG_INFO, "ptym_open %d\n", fdm); 
+
     if (slave_name != NULL)  
     {  
         strncpy(slave_name, pts_name, slave_namesz);  
@@ -284,46 +310,93 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
   
     if ((pid = fork()) < 0)  
     {  
+        syslog (LOG_INFO, "fork failed\n"); 
         return FORK_ERR;  
     }  
     else if (pid == 0)  
     {  
         if (setsid() < 0)  
         {  
+            syslog (LOG_INFO, "setsid failed\n"); 
             return SETSID_ERR;  
         }  
+        else if (verbose)
+            syslog (LOG_INFO, "setsid for pty_fork child ok\n"); 
 
-        test_tty_exist (); 
+        if (verbose)
+            test_tty_exist (); 
+
         if ((fds = ptys_open(pts_name)) < 0)  
         {  
             close(fdm);  
+            syslog (LOG_INFO, "ptys_open failed\n"); 
             return OPEN_PTYS_ERR;  
         }  
+        else if (verbose)
+            syslog (LOG_INFO, "ptys_open %s for pty_fork child ok\n", pts_name); 
 
-        test_tty_exist (); 
+        if (verbose)
+            test_tty_exist (); 
+
 #ifdef TIOCSCTTY   
         if (ioctl(fds, TIOCSCTTY, (char *) 0) < 0)  
+        {
+            syslog (LOG_INFO, "TIOCSCTTY failed\n"); 
             return TIOCSCTTY_ERR;  
+        }
+        else if (verbose)
+            syslog (LOG_INFO, "TIOCSCTTY for pty_fork child ok\n"); 
 #endif   
 
-        test_tty_exist (); 
+        if (verbose)
+            test_tty_exist (); 
+
         if (slave_termiors != NULL)   
         {   
             if (tcsetattr(fds, TCSANOW, slave_termiors) < 0)   
+            {
+                syslog (LOG_INFO, "TCSANOW failed\n"); 
                 return INIT_ATTR_ERR;   
+            }
+            else if (verbose)
+                syslog (LOG_INFO, "TCSANOW for pty_fork child ok\n"); 
         }   
+
         if (slave_winsize != NULL)   
         {   
             if (ioctl(fds, TIOCSWINSZ, slave_winsize) < 0)   
+            {
+                syslog (LOG_INFO, "TIOCSWINSZ failed\n"); 
                 return INIT_ATTR_ERR;   
+            }
+            else if (verbose)
+                syslog (LOG_INFO, "TIOCSWINSZ for pty_fork child ok\n"); 
         }   
   
         if (dup2(fds, STDIN_FILENO) != STDIN_FILENO)  
+        {
+            syslog (LOG_INFO, "dup2 STDIN_FILENO failed\n"); 
             return DUP_STDIN_ERR;  
+        }
+        else if (verbose)
+            syslog (LOG_INFO, "dup2 STDIN_FILENO for pty_fork child ok\n"); 
+
         if (dup2(fds, STDOUT_FILENO) != STDOUT_FILENO)  
+        {
+            syslog (LOG_INFO, "dup2 STDOUT_FILENO failed\n"); 
             return DUP_STDOUT_ERR;  
+        }
+        else if (verbose)
+            syslog (LOG_INFO, "dup2 STDOUT_FILENO for pty_fork child ok\n"); 
+
         if (dup2(fds, STDERR_FILENO) != STDERR_FILENO)  
+        {
+            syslog (LOG_INFO, "dup2 STDERR_FILENO failed\n"); 
             return DUP_STDERR_ERR;  
+        }
+        else if (verbose)
+            syslog (LOG_INFO, "dup2 STDERR_FILENO for pty_fork child ok\n"); 
+
         if (fds != STDIN_FILENO && fds != STDOUT_FILENO && fds != STDERR_FILENO)  
         {  
             close(fds);  
@@ -335,6 +408,9 @@ int pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
     }  
     else  
     {  
+        if (verbose)
+            syslog (LOG_INFO, "%u fork %u ok\n", getpid (), pid); 
+
         *ptrfdm =fdm;  
         if (ppid)
             *ppid = pid;  
