@@ -1,9 +1,12 @@
-#include "../apue.h"
+//#include "../apue.h"
 #include "../pty_fun.h"
 #include "../tty.h"
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
+#include <signal.h>
+//#include <stdio.h>
+#include <stdlib.h>
 
 #define BUFFSIZE 512
 #define USE_SIGTERM
@@ -29,8 +32,11 @@ void loop (int ptym, int ignoreeof, int verbose)
     int nread; 
     char buf[BUFFSIZE]; 
 
-    if ((child = fork ()) < 0)
-        err_sys ("fork error"); 
+    if ((child = fork ()) < 0) {
+        //err_sys ("fork error"); 
+	syslog (LOG_INFO, "fork error"); 
+	exit (0); 
+    }
     else if (child == 0)
     {
         // child
@@ -46,8 +52,15 @@ void loop (int ptym, int ignoreeof, int verbose)
             else if (verbose)
                 syslog (LOG_INFO, "read pty master %d\n", nread); 
 
-            if (writen (STDOUT_FILENO, buf, nread) != nread)
-                err_sys ("writen error to stdout"); 
+#if defined(__sun__) || defined(sun)
+            if (write (STDOUT_FILENO, buf, nread) != nread) {
+#else
+            if (writen (STDOUT_FILENO, buf, nread) != nread) {
+#endif
+                //err_sys ("writen error to stdout"); 
+		syslog (LOG_INFO, "writen error to stdout"); 
+		exit (0); 
+	    }
             else if (verbose)
                 syslog (LOG_INFO, "write stdout %d\n", nread); 
         }
@@ -70,8 +83,11 @@ void loop (int ptym, int ignoreeof, int verbose)
 
     // parent
 #ifdef USE_SIGTERM
-    if (signal(SIGTERM, sig_term) == SIG_ERR)
-        err_sys ("signal error for SIGTERM"); 
+    if (signal(SIGTERM, sig_term) == SIG_ERR) {
+        //err_sys ("signal error for SIGTERM"); 
+	syslog (LOG_INFO, "signal error for SIGTERM"); 
+	exit (0); 
+    }
     else if (verbose)
         syslog (LOG_INFO, "setup SIGTERM handler\n"); 
 #endif
@@ -93,8 +109,15 @@ void loop (int ptym, int ignoreeof, int verbose)
         else if (verbose)
             syslog (LOG_INFO, "read %d from stdin\n", nread); 
 
-        if (writen (ptym, buf, nread) != nread)
-            err_sys ("writen error to master pty"); 
+#if defined(__sun__) || defined(sun)
+	if (write (ptym, buf, nread) != nread) {
+#else
+        if (writen (ptym, buf, nread) != nread) {
+#endif
+            //err_sys ("writen error to master pty"); 
+	    syslog (LOG_INFO, "writen error to master pty"); 
+	    exit (0); 
+	}
         else if (verbose)
             syslog (LOG_INFO, "write pty master %d ok\n", nread); 
     }
@@ -115,14 +138,20 @@ void loop (int ptym, int ignoreeof, int verbose)
 static void set_noecho (int fd)
 {
     struct termios term; 
-    if (tcgetattr (fd, &term) < 0)
-        err_sys ("tcgetattr error"); 
+    if (tcgetattr (fd, &term) < 0) {
+        //err_sys ("tcgetattr error"); 
+	syslog (LOG_INFO, "tcgetattr error"); 
+	exit (0); 
+    }
 
     term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL); 
     term.c_oflag &= ~(ONLCR); 
 
-    if (tcsetattr (fd, TCSANOW, &term) < 0)
-        err_sys ("tcsetattr error"); 
+    if (tcsetattr (fd, TCSANOW, &term) < 0) {
+        //err_sys ("tcsetattr error"); 
+	syslog (LOG_INFO, "tcsetattr error"); 
+	exit (0); 
+    }
 }
 
 int main (int argc, char *argv[])
@@ -161,34 +190,56 @@ int main (int argc, char *argv[])
                 verbose = 1; 
                 break; 
             case '?':
-                err_quit ("unrecongnized option: -%c", optopt); 
+                //err_quit ("unrecongnized option: -%c", optopt); 
+                syslog (LOG_INFO, "unrecongnized option: -%c", optopt); 
+		return -1; 
                 break; 
         }
     }
 
-    if (optind >= argc)
+    if (optind >= argc) {
         // no program and arg following ?
-        err_quit ("usage: pty [ -d driver -einv] program [ arg ... ]"); 
+        //err_quit ("usage: pty [ -d driver -einv] program [ arg ... ]"); 
+        syslog (LOG_INFO, "usage: pty [ -d driver -einv] program [ arg ... ]"); 
+	return -1; 
+    }
 
     if (interactive) 
     {
-        if (tcgetattr (STDIN_FILENO, &orig_termios) < 0)
-            err_sys ("tcgetattr error on stdin"); 
+        if (tcgetattr (STDIN_FILENO, &orig_termios) < 0) {
+            //err_sys ("tcgetattr error on stdin"); 
+	    syslog (LOG_INFO, "tcgetattr error on stdin"); 
+	    exit (0); 
+	}
         else if (verbose)
             syslog (LOG_INFO, "tcgetattr for current tty ok\n"); 
 
-        if (ioctl (STDIN_FILENO, TIOCGWINSZ, (char *) &size) < 0)
-            err_sys ("TIOCGWINSZ error"); 
+        if (ioctl (STDIN_FILENO, TIOCGWINSZ, (char *) &size) < 0) {
+            //err_sys ("TIOCGWINSZ error"); 
+	    syslog (LOG_INFO, "TIOCGWINSZ error"); 
+	    exit (0); 
+	}
         else if (verbose)
             syslog (LOG_INFO, "TIOCGWINSZ for currrent tty ok, %d, %d\n", size.ws_row, size.ws_col); 
 
-        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), &orig_termios, &size, verbose); 
+        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), &orig_termios, 
+#if !defined(__sun__) && !defined(sun)
+	&size, 
+#endif
+	verbose); 
     }
     else 
-        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), NULL, NULL, verbose); 
+        pid = pty_fork (&fdm, slave_name, sizeof (slave_name), NULL, 
+#if !defined(__sun__) && !defined(sun)
+	NULL, 
+#endif
+	verbose); 
 
-    if (pid < 0)
-        err_sys ("fork error"); 
+    if (pid < 0) {
+        //err_sys ("fork error"); 
+	syslog (LOG_INFO, "fork error"); 
+	exit (0); 
+    }
     else if (pid == 0)
     {
         // child
@@ -200,8 +251,11 @@ int main (int argc, char *argv[])
             set_noecho (STDIN_FILENO); 
         }
         
-        if (execvp (argv[optind], &argv[optind]) < 0)
-            err_sys ("can't execute: %s", argv[optind]); 
+        if (execvp (argv[optind], &argv[optind]) < 0) {
+            //err_sys ("can't execute: %s", argv[optind]); 
+	    syslog (LOG_INFO, "can't execute: %s", argv[optind]); 
+	    exit (0); 
+	}
     }
 
     // parent
@@ -214,13 +268,18 @@ int main (int argc, char *argv[])
     }
 
     if (interactive && driver == NULL) {
-        if (tty_raw (STDIN_FILENO) < 0)
-            err_sys ("tty_raw error"); 
+        if (tty_raw (STDIN_FILENO) < 0) {
+            //err_sys ("tty_raw error"); 
+	    syslog (LOG_INFO, "tty_raw error"); 
+	    exit (0); 
+	}
         else if (verbose)
             syslog (LOG_INFO, "tty_raw mode for parent\n"); 
 
-        if (atexit (tty_atexit) < 0)
-            err_sys ("atexit error"); 
+        if (atexit (tty_atexit) < 0) {
+            //err_sys ("atexit error"); 
+	    syslog (LOG_INFO, "atexit error"); 
+	}
         else if (verbose)
             syslog (LOG_INFO, "register tty_atexit ok\n"); 
     }

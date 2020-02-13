@@ -281,7 +281,10 @@ void test_tty_exist ()
   
 pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, int verbose)  
+#if !defined(__sun__) && !defined(sun)
+        const struct winsize *slave_winsize, 
+#endif
+	int verbose)  
 {  
     int fdm = 0, fds = 0;  
     pid_t pid = 0;  
@@ -355,6 +358,7 @@ pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
                 syslog (LOG_INFO, "TCSANOW for pty_fork child ok\n"); 
         }   
 
+#if !defined(__sun) && !defined(sun)
         if (slave_winsize != NULL)   
         {   
             if (ioctl(fds, TIOCSWINSZ, slave_winsize) < 0)   {
@@ -364,6 +368,7 @@ pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
             else if (verbose)
                 syslog (LOG_INFO, "TIOCSWINSZ for pty_fork child ok\n"); 
         }   
+#endif
   
         if (dup2(fds, STDIN_FILENO) != STDIN_FILENO)  {
             syslog (LOG_INFO, "dup2 error to stdin"); 

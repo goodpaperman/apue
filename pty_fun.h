@@ -81,6 +81,9 @@ int ptys_open(char *pts_name);
   
 pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,  
         const struct termios *slave_termiors,  
-        const struct winsize *slave_winsize, int verbose);  
+#if !defined(__sun__) && !defined(sun)
+        const struct winsize *slave_winsize, 
+#endif
+	int verbose);  
 
 #endif 
