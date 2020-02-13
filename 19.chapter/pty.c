@@ -34,12 +34,14 @@ void loop (int ptym, int ignoreeof, int verbose)
 
     if ((child = fork ()) < 0) {
         //err_sys ("fork error"); 
+        //printf ("before 2nd fork\n"); 
 	syslog (LOG_INFO, "fork error"); 
 	exit (0); 
     }
     else if (child == 0)
     {
         // child
+	//printf ("in 2nd child\n"); 
         for (;;) 
         {
             if ((nread = read (ptym, buf, BUFFSIZE)) <= 0)
@@ -82,6 +84,7 @@ void loop (int ptym, int ignoreeof, int verbose)
         syslog (LOG_INFO, "%u fork %u ok\n", getpid (), child); 
 
     // parent
+    //printf ("in 2nd parent\n"); 
 #ifdef USE_SIGTERM
     if (signal(SIGTERM, sig_term) == SIG_ERR) {
         //err_sys ("signal error for SIGTERM"); 
@@ -162,6 +165,7 @@ int main (int argc, char *argv[])
     char slave_name[20]; 
     struct termios orig_termios; 
     struct winsize size; 
+    openlog ("pty", LOG_CONS | LOG_PID, 0); 
 
     interactive = isatty (STDIN_FILENO); 
     ignoreeof = 0; 
@@ -204,6 +208,7 @@ int main (int argc, char *argv[])
 	return -1; 
     }
 
+    //printf ("before fork\n"); 
     if (interactive) 
     {
         if (tcgetattr (STDIN_FILENO, &orig_termios) < 0) {
@@ -235,6 +240,7 @@ int main (int argc, char *argv[])
 #endif
 	verbose); 
 
+    //printf ("after pty_fork %d\n", pid); 
     if (pid < 0) {
         //err_sys ("fork error"); 
 	syslog (LOG_INFO, "fork error"); 
@@ -243,6 +249,7 @@ int main (int argc, char *argv[])
     else if (pid == 0)
     {
         // child
+	//printf ("in child\n"); 
         if (noecho)
         {
             if (verbose)
@@ -259,6 +266,7 @@ int main (int argc, char *argv[])
     }
 
     // parent
+    //printf ("in parent\n"); 
     //syslog (LOG_INFO, "verbose = %d\n", verbose); 
     if (verbose) 
     {
@@ -290,5 +298,6 @@ int main (int argc, char *argv[])
 #endif
 
     loop (fdm, ignoreeof, verbose); 
+    closelog (); 
     exit (0); 
 }
