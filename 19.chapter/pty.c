@@ -6,6 +6,7 @@
 #include <syslog.h>
 
 #define BUFFSIZE 512
+#define USE_SIGTERM
 
 #ifdef __linux__
 #define OPTSTR "+d:einv"
@@ -13,12 +14,14 @@
 #define OPTSTR "d:einv"
 #endif
 
+#ifdef USE_SIGTERM
 static volatile sig_atomic_t sigcaught; 
 
 static void sig_term (int signo)
 {
     sigcaught = 1; 
 }
+#endif
 
 void loop (int ptym, int ignoreeof, int verbose)
 {
@@ -33,24 +36,23 @@ void loop (int ptym, int ignoreeof, int verbose)
         // child
         for (;;) 
         {
-            if ((nread = read (STDIN_FILENO, buf, BUFFSIZE)) < 0)
-                err_sys ("read error from stdin"); 
-            else if (nread == 0)
+            if ((nread = read (ptym, buf, BUFFSIZE)) <= 0)
             {
                 if (verbose)
-                    syslog (LOG_INFO, "read stdin end\n"); 
+                    syslog (LOG_INFO, "read pty master failed, errno %d\n", errno); 
 
                 break; 
             }
             else if (verbose)
-                syslog (LOG_INFO, "read %d from stdin\n", nread); 
+                syslog (LOG_INFO, "read pty master %d\n", nread); 
 
-            if (writen (ptym, buf, nread) != nread)
-                err_sys ("writen error to master pty"); 
+            if (writen (STDOUT_FILENO, buf, nread) != nread)
+                err_sys ("writen error to stdout"); 
             else if (verbose)
-                syslog (LOG_INFO, "write pty master %d ok\n", nread); 
+                syslog (LOG_INFO, "write stdout %d\n", nread); 
         }
 
+#ifdef USE_SIGTERM
         if (ignoreeof == 0)
         {
             if (verbose)
@@ -58,6 +60,7 @@ void loop (int ptym, int ignoreeof, int verbose)
 
             kill (getppid (), SIGTERM); 
         }
+#endif
 
         exit (0); 
     }
@@ -66,27 +69,37 @@ void loop (int ptym, int ignoreeof, int verbose)
         syslog (LOG_INFO, "%u fork %u ok\n", getpid (), child); 
 
     // parent
+#ifdef USE_SIGTERM
     if (signal(SIGTERM, sig_term) == SIG_ERR)
         err_sys ("signal error for SIGTERM"); 
     else if (verbose)
         syslog (LOG_INFO, "setup SIGTERM handler\n"); 
+#endif
 
     for (;;) 
     {
-        if ((nread = read (ptym, buf, BUFFSIZE)) <= 0)
+        if ((nread = read (STDIN_FILENO, buf, BUFFSIZE)) < 0)
+        {
+            syslog (LOG_INFO, "read error from stdin"); 
+            break;
+        }
+        else if (nread == 0)
         {
             if (verbose)
-                syslog (LOG_INFO, "read pty master failed, errno %d\n", errno); 
+                syslog (LOG_INFO, "read stdin end\n"); 
 
             break; 
         }
-
-        if (writen (STDOUT_FILENO, buf, nread) != nread)
-            err_sys ("writen error to stdout"); 
         else if (verbose)
-            syslog (LOG_INFO, "write stdout %d\n", nread); 
+            syslog (LOG_INFO, "read %d from stdin\n", nread); 
+
+        if (writen (ptym, buf, nread) != nread)
+            err_sys ("writen error to master pty"); 
+        else if (verbose)
+            syslog (LOG_INFO, "write pty master %d ok\n", nread); 
     }
 
+#ifdef USE_SIGTERM
     if (sigcaught == 0)
     {
         if (verbose)
@@ -96,6 +109,7 @@ void loop (int ptym, int ignoreeof, int verbose)
     }
     else if (verbose)
         syslog (LOG_INFO, "has caught SIGTERM, exit\n"); 
+#endif
 }
 
 static void set_noecho (int fd)
@@ -191,7 +205,7 @@ int main (int argc, char *argv[])
     }
 
     // parent
-    syslog (LOG_INFO, "verbose = %d\n", verbose); 
+    //syslog (LOG_INFO, "verbose = %d\n", verbose); 
     if (verbose) 
     {
         syslog (LOG_INFO, "slave name = %s\n", slave_name); 
@@ -199,7 +213,6 @@ int main (int argc, char *argv[])
             syslog (LOG_INFO, "driver = %s\n", driver); 
     }
 
-#if 1
     if (interactive && driver == NULL) {
         if (tty_raw (STDIN_FILENO) < 0)
             err_sys ("tty_raw error"); 
@@ -211,7 +224,6 @@ int main (int argc, char *argv[])
         else if (verbose)
             syslog (LOG_INFO, "register tty_atexit ok\n"); 
     }
-#endif
 
 #if 0
     if (driver)

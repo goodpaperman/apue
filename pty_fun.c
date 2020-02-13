@@ -78,7 +78,7 @@ int unlockpt (int fdm)
 {
     return 0; 
 }
-#elif 0 //defined (__linux__)
+#elif 0 //defined (__linux__) // use system default implement
 #include <sys/stat.h> // chmod
 int posix_openpt (int oflag)
 {
@@ -137,12 +137,10 @@ int ptym_open(char *pts_name, int pts_namesz)
     if ((fdm = open (pts_name, O_RDWR)) < 0)
         return -1; 
 
-#if 0
     if (grantpt (fdm) < 0) { 
         close (fdm); 
         return -2; 
     }
-#endif
 
     if (unlockpt (fdm) <0) {
         close (fdm); 

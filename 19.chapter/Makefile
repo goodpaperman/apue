@@ -20,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp 
+	-rm -f *.o core.* *.log *~ *.swp pty
 	@echo "end clean"
 
 .PHONY: clean
