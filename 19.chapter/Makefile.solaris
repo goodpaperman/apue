@@ -1,4 +1,7 @@
-all: pty 
+all: pty slowout
+
+slowout: slowout.c 
+	gcc -Wall -g $^ -o $@
 
 pty: pty.o tty.o pty_fun.o
 	gcc -Wall -g $^ -o $@
@@ -12,15 +15,9 @@ tty.o: ../tty.c ../tty.h
 pty_fun.o: ../pty_fun.c ../pty_fun.h 
 	gcc -Wall -g -c $< -o $@ 
 
-log.o: ../log.c ../log.h
-	gcc -Wall -g -c $< -o $@
-
-apue.o: ../apue.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -D__USE_BSD
-
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pty
+	-rm -f *.o core.* *.log *~ *.swp pty slowout
 	@echo "end clean"
 
 .PHONY: clean
