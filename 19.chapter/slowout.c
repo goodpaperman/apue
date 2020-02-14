@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+//#define HAS_READ
+
 int main (void)
 {
     int i = 0; 
