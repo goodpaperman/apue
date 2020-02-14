@@ -1,4 +1,7 @@
-all: pty 
+all: pty slowout
+
+slowout: slowout.c 
+	gcc -Wall -g $^ -o $@
 
 pty: pty.o tty.o apue.o pty_fun.o
 	gcc -Wall -g $^ -o $@
@@ -20,7 +23,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pty
+	-rm -f *.o core.* *.log *~ *.swp pty slowout
 	@echo "end clean"
 
 .PHONY: clean

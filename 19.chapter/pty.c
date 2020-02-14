@@ -45,6 +45,8 @@ void loop (int ptym, int ignoreeof, int verbose)
     {
         // child
         //printf ("in 2nd child\n"); 
+        // restore ppid to avoid parent exit
+        pid_t ppid = getppid (); 
         for (;;) 
         {
             if ((nread = read (ptym, buf, BUFFSIZE)) <= 0)
@@ -74,7 +76,7 @@ void loop (int ptym, int ignoreeof, int verbose)
         if (verbose)
             syslog (LOG_INFO, "send SIGTERM to parent to notify our exit\n"); 
 
-        kill (getppid (), SIGTERM); 
+        kill (ppid, SIGTERM); 
 #endif
 
         exit (0); 
@@ -126,12 +128,17 @@ void loop (int ptym, int ignoreeof, int verbose)
     }
 
 #ifdef USE_SIGTERM
-    if (sigcaught == 0 && ignoreeof == 0)
+    if (sigcaught == 0)
     {
-        if (verbose)
-            syslog (LOG_INFO, "no SIGTERM sent from child, try kill it\n"); 
+        if (ignoreeof == 0)
+        {
+            if (verbose)
+                syslog (LOG_INFO, "no SIGTERM sent from child, try kill it\n"); 
 
-        kill (child, SIGTERM); 
+            kill (child, SIGTERM); 
+        }
+        else if (verbose)
+            syslog (LOG_INFO, "ignore eof, exit\n"); 
     }
     else if (verbose)
         syslog (LOG_INFO, "has caught SIGTERM, exit\n"); 
@@ -168,6 +175,7 @@ int main (int argc, char *argv[])
     openlog ("pty", LOG_CONS | LOG_PID, 0); 
 
     interactive = isatty (STDIN_FILENO); 
+    syslog (LOG_INFO, "is stdin a tty ? %s\n", interactive ? "true" : "false"); 
     ignoreeof = 0; 
     noecho = 0; 
     verbose = 0; 
