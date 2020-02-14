@@ -338,7 +338,7 @@ pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
 
 #if  defined(TIOCSCTTY) && (!defined(__sun__) && !defined(sun))   
         if (ioctl(fds, TIOCSCTTY, (char *) 0) < 0)  {
-            syslog (LOG_INFO, "TIOCSCTTY error"); 
+            syslog (LOG_INFO, "TIOCSCTTY error, errno %d", errno); 
             return TIOCSCTTY_ERR; 
         }
         else if (verbose)
