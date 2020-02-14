@@ -71,13 +71,10 @@ void loop (int ptym, int ignoreeof, int verbose)
         }
 
 #ifdef USE_SIGTERM
-        if (ignoreeof == 0)
-        {
-            if (verbose)
-                syslog (LOG_INFO, "send SIGTERM to parent to notify our exit\n"); 
+        if (verbose)
+            syslog (LOG_INFO, "send SIGTERM to parent to notify our exit\n"); 
 
-            kill (getppid (), SIGTERM); 
-        }
+        kill (getppid (), SIGTERM); 
 #endif
 
         exit (0); 
@@ -129,7 +126,7 @@ void loop (int ptym, int ignoreeof, int verbose)
     }
 
 #ifdef USE_SIGTERM
-    if (sigcaught == 0)
+    if (sigcaught == 0 && ignoreeof == 0)
     {
         if (verbose)
             syslog (LOG_INFO, "no SIGTERM sent from child, try kill it\n"); 
