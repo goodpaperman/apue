@@ -13,6 +13,7 @@
 
 #define BUFFSIZE 512
 #define USE_SIGTERM
+#define USE_SIGWINCH
 
 #ifdef __linux__
 #define OPTSTR "+d:einv"
@@ -28,6 +29,38 @@ static void sig_term (int signo)
     sigcaught = 1; 
 }
 #endif
+
+static int g_pty = -1; 
+static pid_t g_pid = -1; 
+
+#ifdef USE_SIGWINCH
+static void sig_winch (int signo)
+{
+    struct winsize sz; 
+    if (ioctl (STDIN_FILENO, TIOCGWINSZ, (char *)&sz) < 0)
+    {
+        syslog (LOG_INFO, "TIOCGWINSZ failed\n"); 
+        return; 
+    }
+
+    syslog (LOG_INFO, "SIGWINCH: %d, %d\n", sz.ws_row, sz.ws_col); 
+    if (g_pty != -1 && g_pid != -1)
+    {
+        if (ioctl (g_pty, TIOCSWINSZ, (char *)&sz) < 0)
+        {
+            syslog (LOG_INFO, "TIOCSWINSZ failed\n"); 
+            return; 
+        }
+
+        syslog (LOG_INFO, "set pty win size ok\n"); 
+        //kill (g_pid, SIGWINCH); 
+        //syslog (LOG_INFO, "kill SIGWINCH ok\n"); 
+    }
+
+    signal (SIGWINCH, sig_winch); 
+}
+#endif
+
 
 void loop (int ptym, int ignoreeof, int verbose)
 {
@@ -97,11 +130,26 @@ void loop (int ptym, int ignoreeof, int verbose)
         syslog (LOG_INFO, "setup SIGTERM handler\n"); 
 #endif
 
+#ifdef USE_SIGWINCH
+    g_pty = ptym; 
+    if (signal (SIGWINCH, sig_winch) == SIG_ERR)
+    {
+        syslog (LOG_INFO, "signal for SIGWINCH failed\n"); 
+        return -1; 
+    }
+    else if (verbose)
+        syslog (LOG_INFO, "setup sig_winch ok\n"); 
+#endif
+
+
     for (;;) 
     {
         if ((nread = read (STDIN_FILENO, buf, BUFFSIZE)) < 0)
         {
-            syslog (LOG_INFO, "read error from stdin"); 
+            syslog (LOG_INFO, "read error %d from stdin", errno); 
+            if (errno == EINTR && !sigcaught)
+                continue; 
+
             break;
         }
         else if (nread == 0)
@@ -276,6 +324,7 @@ int main (int argc, char *argv[])
     // parent
     //printf ("in parent\n"); 
     //syslog (LOG_INFO, "verbose = %d\n", verbose); 
+    g_pid = pid; 
     if (verbose) 
     {
         syslog (LOG_INFO, "slave name = %s\n", slave_name); 
