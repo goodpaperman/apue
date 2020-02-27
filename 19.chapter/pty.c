@@ -10,6 +10,7 @@
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
+#include <sys/socket.h>
 
 #define BUFFSIZE 512
 #define USE_SIGTERM
@@ -212,6 +213,42 @@ static void set_noecho (int fd)
     }
 }
 
+static void do_driver (char *driver)
+{
+    pid_t child; 
+    int pipe[2]; 
+    if (socketpair (AF_UNIX, SOCK_STREAM, 0, pipe) < 0)
+        err_sys ("can't create stream pipe"); 
+
+    if ((child = fork ()) < 0) 
+        err_sys ("fork error"); 
+    else if (child == 0)
+    {
+        close (pipe[1]); 
+        if (dup2 (pipe[0], STDIN_FILENO) != STDIN_FILENO)
+            err_sys ("dup2 error to stdin"); 
+        if (dup2 (pipe[0], STDOUT_FILENO) != STDOUT_FILENO)
+            err_sys ("dup2 error to stdout"); 
+        if (pipe[0] != STDIN_FILENO && pipe[0] != STDOUT_FILENO)
+            close (pipe[0]); 
+
+        execlp (driver, driver, (char *)0); 
+        err_sys ("execlp error for: %s", driver); 
+    }
+
+    close (pipe[0]); 
+    if (dup2 (pipe[1], STDIN_FILENO) != STDIN_FILENO)
+        err_sys ("dup2 error to stdin"); 
+    if (dup2 (pipe[1], STDOUT_FILENO) != STDOUT_FILENO)
+        err_sys ("dup2 error to stdout"); 
+    if (pipe[1] != STDIN_FILENO && pipe[1] != STDOUT_FILENO)
+        close(pipe[1]); 
+
+    // after do_driver, 
+    // we read from driver output; 
+    //    write to driver input.
+}
+
 int main (int argc, char *argv[])
 {
     int fdm, c, ignoreeof, interactive, noecho, verbose; 
@@ -349,7 +386,7 @@ int main (int argc, char *argv[])
             syslog (LOG_INFO, "register tty_atexit ok\n"); 
     }
 
-#if 0
+#if 1
     if (driver)
         do_driver (driver); 
 #endif
