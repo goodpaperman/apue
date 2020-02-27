@@ -1,4 +1,16 @@
-all: pty slowout
+all: pty slowout add2 padd2
+
+padd2: padd2.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+padd2.o: ../15.chapter/padd2.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -DUSE_PTY
+
+add2: add2.o apue.o 
+	gcc -Wall -g $^ -o $@ -lpthread
+
+add2.o: ../15.chapter/add3.c ../apue.h
+	gcc -Wall -g -c $< -o $@ 
 
 slowout: slowout.c 
 	gcc -Wall -g $^ -o $@
@@ -23,7 +35,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp pty slowout
+	-rm -f *.o core.* *.log *~ *.swp pty slowout add2 padd2
 	@echo "end clean"
 
 .PHONY: clean

@@ -4,7 +4,7 @@ int main (void)
 {
     int int1, int2; 
     char line[MAXLINE]; 
-#if 1
+#ifdef SETVBUF
     // to see if parent can set them 
     if (setvbuf (stdin, NULL, _IOLBF, 0) != 0)
         err_sys ("setvbuf error"); 

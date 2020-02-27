@@ -82,7 +82,7 @@ add3: add3.o apue.o
 	gcc -Wall -g $^ -o $@ -lpthread
 
 add3.o: add3.c ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -DSETVBUF
 
 add2: add2.o apue.o 
 	gcc -Wall -g $^ -o $@ -lpthread

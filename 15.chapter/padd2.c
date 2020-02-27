@@ -84,8 +84,14 @@ int main (int argc, char *argv[])
             err_sys ("setvbuf error"); 
         if (setvbuf (stdout, NULL, _IOLBF, 0) != 0)
             err_sys ("setvbuf error"); 
-#endif 
+#endif
+
+#ifdef USE_PTY 
+        if (execl ("./pty", "pty", "-e", argv[1], (char *)0) < 0)
+        //if (execl ("./pty", "pty", argv[1], (char *)0) < 0)
+#else
         if (execl (argv[1], "add2", (char *)0) < 0)
+#endif
             err_sys ("execl error"); 
     }
 

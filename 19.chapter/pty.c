@@ -203,7 +203,7 @@ static void set_noecho (int fd)
     }
 
     term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL); 
-    term.c_oflag &= ~(ONLCR); 
+    //term.c_oflag &= ~(ONLCR); 
 
     if (tcsetattr (fd, TCSANOW, &term) < 0) {
         //err_sys ("tcsetattr error"); 
