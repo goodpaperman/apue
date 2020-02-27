@@ -1,8 +1,7 @@
 #! /usr/bin/expect -f
 set timeout 30
-while (1)
-{
-    puts "start pushing git"
+for {set i 0} {$i<=10} {incr i} {
+    puts "start pushing git $i"
     spawn git push 
     expect "Everything up-to-date" { puts "pushing ok"; exit }
 }
