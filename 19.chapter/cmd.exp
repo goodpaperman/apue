@@ -1,0 +1,5 @@
+#! /usr/bin/expect -f
+set timeout 3
+spawn telnet 127.0.0.1 10028
+expect "password:" { send "haihai107" }
+interact
