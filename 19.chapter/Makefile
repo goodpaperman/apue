@@ -19,7 +19,7 @@ pty: pty.o tty.o apue.o pty_fun.o
 	gcc -Wall -g $^ -o $@
 
 pty.o: pty.c ../tty.h ../pty_fun.h ../apue.h
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -DUSE_POLL
 
 tty.o: ../tty.c ../tty.h ../apue.h 
 	gcc -Wall -g -c $< -o $@

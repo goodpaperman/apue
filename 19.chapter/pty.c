@@ -9,12 +9,14 @@
 #include "../tty.h"
 #include <termios.h>
 #include <errno.h>
+#include <poll.h>
 #include <syslog.h>
 #include <sys/socket.h>
 
 #define BUFFSIZE 512
 #define USE_SIGTERM
 #define USE_SIGWINCH
+
 
 #ifdef __linux__
 #define OPTSTR "+d:einv"
@@ -63,6 +65,117 @@ static void sig_winch (int signo)
 #endif
 
 
+#ifdef USE_POLL
+
+void loop (int ptym, int ignoreeof, int verbose)
+{
+    int ret = 0; 
+    char line[BUFFSIZE]; 
+	struct pollfd pfd[2]; 
+	pfd[0].fd = STDIN_FILENO; 
+	pfd[0].events = POLLIN;
+	pfd[1].fd = ptym; 
+	pfd[1].events = POLLIN; //| POLLHUP;   
+#  ifdef USE_SIGWINCH
+    g_pty = ptym; 
+    if (signal (SIGWINCH, sig_winch) == SIG_ERR)
+    {
+        syslog (LOG_INFO, "signal for SIGWINCH failed\n"); 
+        return; 
+    }
+    else if (verbose)
+        syslog (LOG_INFO, "setup sig_winch ok\n"); 
+#  endif
+
+    while (1) { 
+	    ret = poll (pfd, 2, -1); 
+	    if (ret == -1) { 
+            syslog (LOG_INFO, "poll error"); 
+            break; 
+        } else if (ret == 0){ 
+            if (verbose)
+		        syslog (LOG_INFO, "poll over but no event\n"); 
+
+            continue; 
+        }  
+
+        if (pfd[0].revents & POLLIN) { 
+            if (verbose)
+                syslog (LOG_INFO, "poll stdin\n"); 
+
+            // has input, redirect to pipe
+            ret = read (STDIN_FILENO, line, sizeof (line)); 
+            if (ret < 0) {
+                syslog (LOG_INFO, "read stdin error"); 
+                if (errno == EINTR && !sigcaught)
+                    continue; 
+
+                break;  
+            }
+            else if (ret == 0) { 
+                if (verbose)
+                    syslog (LOG_INFO, "read end\n"); 
+                break; 
+            }
+            else {
+                ret = write (ptym, line, ret); 
+                if (ret < 0)
+                {
+                    syslog (LOG_INFO, "write pipe error"); 
+                    break; 
+                }
+                else if (ret == 0) { 
+                    if (verbose)
+                        syslog (LOG_INFO, "write end\n"); 
+                    break; 
+                }
+                //else 
+                //    printf ("write pipe %d\n", ret); 
+            }
+        }
+
+        if (pfd[1].revents & POLLIN) { 
+            if (verbose)
+                syslog (LOG_INFO, "poll pty in\n"); 
+            // has output, redirect to stdout
+            ret = read (pfd[1].fd, line, sizeof (line)); 
+            if (ret < 0)
+            {
+                syslog (LOG_INFO, "read pty error"); 
+                break; 
+            }
+            else if (ret == 0) { 
+                if (verbose)
+                    syslog (LOG_INFO, "read end\n"); 
+                break; 
+            }
+            else { 
+                ret = write (STDOUT_FILENO, line, ret); 
+                if (ret < 0)
+                {
+                    syslog (LOG_INFO, "write stdout error"); 
+                    break; 
+                }
+                else if (ret == 0) { 
+                    if (verbose)
+                        syslog (LOG_INFO, "write end\n"); 
+                    break; 
+                }
+                //else { 
+                //    printf ("write %d\n", ret); 
+                //}
+            }
+        }
+
+        if (pfd[1].revents & POLLHUP) {
+            syslog (LOG_INFO, "poll pty hup\n"); 
+            break; 
+        }
+    }
+}
+
+#else // USE_POLL -> use fork
+
 void loop (int ptym, int ignoreeof, int verbose)
 {
     pid_t child; 
@@ -93,11 +206,11 @@ void loop (int ptym, int ignoreeof, int verbose)
             else if (verbose)
                 syslog (LOG_INFO, "read pty master %d\n", nread); 
 
-#if defined(__sun__) || defined(sun)
+#  if defined(__sun__) || defined(sun)
             if (write (STDOUT_FILENO, buf, nread) != nread) {
-#else
+#  else
             if (writen (STDOUT_FILENO, buf, nread) != nread) {
-#endif
+#  endif
                 //err_sys ("writen error to stdout"); 
                 syslog (LOG_INFO, "writen error to stdout"); 
                 exit (0); 
@@ -106,12 +219,12 @@ void loop (int ptym, int ignoreeof, int verbose)
                 syslog (LOG_INFO, "write stdout %d\n", nread); 
         }
 
-#ifdef USE_SIGTERM
+#  ifdef USE_SIGTERM
         if (verbose)
             syslog (LOG_INFO, "send SIGTERM to parent to notify our exit\n"); 
 
         kill (ppid, SIGTERM); 
-#endif
+#  endif
 
         exit (0); 
     }
@@ -121,26 +234,25 @@ void loop (int ptym, int ignoreeof, int verbose)
 
     // parent
     //printf ("in 2nd parent\n"); 
-#ifdef USE_SIGTERM
+#  ifdef USE_SIGTERM
     if (signal(SIGTERM, sig_term) == SIG_ERR) {
-        //err_sys ("signal error for SIGTERM"); 
-        syslog (LOG_INFO, "signal error for SIGTERM"); 
+        //err_sys ("signal error for SIGTERM"); syslog (LOG_INFO, "signal error for SIGTERM"); 
         exit (0); 
     }
     else if (verbose)
         syslog (LOG_INFO, "setup SIGTERM handler\n"); 
-#endif
+#  endif
 
-#ifdef USE_SIGWINCH
+#  ifdef USE_SIGWINCH
     g_pty = ptym; 
     if (signal (SIGWINCH, sig_winch) == SIG_ERR)
     {
         syslog (LOG_INFO, "signal for SIGWINCH failed\n"); 
-        return -1; 
+        return; 
     }
     else if (verbose)
         syslog (LOG_INFO, "setup sig_winch ok\n"); 
-#endif
+#  endif
 
 
     for (;;) 
@@ -163,11 +275,11 @@ void loop (int ptym, int ignoreeof, int verbose)
         else if (verbose)
             syslog (LOG_INFO, "read %d from stdin\n", nread); 
 
-#if defined(__sun__) || defined(sun)
+#  if defined(__sun__) || defined(sun)
         if (write (ptym, buf, nread) != nread) {
-#else
+#  else
         if (writen (ptym, buf, nread) != nread) {
-#endif
+#  endif
             //err_sys ("writen error to master pty"); 
             syslog (LOG_INFO, "writen error to master pty"); 
             exit (0); 
@@ -176,7 +288,7 @@ void loop (int ptym, int ignoreeof, int verbose)
             syslog (LOG_INFO, "write pty master %d ok\n", nread); 
     }
 
-#ifdef USE_SIGTERM
+#  ifdef USE_SIGTERM
     if (sigcaught == 0)
     {
         if (ignoreeof == 0)
@@ -191,8 +303,9 @@ void loop (int ptym, int ignoreeof, int verbose)
     }
     else if (verbose)
         syslog (LOG_INFO, "has caught SIGTERM, exit\n"); 
-#endif
+#  endif
 }
+#endif
 
 static void set_noecho (int fd)
 {
