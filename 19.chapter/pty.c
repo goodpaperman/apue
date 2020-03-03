@@ -263,7 +263,12 @@ void loop (int ptym, int ignoreeof, int verbose)
         if ((nread = read (STDIN_FILENO, buf, BUFFSIZE)) < 0)
         {
             syslog (LOG_INFO, "read error %d from stdin", errno); 
-            if (errno == EINTR)
+            if (errno == EINTR
+#  ifdef USE_SIGTERM
+                    && !sigcaught)
+#  else
+                    )
+#  endif
                 continue; 
 
             break;
