@@ -14,8 +14,8 @@
 #include <sys/socket.h>
 
 #define BUFFSIZE 512
-#define USE_SIGTERM
-#define USE_SIGWINCH
+//#define USE_SIGTERM
+//#define USE_SIGWINCH
 
 
 #ifdef __linux__
@@ -72,10 +72,6 @@ void loop (int ptym, int ignoreeof, int verbose)
     int ret = 0; 
     char line[BUFFSIZE]; 
 	struct pollfd pfd[2]; 
-	pfd[0].fd = STDIN_FILENO; 
-	pfd[0].events = POLLIN;
-	pfd[1].fd = ptym; 
-	pfd[1].events = POLLIN; //| POLLHUP;   
 #  ifdef USE_SIGWINCH
     g_pty = ptym; 
     if (signal (SIGWINCH, sig_winch) == SIG_ERR)
@@ -88,6 +84,10 @@ void loop (int ptym, int ignoreeof, int verbose)
 #  endif
 
     while (1) { 
+	    pfd[0].fd = STDIN_FILENO; 
+	    pfd[0].events = POLLIN;
+	    pfd[1].fd = ptym; 
+	    pfd[1].events = POLLIN; //| POLLHUP;   
 	    ret = poll (pfd, 2, -1); 
 	    if (ret == -1) { 
             syslog (LOG_INFO, "poll error"); 
@@ -107,7 +107,7 @@ void loop (int ptym, int ignoreeof, int verbose)
             ret = read (STDIN_FILENO, line, sizeof (line)); 
             if (ret < 0) {
                 syslog (LOG_INFO, "read stdin error"); 
-                if (errno == EINTR && !sigcaught)
+                if (errno == EINTR)
                     continue; 
 
                 break;  
@@ -172,6 +172,9 @@ void loop (int ptym, int ignoreeof, int verbose)
             break; 
         }
     }
+
+    if (verbose)
+        syslog (LOG_INFO, "loop break\n"); 
 }
 
 #else // USE_POLL -> use fork
@@ -260,7 +263,7 @@ void loop (int ptym, int ignoreeof, int verbose)
         if ((nread = read (STDIN_FILENO, buf, BUFFSIZE)) < 0)
         {
             syslog (LOG_INFO, "read error %d from stdin", errno); 
-            if (errno == EINTR && !sigcaught)
+            if (errno == EINTR)
                 continue; 
 
             break;

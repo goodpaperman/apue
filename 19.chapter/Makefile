@@ -20,6 +20,7 @@ pty: pty.o tty.o apue.o pty_fun.o
 
 pty.o: pty.c ../tty.h ../pty_fun.h ../apue.h
 	gcc -Wall -g -c $< -o $@ -DUSE_POLL
+#gcc -Wall -g -c $< -o $@ -DUSE_SIGTERM
 
 tty.o: ../tty.c ../tty.h ../apue.h 
 	gcc -Wall -g -c $< -o $@
