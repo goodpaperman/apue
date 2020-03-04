@@ -1,7 +1,10 @@
 #ifndef __APUE_DB_H__
 #define __APUE_DB_H__
 
-typedef DBHANDLE void*
+typedef void* DBHANDLE;
+#define DB_INSERT 1
+#define DB_REPLACE 2
+#define DB_STORE 3
 
 DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/); 
 void db_close (DBHANDLE db); 
