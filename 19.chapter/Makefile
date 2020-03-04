@@ -19,8 +19,8 @@ pty: pty.o tty.o apue.o pty_fun.o
 	gcc -Wall -g $^ -o $@
 
 pty.o: pty.c ../tty.h ../pty_fun.h ../apue.h
-	gcc -Wall -g -c $< -o $@ -DUSE_POLL
-#gcc -Wall -g -c $< -o $@ -DUSE_SIGTERM
+	gcc -Wall -g -c $< -o $@ -DUSE_POLL -DUSE_SIGWINCH
+#gcc -Wall -g -c $< -o $@ -DUSE_SIGTERM -DUSE_SIGWINCH
 
 tty.o: ../tty.c ../tty.h ../apue.h 
 	gcc -Wall -g -c $< -o $@

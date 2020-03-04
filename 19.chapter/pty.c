@@ -83,13 +83,20 @@ void loop (int ptym, int ignoreeof, int verbose)
         syslog (LOG_INFO, "setup sig_winch ok\n"); 
 #  endif
 
+    int stdin_break = 0; 
     while (1) { 
-	    pfd[0].fd = STDIN_FILENO; 
+	    pfd[0].fd = stdin_break ? -1 : STDIN_FILENO; 
 	    pfd[0].events = POLLIN;
 	    pfd[1].fd = ptym; 
 	    pfd[1].events = POLLIN; //| POLLHUP;   
 	    ret = poll (pfd, 2, -1); 
 	    if (ret == -1) { 
+            if (errno == EINTR)
+            {
+                syslog (LOG_INFO, "poll breaked by signal"); 
+                continue; 
+            }
+
             syslog (LOG_INFO, "poll error"); 
             break; 
         } else if (ret == 0){ 
@@ -110,11 +117,24 @@ void loop (int ptym, int ignoreeof, int verbose)
                 if (errno == EINTR)
                     continue; 
 
+                if (ignoreeof)
+                {
+                    stdin_break = 1; 
+                    continue; 
+                }
+
                 break;  
             }
             else if (ret == 0) { 
                 if (verbose)
                     syslog (LOG_INFO, "read end\n"); 
+
+                if (ignoreeof)
+                {
+                    stdin_break = 1; 
+                    continue; 
+                }
+
                 break; 
             }
             else {
