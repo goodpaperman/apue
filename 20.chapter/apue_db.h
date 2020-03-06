@@ -8,13 +8,10 @@ typedef void* DBHANDLE;
 #define DB_REPLACE 2
 #define DB_STORE 3
 
-#define IDX_BUCKET 10
-#define IDX_ADDR 4
-
 #define IDXLEN_MIN 6
-#define IDXLEN_MAX 1024
+#define IDXLEN_MAX 1024 // single index can not exceed this size
 #define DATLEN_MIN 2
-#define DATLEN_MAX 1024
+#define DATLEN_MAX 1024 // single data can not exceed this size
 
 DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/); 
 void db_close (DBHANDLE db); 
