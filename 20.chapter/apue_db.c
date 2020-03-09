@@ -30,16 +30,16 @@ typedef struct {
     DBHASH nhash;  // NHASH_DEF: hash size
 
     // for current index & date
-    char *idxbuf; 
+    char *idxbuf;  // key in current index (for searching in a single hash chain)
     char *datbuf; 
     off_t idxoff;  
     size_t idxlen; 
-    off_t datoff; 
-    size_t datlen; 
+    off_t datoff; // data offset in current index
+    size_t datlen; // data length in current index
     off_t ptrval; //
-    off_t ptroff;  // 
-    off_t chainoff;  // field 1
-    off_t hashoff;  // HASH_OFF: hash offset in index file
+    off_t ptroff;  // previous index node position (for delete)
+    off_t chainoff;  // root element position for this key in hash table
+    off_t hashoff;  // HASH_OFF: hash table start postion in index file
 
     // for staticstic
     COUNT cnt_delok; 
@@ -173,9 +173,72 @@ void db_close (DBHANDLE db)
     _db_free ((DB *)db); 
 }
 
-char* db_fetch (DBHANDLE db, char *key)
+static DBHASH _db_hash (DB *db, const char *key)
 {
-    return 0; 
+    DBHASH hval = 0; 
+    char c; 
+    int i; 
+    for (i=1; (c = *key++) != 0; i ++)
+        hval += c * i; 
+
+    return hval % db->nhash; 
+}
+
+static off_t _db_readptr (DB *db, off_t offset)
+{
+    char asciiptr [PTR_SZ + 1]; 
+    if (lseek (db->idxfd, offset, SEEK_SET) == -1)
+        err_dump ("_db_readptr: lseek error to ptr field"); 
+    if (read (db->idxfd, asciiptr, PTR_SZ) != PTR_SZ)
+        err_dump ("_db_readptr: read error of ptr field"); 
+
+    asciiptr [PTR_SZ] = 0; 
+    return atoi (asciiptr); 
+}
+
+static int _db_find_and_lock (DB *db, const char *key, int writelock)
+{
+    off_t offset, nextoffset; 
+    db->chainoff = (_db_hash (db, key) * PTR_SZ) + db->hashoff; 
+    db->ptroff = db->chainoff; 
+
+    if (writelock) {
+        if (writew_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+            err_dump ("_db_find_and_lock: writew_lock error"); 
+    } else { 
+        if (readw_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+            err_dump ("_db_find_and_lock: readw_lock error"); 
+    }
+
+    offset = _db_readptr (db, db->ptroff); 
+    while (offset != 0) {
+        nextoffset = _db_readidx (db, offset); 
+        if (strcmp (db->idxbuf, key) == 0)
+            break; 
+
+        db->ptroff = offset; 
+        offset = nextoffset; 
+    }
+
+    return offset == 0 ? -1 : 0; 
+}
+
+char* db_fetch (DBHANDLE h, char *key)
+{
+    DB *db =  (DB*)h; 
+    char *ptr; 
+    if (_db_find_and_lock (db, key, 0) < 0) { 
+        ptr = NULL; 
+        db->cnt_fetcherr ++; 
+    } else { 
+        ptr = _db_readdat (db); 
+        db->cnt_fetchok ++; 
+    }
+
+    if (un_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+        err_dump ("db_fetch: un_lock error"); 
+
+    return ptr; 
 }
 
 int db_store (DBHANDLE db, const char *key, const char *data, int flag)
