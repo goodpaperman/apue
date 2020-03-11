@@ -30,15 +30,15 @@ typedef struct {
     DBHASH nhash;  // NHASH_DEF: hash size
 
     // for current index & date
-    char *idxbuf;  // key in current index (for searching in a single hash chain)
+    char *idxbuf;  // the whole index content 
     char *datbuf; 
-    off_t idxoff;  
-    size_t idxlen; 
-    off_t datoff; // data offset in current index
-    size_t datlen; // data length in current index
-    off_t ptrval; //
-    off_t ptroff;  // previous index node position (for delete)
-    off_t chainoff;  // root element position for this key in hash table
+    off_t idxoff;  // index node position in file
+    size_t idxlen; // length of this index node
+    off_t datoff; // corresponding data position in file for this index
+    size_t datlen; // corresponding data length for this index
+    off_t ptrval; // next index node position in the hash chain
+    off_t ptroff;  // previous index node position (for delete. and previous of first index node in the chain is the 'chainoff', see below)
+    off_t chainoff;  // root element position for this index in hash table
     off_t hashoff;  // HASH_OFF: hash table start postion in index file
 
     // for staticstic
@@ -196,6 +196,60 @@ static off_t _db_readptr (DB *db, off_t offset)
     return atoi (asciiptr); 
 }
 
+static off_t _db_readidx (DB *db, off_t offset)
+{
+    ssize_t i; 
+    char *ptr1, *ptr2; 
+    char asciiptr [PTR_SZ+1], asciilen [IDXLEN_SZ+1]; 
+    struct iovec iov[2]; 
+
+    if ((db->idxoff = lseek (db->idxfd, offset, offset == 0 ? SEEK_CUR : SEEK_SET)) == -1)
+        err_dump ("_db_readidx: lseek error"); 
+
+    iov[0].iov_base = asciiptr; 
+    iov[0].iov_len = PTR_SZ; 
+    iov[1].iov_base = asciilen; 
+    iov[1].iov_len = IDXLEN_SZ; 
+    if ((i = readv (db->idxfd, &iov[0], 2)) != PTR_SZ + IDXLEN_SZ) {
+        if (i == 0 && offset == 0)
+            return -1; 
+
+        err_dump ("_db_readidx: readv error of index record"); 
+    }
+
+    asciiptr [PTR_SZ] = 0; 
+    db->ptrval = atol (asciiptr); 
+    asciilen [IDXLEN_SZ] = 0; 
+    if ((db->idxlen = atoi (asciilen)) < IDXLEN_MIN ||
+            db->idxlen > IDXLEN_MAX)
+        err_dump ("_db_readidx: invalid length"); 
+
+    if ((i = read (db->idxfd, db->idxbuf, db->idxlen)) != db->idxlen)
+        err_dump ("_db_readidx: read error of index record"); 
+    if (db->idxbuf[db->idxlen-1] != NEWLINE)
+        err_dump ("_db_readidx: missing newline"); 
+    db->idxbuf[db->idxlen-1] = 0; 
+
+    if ((ptr1 = strchr (db->idxbuf, SEP)) == NULL)
+        err_dump ("_db_readidx: missing first separator"); 
+
+    *ptr1 ++ = 0; 
+    if ((ptr2 = strchr (ptr1, SEP)) == NULL)
+        err_dump ("_db_readidx: missing second separator"); 
+
+    *ptr2 ++ = 0; 
+    if (strchr (ptr2, SEP) != NULL)
+        err_dump ("_db_readidx: too many separators"); 
+
+    if ((db->datoff = atol (ptr1)) < 0)
+        err_dump ("_db_readidx: starting offset < 0"); 
+    if ((db->datlen = atol (ptr2)) <= 0 ||
+            db->datlen > DATLEN_MAX)
+        err_dump ("_db_readidx: invalid length"); 
+
+    return db->ptrval; 
+}
+
 static int _db_find_and_lock (DB *db, const char *key, int writelock)
 {
     off_t offset, nextoffset; 
@@ -223,6 +277,19 @@ static int _db_find_and_lock (DB *db, const char *key, int writelock)
     return offset == 0 ? -1 : 0; 
 }
 
+static char* _db_readdat (DB *db)
+{
+    if (lseek (db->datfd, db->datoff, SEEK_SET) == -1)
+        err_dump ("_db_readdat: lseek error"); 
+    if (read (db->datfd, db->datbuf, db->datlen) != db->datlen)
+        err_dump ("_db_readdat: read error"); 
+    if (db->datbuf [db->datlen-1] != NEWLINE)
+        err_dump ("_db_readdat: missing newline"); 
+
+    db->datbuf[db->datlen-1] = 0; 
+    return db->datbuf; 
+}
+
 char* db_fetch (DBHANDLE h, char *key)
 {
     DB *db =  (DB*)h; 
@@ -246,8 +313,9 @@ int db_store (DBHANDLE db, const char *key, const char *data, int flag)
     return -1; 
 }
 
-int db_delete (DBHANDLE db, const char *key)
+int db_delete (DBHANDLE h, const char *key)
 {
+    DB *db = (DB *)h; 
     return -1; 
 }
 
