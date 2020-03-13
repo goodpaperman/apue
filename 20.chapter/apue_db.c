@@ -342,17 +342,18 @@ static void _db_writeidx (DB *db, const char *key, off_t offset, int whence, off
     db->ptrval = ptrval; 
     if (ptrval < 0 || ptrval > PTR_MAX)
         err_quit ("_db_writeidx: invalid ptr: %d", ptrval); 
+
     if (sizeof (off_t) == sizeof (long long))
         fmt = "%s%c%lld%c%d\n"; 
     else 
-        fmt = "5s%c%ld%c%d\n"; 
+        fmt = "%s%c%ld%c%d\n"; 
 
     sprintf (db->idxbuf, fmt, key, SEP, db->datoff, SEP, db->datlen); 
     if ((len = strlen (db->idxbuf)) < IDXLEN_MIN 
             || len > IDXLEN_MAX)
         err_dump ("_db_writeidx: invalid length"); 
-    sprintf (asciiptrlen, "%*ld%*d", PTR_SZ, ptrval, IDXLEN_SZ, len); 
 
+    sprintf (asciiptrlen, "%*ld%*d", PTR_SZ, ptrval, IDXLEN_SZ, len); 
     if (whence == SEEK_END)
         if (writew_lock (db->idxfd, ((db->nhash+1) * PTR_SZ) + 1, SEEK_SET, 0) < 0)
             err_dump ("_db_writeidx: writew_lock error"); 
@@ -430,9 +431,103 @@ int db_delete (DBHANDLE h, const char *key)
     return -1; 
 }
 
-int db_store (DBHANDLE db, const char *key, const char *data, int flag)
+static int _db_findfree (DB *db, int keylen, int datlen)
 {
-    return -1; 
+    int rc; 
+    off_t offset, nextoffset, saveoffset; 
+    if (writew_lock (db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+        err_dump ("_db_findfree: writew_lock error"); 
+
+    saveoffset = FREE_OFF; 
+    offset = _db_readptr (db, saveoffset); 
+    while (offset != 0) { 
+        nextoffset = _db_readidx (db, offset); 
+        // too strict ?
+        if (strlen (db->idxbuf) == keylen
+                && db->datlen == datlen)
+            break; 
+
+        saveoffset = offset; 
+        offset = nextoffset; 
+    }
+
+    if (offset == 0)
+        rc = -1; 
+    else  {
+        // remove this empty node from free list
+        _db_writeptr (db, saveoffset, db->ptrval); 
+        rc = 0; 
+    }
+
+    if (un_lock (db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+        err_dump ("_db_findfree: un_lock error"); 
+
+    return rc; 
+}
+
+int db_store (DBHANDLE h, const char *key, const char *data, int flag)
+{
+    DB *db = (DB *)h; 
+    int rc, keylen, datlen; 
+    off_t ptrval; 
+    if (flag != DB_INSERT && flag != DB_REPLACE && flag != DB_STORE) {
+        errno = EINVAL; 
+        return -1; 
+    }
+
+    keylen = strlen (key); 
+    datlen = strlen (data) + 1; 
+    if (datlen < DATLEN_MIN || datlen > DATLEN_MAX)
+        err_dump ("db_store: invalid data length"); 
+
+    if (_db_find_and_lock (db, key, 1) < 0) { 
+        if (flag == DB_REPLACE) { 
+            rc = -1; 
+            db->cnt_storerr ++; 
+            errno = ENOENT; 
+            goto doreturn; 
+        }
+
+        ptrval = _db_readptr (db, db->chainoff); 
+        if (_db_findfree (db, keylen, datlen) < 0) {
+            _db_writedat (db, data, 0, SEEK_END); 
+            _db_writeidx (db, key, 0, SEEK_END, ptrval); 
+            _db_writeptr (db, db->chainoff, db->idxoff); 
+            db->cnt_stor_ins_app ++; 
+        } else {
+            _db_writedat (db, data, db->datoff, SEEK_SET); 
+            // insert on to chain head (ptrval)
+            _db_writeidx (db, key, db->idxoff, SEEK_SET, ptrval); 
+            _db_writeptr (db, db->chainoff, db->idxoff); 
+            db->cnt_stor_ins_ru ++; 
+        }
+    } else {
+        if (flag == DB_INSERT) {
+            rc = 1; 
+            db->cnt_storerr ++; 
+            goto doreturn; 
+        }
+
+        if (datlen != db->datlen) {
+            _db_dodelete (db); 
+            // _db_dodelete will mass db->ptrval
+            ptrval = _db_readptr (db, db->chainoff); 
+            _db_writedat (db, data, 0, SEEK_END); 
+            _db_writeidx (db, key, 0, SEEK_END, ptrval); 
+            _db_writeptr (db, db->chainoff, db->idxoff); 
+            db->cnt_stor_rep_app ++; 
+        } else {
+            _db_writedat (db, data, db->datoff, SEEK_SET); 
+            db->cnt_stor_rep_ow ++; 
+        }
+    }
+
+    rc = 0; 
+doreturn:
+    if (un_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+        err_dump ("db_store: un_lock error"); 
+
+    return rc; 
 }
 
 void db_rewind (DBHANDLE db)
