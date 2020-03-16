@@ -530,8 +530,13 @@ doreturn:
     return rc; 
 }
 
-void db_rewind (DBHANDLE db)
+void db_rewind (DBHANDLE h)
 {
+    DB *db = (DB *)h; 
+    off_t offset; 
+    offset = (db->nhash + 1) * PTR_SZ; 
+    if ((db->idxoff = lseek (db->idxfd, offset+1, SEEK_SET)) == -1)
+        err_dump ("db_rewind: lseek error"); 
 }
 
 char *db_nextrec (DBHANDLE db, char *key)
