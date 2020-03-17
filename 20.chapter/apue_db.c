@@ -428,7 +428,7 @@ int db_delete (DBHANDLE h, const char *key)
     if (un_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
         err_dump ("db_delete: un_lock error"); 
 
-    return -1; 
+    return rc; 
 }
 
 static int _db_findfree (DB *db, int keylen, int datlen)
