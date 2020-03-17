@@ -1,4 +1,10 @@
-all: db_demo
+all: db_demo db
+
+db: db.o apue.o apue_db.o
+	gcc -Wall -g $^ -o $@
+
+db.o: db.c apue_db.h ../apue.h
+	gcc -Wall -g -c $< -o $@ 
 
 db_demo: db_demo.o apue.o apue_db.o
 	gcc -Wall -g $^ -o $@
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp db_demo
+	-rm -f *.o core.* *.log *~ *.swp db_demo db
 	@echo "end clean"
 
 .PHONY: clean
