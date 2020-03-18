@@ -8,8 +8,8 @@ do
   key=${array[0]}
   data=${array[1]}
   echo "$key -> $data"
-  ./db db5 insert $key $data
-done <demo2
+  ./db db6 insert $key $data
+done <demo3
 
 IFS="$OLD_IFS"
      
