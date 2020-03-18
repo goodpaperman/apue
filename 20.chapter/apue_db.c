@@ -572,3 +572,73 @@ doreturn:
     return ptr; 
 }
 
+int _db_walk_free (DB* db)
+{
+    int total = 0; 
+    off_t offset, nextoffset, saveoffset; 
+    if (readw_lock (db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+        err_dump ("_db_walk_free: readw_lock error"); 
+
+    printf ("free nodes: \n"); 
+    saveoffset = FREE_OFF; 
+    offset = _db_readptr (db, saveoffset); 
+    while (offset != 0) { 
+        nextoffset = _db_readidx (db, offset); 
+        printf ("    %-5d key %d, dat %d\n", ++total, strlen (db->idxbuf), db->datlen); 
+
+        saveoffset = offset; 
+        offset = nextoffset; 
+    }
+
+    if (un_lock (db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
+        err_dump ("_db_findfree: un_lock error"); 
+
+    return total; 
+}
+
+int _db_walk_hash (DB* db, int n)
+{
+    int total = 0; 
+    off_t offset, nextoffset; 
+    db->chainoff = (n * PTR_SZ) + db->hashoff; 
+    db->ptroff = db->chainoff; 
+
+    printf ("  hash[%d] nodes: \n", n); 
+    if (readw_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
+        err_dump ("_db_walk_hash: readw_lock error"); 
+
+    offset = _db_readptr (db, db->ptroff); 
+    while (offset != 0) {
+        nextoffset = _db_readidx (db, offset); 
+        printf ("    %-5d key %d, dat %d: %s\n", ++total, strlen (db->idxbuf), db->datlen, db->idxbuf); 
+
+        db->ptroff = offset; 
+        offset = nextoffset; 
+    }
+
+    return total; 
+}
+
+void db_walk (DBHANDLE h)
+{
+    DB* db = (DB *)h; 
+    int i; 
+    int cnt_total = 0; 
+    int cnt_hash[NHASH_DEF] = { 0 }; 
+    printf ("hash nodes: \n"); 
+    for (i=0; i<db->nhash; ++ i)
+        cnt_hash[i] = _db_walk_hash (db, i); 
+
+    int cnt_free = _db_walk_free(db); 
+    printf ("\n"); 
+    printf ("total free: %d\n", cnt_free); 
+    printf ("----------------------------------\n"); 
+    for (i=0; i<db->nhash; ++ i) {
+        printf ("    hash[%d]: %d\n", i+1, cnt_hash[i]); 
+        cnt_total += cnt_hash[i]; 
+    }
+
+    printf ("\n"); 
+    printf ("total index: %d\n", cnt_total); 
+}
+

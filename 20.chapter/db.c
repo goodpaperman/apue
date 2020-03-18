@@ -23,6 +23,7 @@ int main (int argc, char *argv[])
     char *data = NULL; 
     if (strcasecmp (action, "walk") == 0)
     {
+        // no extra param
     }
     else if (strcasecmp (action, "delete") == 0 
             || strcasecmp (action, "query") == 0)
@@ -51,7 +52,12 @@ int main (int argc, char *argv[])
 
     int ret = 0; 
     char *ptr = NULL; 
-    if (strcasecmp (action, "insert") == 0)
+    if (strcasecmp (action, "walk") == 0)
+    {
+        db_walk (db); 
+        ptr = (char *)1; 
+    }
+    else if (strcasecmp (action, "insert") == 0)
         ret = db_store (db, key, data, DB_STORE); 
     else if (strcasecmp (action, "delete") == 0)
         ret = db_delete (db, key); 
