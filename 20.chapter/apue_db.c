@@ -140,7 +140,7 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
         return NULL; 
     }
 
-    if ((oflag & (O_CREAT | O_TRUNC)) == (O_CREAT | O_TRUNC)) {
+    if ((oflag & (O_CREAT)) == (O_CREAT)) {
         if (writew_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
             err_dump ("db_open: writew_lock error"); 
 
@@ -488,6 +488,7 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
             goto doreturn; 
         }
 
+        rc = 0; 
         ptrval = _db_readptr (db, db->chainoff); 
         if (_db_findfree (db, keylen, datlen) < 0) {
             _db_writedat (db, data, 0, SEEK_END); 
@@ -503,11 +504,13 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
         }
     } else {
         if (flag == DB_INSERT) {
-            rc = 1; 
+            rc = -1; 
             db->cnt_storerr ++; 
+            errno = EEXIST; 
             goto doreturn; 
         }
 
+        rc = 1;  // cover old data
         if (datlen != db->datlen) {
             _db_dodelete (db); 
             // _db_dodelete will mass db->ptrval
@@ -522,7 +525,6 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
         }
     }
 
-    rc = 0; 
 doreturn:
     if (un_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
         err_dump ("db_store: un_lock error"); 
@@ -623,13 +625,13 @@ void db_walk (DBHANDLE h)
 {
     DB* db = (DB *)h; 
     int i; 
-    int cnt_total = 0; 
     int cnt_hash[NHASH_DEF] = { 0 }; 
     printf ("hash nodes: \n"); 
     for (i=0; i<db->nhash; ++ i)
         cnt_hash[i] = _db_walk_hash (db, i); 
 
     int cnt_free = _db_walk_free(db); 
+    int cnt_total = cnt_free; 
     printf ("\n"); 
     printf ("total free: %d\n", cnt_free); 
     printf ("----------------------------------\n"); 

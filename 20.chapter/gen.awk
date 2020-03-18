@@ -2,7 +2,7 @@
 BEGIN {
     WORDNUM = 1000
     for (i = 1; i <= WORDNUM; i++) {
-        printf("%s %s\n", randword(10), randword(50))
+        printf("%s %s\n", randword(randint(50)), randword(randint(500)))
     }
 }
 

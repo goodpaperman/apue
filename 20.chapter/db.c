@@ -2,6 +2,7 @@
 #include "apue_db.h"
 #include <fcntl.h>
 #include <strings.h>
+#include <errno.h>
 
 void Usage ()
 {
@@ -55,17 +56,29 @@ int main (int argc, char *argv[])
     if (strcasecmp (action, "walk") == 0)
     {
         db_walk (db); 
-        ptr = (char *)1; 
     }
     else if (strcasecmp (action, "insert") == 0)
+    {
         ret = db_store (db, key, data, DB_STORE); 
+        if (ret < 0)
+            fprintf (stderr, "insert %s.%s failed, errno %d\n", key, data, errno); 
+        else if (ret == 1)
+            fprintf (stderr, "insert %s.%s cover old data\n", key, data); 
+        else 
+            printf ("db %s '%s' code %d\n", action, key, ret); 
+    }
     else if (strcasecmp (action, "delete") == 0)
+    {
         ret = db_delete (db, key); 
+        if (ret < 0)
+            fprintf (stderr, "delete %s failed, errno %d\n", key, errno); 
+        else 
+            printf ("db %s '%s' code %d\n", action, key, ret); 
+    }
     else if (strcasecmp (action, "query") == 0)
     {
         ptr = db_fetch (db, key); 
         printf ("%s === %s\n", key, ptr); 
-        ptr = (char *)1; 
     }
     else  // walk
     {
@@ -79,11 +92,7 @@ int main (int argc, char *argv[])
         }
 
         printf ("walk done!\n"); 
-        ptr = (char *)1; 
     }
-
-    if (ptr == NULL)
-        printf ("db %s '%s' code %d\n", action, key, ret); 
 
     db_close (db); 
     return 0; 
