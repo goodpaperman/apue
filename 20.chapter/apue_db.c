@@ -496,6 +496,8 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
             _db_writeptr (db, db->chainoff, db->idxoff); 
             db->cnt_stor_ins_app ++; 
         } else {
+            fprintf (stderr, "find a free node with same key(%d) & data(%d) len for %s.%s, reuse it\n", 
+                    keylen, datlen, key, data); 
             _db_writedat (db, data, db->datoff, SEEK_SET); 
             // insert on to chain head (ptrval)
             _db_writeidx (db, key, db->idxoff, SEEK_SET, ptrval); 
@@ -512,6 +514,8 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
 
         rc = 1;  // cover old data
         if (datlen != db->datlen) {
+            fprintf (stderr, "data len mismatch, delete old key (%d %s) & data (%d %s)\n", 
+                    keylen, key, db->datlen, db->datbuf); 
             _db_dodelete (db); 
             // _db_dodelete will mass db->ptrval
             ptrval = _db_readptr (db, db->chainoff); 
@@ -520,6 +524,8 @@ int db_store (DBHANDLE h, const char *key, const char *data, int flag)
             _db_writeptr (db, db->chainoff, db->idxoff); 
             db->cnt_stor_rep_app ++; 
         } else {
+            fprintf (stderr, "cover old key (%d %s) with same data len, old data (%d %s)\n", 
+                    keylen, key, datlen, db->datbuf); 
             _db_writedat (db, data, db->datoff, SEEK_SET); 
             db->cnt_stor_rep_ow ++; 
         }
