@@ -97,5 +97,5 @@ int main (int argc, char *argv[])
     }
 
     db_close (db); 
-    return 0; 
+    return ret; 
 }
