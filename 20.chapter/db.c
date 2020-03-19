@@ -78,7 +78,9 @@ int main (int argc, char *argv[])
     else if (strcasecmp (action, "query") == 0)
     {
         ptr = db_fetch (db, key); 
-        printf ("%s === %s\n", key, ptr); 
+        //printf ("%s === %s\n", key, ptr); 
+        // only print data to allow assigned in shell script
+        printf ("%s\n", ptr); 
     }
     else  // walk
     {
