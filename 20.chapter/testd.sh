@@ -18,6 +18,7 @@ done <demo5
 
 ./db db5 walk
 echo "total failure: $n"
+./db db5 dump
 
 IFS="$OLD_IFS"
      

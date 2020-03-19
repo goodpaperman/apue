@@ -9,6 +9,7 @@ void Usage ()
     printf ("Usage: db filename insert key data\n"); 
     printf ("       db filename query key\n"); 
     printf ("       db filename delete key\n"); 
+    printf ("       db filename dump\n"); 
     printf ("       db filename walk\n"); 
     exit (-1); 
 }
@@ -22,7 +23,8 @@ int main (int argc, char *argv[])
     char *action = argv[2]; 
     char *key = NULL; 
     char *data = NULL; 
-    if (strcasecmp (action, "walk") == 0)
+    if (strcasecmp (action, "walk") == 0 
+            || strcasecmp (action, "dump") == 0)
     {
         // no extra param
     }
@@ -56,6 +58,19 @@ int main (int argc, char *argv[])
     if (strcasecmp (action, "walk") == 0)
     {
         db_walk (db); 
+    }
+    else if (strcasecmp (action, "dump") == 0)
+    {
+        int n = 0; 
+        char key[IDXLEN_MAX] = { 0 };
+        char *data = NULL; 
+        while ((data = db_nextrec (db, key)) != NULL)
+        {
+            n ++; 
+            printf ("%s --- %s\n", key, data); 
+        }
+
+        printf ("total %d\n", n); 
     }
     else if (strcasecmp (action, "insert") == 0)
     {
