@@ -17,7 +17,12 @@
 #define PTR_MAX 999999 // max file offset = 10 ** PTR_SZ - 1
 #define NHASH_DEF 137 // default hash table size
 #define FREE_OFF 0 // free list offset in index file
-#define HASH_OFF PTR_SZ // hash table offset in index file
+
+#ifdef HAS_HASH_SIZE
+#  define HASH_OFF (PTR_SZ*2) // 1 for free node; 1 for hash size
+#else
+#  define HASH_OFF (PTR_SZ)   // hash table offset in index file
+#endif
 
 typedef unsigned long DBHASH;  // hash value
 typedef unsigned long COUNT;  // unsigned counter
@@ -109,7 +114,7 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
     char asciiptr[PTR_SZ+1]; 
     // +1 for free list (we can do this because HASH_OFF == PTR_SZ)
     // +2 for newline & null
-    char hash[(NHASH_DEF + 1) * PTR_SZ + 2];
+    char hash[HASH_OFF + NHASH_DEF * PTR_SZ + 2];
     struct stat statbuf; 
     len = strlen (pathname); 
     if ((db = _db_alloc (len)) == NULL)
@@ -150,7 +155,7 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
         if (statbuf.st_size == 0) {
             sprintf (asciiptr, "%*d", PTR_SZ, 0); 
             hash[0] = 0;  // init string not free list, see +1 below
-            for (i=0; i<NHASH_DEF+1; ++i)
+            for (i=0; i<db->nhash+1; ++i)
                 strcat (hash, asciiptr); 
 
             strcat (hash, "\n"); 
@@ -355,7 +360,7 @@ static void _db_writeidx (DB *db, const char *key, off_t offset, int whence, off
 
     sprintf (asciiptrlen, "%*ld%*d", PTR_SZ, ptrval, IDXLEN_SZ, len); 
     if (whence == SEEK_END)
-        if (writew_lock (db->idxfd, ((db->nhash+1) * PTR_SZ) + 1, SEEK_SET, 0) < 0)
+        if (writew_lock (db->idxfd, db->hashoff + db->nhash * PTR_SZ + 1, SEEK_SET, 0) < 0)
             err_dump ("_db_writeidx: writew_lock error"); 
     
     if ((db->idxoff = lseek (db->idxfd, offset, whence)) == -1)
@@ -369,7 +374,7 @@ static void _db_writeidx (DB *db, const char *key, off_t offset, int whence, off
         err_dump ("_db_writeidx: writev error of index record"); 
 
     if (whence == SEEK_END)
-        if (un_lock (db->idxfd, ((db->nhash+1) * PTR_SZ) + 1, SEEK_SET, 0) < 0)
+        if (un_lock (db->idxfd, db->hashoff + db->nhash * PTR_SZ + 1, SEEK_SET, 0) < 0)
             err_dump ("_db_writeidx: un_lock error"); 
 }
 
@@ -542,7 +547,7 @@ void db_rewind (DBHANDLE h)
 {
     DB *db = (DB *)h; 
     off_t offset; 
-    offset = (db->nhash + 1) * PTR_SZ; 
+    offset = db->hashoff + db->nhash * PTR_SZ; 
     if ((db->idxoff = lseek (db->idxfd, offset+1, SEEK_SET)) == -1)
         err_dump ("db_rewind: lseek error"); 
 }
