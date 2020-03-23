@@ -18,7 +18,7 @@
 #define NHASH_DEF 137 // default hash table size
 #define FREE_OFF 0 // free list offset in index file
 
-#ifdef HAS_HASH_SIZE
+#ifdef HAS_HASHSIZE
 #  define HASH_OFF (PTR_SZ*2) // 1 for free node; 1 for hash size
 #else
 #  define HASH_OFF (PTR_SZ)   // hash table offset in index file
@@ -106,20 +106,21 @@ static void _db_free (DB *db)
     free (db); 
 }
 
+// open existing
+//db_open (path, oflag); 
+// open new
+//db_open (path, oflag, 0755, 1061);  
 DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
 {
     DB *db = NULL; 
     int len, mode; 
     size_t i; 
     char asciiptr[PTR_SZ+1]; 
-    // +1 for free list (we can do this because HASH_OFF == PTR_SZ)
-    // +2 for newline & null
-    char hash[HASH_OFF + NHASH_DEF * PTR_SZ + 2];
     struct stat statbuf; 
     len = strlen (pathname); 
     if ((db = _db_alloc (len)) == NULL)
         err_dump ("db_open: _db_alloc error for DB"); 
-    
+
     db->nhash = NHASH_DEF; 
     db->hashoff = HASH_OFF; 
     strcpy (db->name, pathname); 
@@ -129,6 +130,11 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
         va_list ap; 
         va_start (ap, oflag); 
         mode = va_arg (ap, int); 
+#ifdef HAS_HASHSIZE
+        db->nhash = va_arg (ap, int); 
+        if (db->nhash <= 1)
+            err_dump ("db_open: invalid nhash value %d", db->nhash); 
+#endif
         va_end (ap); 
 
         db->idxfd = open (db->name, oflag, mode); 
@@ -152,21 +158,63 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
         if (fstat (db->idxfd, &statbuf) < 0)
             err_sys ("db_open: fstat error"); 
 
+        // not exist, try initialize it !
         if (statbuf.st_size == 0) {
+            // +1 for free list (we can do this because HASH_OFF == PTR_SZ)
+            // +2 for newline & null
+            char *hash = (char *) malloc (HASH_OFF + db->nhash * PTR_SZ + 2);
             sprintf (asciiptr, "%*d", PTR_SZ, 0); 
             hash[0] = 0;  // init string not free list, see +1 below
+#ifdef HAS_HASHSIZE
+            // 1st: free node
+            strcat (hash, asciiptr); 
+            // 2nd: hash size
+            sprintf (asciiptr, "%*d", PTR_SZ, db->nhash); 
+            strcat (hash, asciiptr); 
+            // 3rd: every hash node
+            sprintf (asciiptr, "%*d", PTR_SZ, 0); 
+            for (i=0; i<db->nhash; ++i)
+                strcat (hash, asciiptr); 
+#else
+            // free node & hash nodes
             for (i=0; i<db->nhash+1; ++i)
                 strcat (hash, asciiptr); 
+#endif
 
             strcat (hash, "\n"); 
             i = strlen (hash); 
             if (write (db->idxfd, hash, i) != i)
                 err_dump ("db_open: index file init write error"); 
-        }
 
-        if (un_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
-            err_dump ("db_open: un_lock error"); 
+            free (hash); 
+        } 
+#ifdef HAS_HASHSIZE
+        else { 
+            // has initialized, just read it
+            if (readw_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
+                err_dump ("db_open: readw_lock error"); 
+
+            db->nhash = _db_readptr(db, HASH_OFF); 
+            if (db->nhash <= 1)
+                err_dump ("db_open: invalid nhash value %d", db->nhash); 
+            else 
+                printf ("got hash size %d\n", db->nhash); 
+        }
+    } else { 
+        // has initialized, just read it
+        if (readw_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
+            err_dump ("db_open: readw_lock error"); 
+
+        db->nhash = _db_readptr(db, HASH_OFF); 
+        if (db->nhash <= 1)
+            err_dump ("db_open: invalid nhash value %d", db->nhash); 
+        else 
+            printf ("got hash size %d\n", db->nhash); 
+#endif
     }
+
+    if (un_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
+        err_dump ("db_open: un_lock error"); 
 
     // rewind to begin to prepare for read
     db_rewind (db); 

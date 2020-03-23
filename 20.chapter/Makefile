@@ -1,4 +1,10 @@
-all: db_demo db
+all: db_demo db dbh
+
+dbh: dbh.o apue.o apue_db.o
+	gcc -Wall -g $^ -o $@
+
+dbh.o: db.c apue_db.h ../apue.h
+	gcc -Wall -g -c $< -o $@ -DHAS_HASHSIZE
 
 db: db.o apue.o apue_db.o
 	gcc -Wall -g $^ -o $@
@@ -20,7 +26,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp db_demo db
+	-rm -f *.o core.* *.log *~ *.swp db_demo db dbh
 	@echo "end clean"
 
 .PHONY: clean
