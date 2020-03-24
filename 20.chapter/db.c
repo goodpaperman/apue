@@ -50,7 +50,12 @@ int main (int argc, char *argv[])
     }
 
     DBHANDLE db; 
+#ifdef HAS_HASHSIZE
+    int hashsize = 1061; 
+    if ((db = db_open (filename, O_RDWR | O_CREAT /*| O_TRUNC*/, FILE_MODE, hashsize)) == NULL)
+#else
     if ((db = db_open (filename, O_RDWR | O_CREAT /*| O_TRUNC*/, FILE_MODE)) == NULL)
+#endif
         err_sys ("db_open error"); 
 
     int ret = 0; 

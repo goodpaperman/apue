@@ -1,6 +1,6 @@
 all: db_demo db dbh
 
-dbh: dbh.o apue.o apue_db.o
+dbh: dbh.o apue.o apue_dbh.o
 	gcc -Wall -g $^ -o $@
 
 dbh.o: db.c apue_db.h ../apue.h
@@ -17,6 +17,9 @@ db_demo: db_demo.o apue.o apue_db.o
 
 db_demo.o: db_demo.c apue_db.h ../apue.h
 	gcc -Wall -g -c $< -o $@ 
+
+apue_dbh.o: apue_db.c apue_db.h
+	gcc -Wall -g -c $< -o $@ -DHAS_HASHSIZE
 
 apue_db.o: apue_db.c apue_db.h
 	gcc -Wall -g -c $< -o $@

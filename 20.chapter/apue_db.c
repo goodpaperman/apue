@@ -106,9 +106,23 @@ static void _db_free (DB *db)
     free (db); 
 }
 
+static off_t _db_readptr (DB *db, off_t offset)
+{
+    char asciiptr [PTR_SZ + 1]; 
+    if (lseek (db->idxfd, offset, SEEK_SET) == -1)
+        err_dump ("_db_readptr: lseek error to ptr field"); 
+    if (read (db->idxfd, asciiptr, PTR_SZ) != PTR_SZ)
+        err_dump ("_db_readptr: read error of ptr field"); 
+
+    asciiptr [PTR_SZ] = 0; 
+    return atoi (asciiptr); 
+}
+
 // open existing
 //db_open (path, oflag); 
 // open new
+//db_open (path, oflag, 0755); 
+// HAS_HASHSIZE open new
 //db_open (path, oflag, 0755, 1061);  
 DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
 {
@@ -194,7 +208,7 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
             if (readw_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
                 err_dump ("db_open: readw_lock error"); 
 
-            db->nhash = _db_readptr(db, HASH_OFF); 
+            db->nhash = _db_readptr(db, FREE_OFF + PTR_SZ); 
             if (db->nhash <= 1)
                 err_dump ("db_open: invalid nhash value %d", db->nhash); 
             else 
@@ -205,7 +219,7 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
         if (readw_lock (db->idxfd, 0, SEEK_SET, 0) < 0)
             err_dump ("db_open: readw_lock error"); 
 
-        db->nhash = _db_readptr(db, HASH_OFF); 
+        db->nhash = _db_readptr(db, FREE_OFF + PTR_SZ); 
         if (db->nhash <= 1)
             err_dump ("db_open: invalid nhash value %d", db->nhash); 
         else 
@@ -235,18 +249,6 @@ static DBHASH _db_hash (DB *db, const char *key)
         hval += c * i; 
 
     return hval % db->nhash; 
-}
-
-static off_t _db_readptr (DB *db, off_t offset)
-{
-    char asciiptr [PTR_SZ + 1]; 
-    if (lseek (db->idxfd, offset, SEEK_SET) == -1)
-        err_dump ("_db_readptr: lseek error to ptr field"); 
-    if (read (db->idxfd, asciiptr, PTR_SZ) != PTR_SZ)
-        err_dump ("_db_readptr: read error of ptr field"); 
-
-    asciiptr [PTR_SZ] = 0; 
-    return atoi (asciiptr); 
 }
 
 static off_t _db_readidx (DB *db, off_t offset)
