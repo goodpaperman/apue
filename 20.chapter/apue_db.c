@@ -211,8 +211,10 @@ DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/)
             db->nhash = _db_readptr(db, FREE_OFF + PTR_SZ); 
             if (db->nhash <= 1)
                 err_dump ("db_open: invalid nhash value %d", db->nhash); 
+#  if 0 // for debug perpose
             else 
                 printf ("got hash size %d\n", db->nhash); 
+#  endif
         }
     } else { 
         // has initialized, just read it
@@ -677,6 +679,7 @@ int _db_walk_hash (DB* db, int n)
 
         db->ptroff = offset; 
         offset = nextoffset; 
+        //printf ("    previous off %d, next off %d\n", offset, nextoffset); 
     }
 
     return total; 
@@ -686,7 +689,7 @@ void db_walk (DBHANDLE h)
 {
     DB* db = (DB *)h; 
     int i; 
-    int cnt_hash[NHASH_DEF] = { 0 }; 
+    int *cnt_hash = (int *)malloc(sizeof (int) * db->nhash); 
     printf ("hash nodes: \n"); 
     for (i=0; i<db->nhash; ++ i)
         cnt_hash[i] = _db_walk_hash (db, i); 
@@ -701,6 +704,7 @@ void db_walk (DBHANDLE h)
         cnt_total += cnt_hash[i]; 
     }
 
+    free(cnt_hash); 
     printf ("\n"); 
     printf ("total index: %d\n", cnt_total); 
 }

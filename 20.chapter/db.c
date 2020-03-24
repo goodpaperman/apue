@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
         ptr = db_fetch (db, key); 
         //printf ("%s === %s\n", key, ptr); 
         // only print data to allow assigned in shell script
-        printf ("%s\n", ptr); 
+        printf ("%s\n", ptr == NULL ? "nil" : ptr); 
     }
     else  // walk
     {
