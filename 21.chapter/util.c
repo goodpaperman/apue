@@ -71,3 +71,43 @@ struct addrinfo* getprintaddr (void)
     return NULL; 
 }
 
+ssize_t tread (int fd, void* buf, size_t nbytes, unsigned int timeout)
+{
+    int nfds; 
+    fd_set readfds; 
+    struct timeval tv; 
+    tv.tv_sec = timeout; 
+    tv.tv_usec = 0; 
+    FD_ZERO (&readfds); 
+    FD_SET (fd, &readfds); 
+    nfds = select (fd+1, &readfds, NULL, NULL, &tv); 
+    if (nfds <= 0) {
+        if (nfds == 0) 
+            errno = ETIME; 
+        return -1; 
+    }
+
+    return read (fd, buf, nbytes);
+}
+
+ssize_t treadn (int fd, void *buf, size_t nbytes, unsigned int timeout)
+{
+    size_t nleft; 
+    ssize_t nread; 
+    nleft = nbytes; 
+    while (nleft > 0) {
+        if ((nread = tread (fd, buf, size, nleft, timeout)) < 0) { 
+            if (nleft == nbytes)
+                return -1; 
+            else 
+                break; 
+        } else if (nread == 0)
+            break; 
+
+        nleft -= nread; 
+        buf += nread; 
+    }
+
+    return nbytes - nleft; 
+}
+
