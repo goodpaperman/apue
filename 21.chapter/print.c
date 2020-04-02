@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <pwd.h>
 
+#define MAXSLEEP 128
 int log_to_stderr = 1; 
 
 void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text)
@@ -29,7 +30,7 @@ void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text
     else 
         req.flags = 0; 
 
-    if ((len = strlen (fname)) >= JOBNAME_MAX) {
+    if ((len = strlen (fname)) >= JOBNM_MAX) {
         strcpy (req.jobnm, "... "); 
         strncat (req.jobnm, &fname[len-JOBNM_MAX+5], JOBNM_MAX-5); 
     } else {
@@ -67,6 +68,23 @@ void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text
     }
 
     exit (0); 
+}
+
+int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
+{
+    int nsec; 
+    for (nsec = 1; nsec <= MAXSLEEP; nsec <<= 1) { 
+        if (connect (sockfd, addr, alen) == 0) { 
+            printf ("connect ok\n"); 
+            return 0; 
+        }
+
+        printf ("connect failed, retry...\n"); 
+        if (nsec <= MAXSLEEP/2)
+            sleep (nsec); 
+    }
+
+    return -1; 
 }
 
 int main (int argc, char *argv[])

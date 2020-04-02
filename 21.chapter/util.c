@@ -96,7 +96,7 @@ ssize_t treadn (int fd, void *buf, size_t nbytes, unsigned int timeout)
     ssize_t nread; 
     nleft = nbytes; 
     while (nleft > 0) {
-        if ((nread = tread (fd, buf, size, nleft, timeout)) < 0) { 
+        if ((nread = tread (fd, buf, nleft, timeout)) < 0) { 
             if (nleft == nbytes)
                 return -1; 
             else 
