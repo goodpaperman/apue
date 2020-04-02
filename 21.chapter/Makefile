@@ -1,4 +1,10 @@
-all: print
+all: print getopt
+
+getopt: getopt.o apue.o
+	gcc -Wall -g $^ -o $@
+
+getopt.o: getopt.c ../apue.h
+	gcc -Wall -g -c $< -o $@ 
 
 print: print.o apue.o util.o
 	gcc -Wall -g $^ -o $@
@@ -14,7 +20,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp print
+	-rm -f *.o core.* *.log *~ *.swp print getopt
 	@echo "end clean"
 
 .PHONY: clean
