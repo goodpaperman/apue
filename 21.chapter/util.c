@@ -53,7 +53,7 @@ char *get_printserver (void)
     return scan_configfile ("printserver"); 
 }
 
-struct addrinfo* getprintaddr (void)
+struct addrinfo* get_printaddr (void)
 {
     int err; 
     char *p; 

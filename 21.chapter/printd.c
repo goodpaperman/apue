@@ -43,7 +43,47 @@ struct job *jobhead, *jobtail;
 pthread_mutex_t joblock = PTHREAD_MUTEX_INITIALIZER; 
 pthread_cond_t jobwait = PTHREAD_COND_INITIALIZER; 
 
+void init_request (void)
+{
+    int n; 
+    char name [FILENMSZ]; 
+    sprintf (name, "%s/%s", SPOOLDIR, JOBFILE); 
+    jobfd = open (name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); 
+    if (write_lock (jobfd, 0, SEEK_SET, 0) < 0)
+        log_quit ("daemon already running"); 
 
+    if ((n = read (jobfd, name, FILENMSZ)) < 0)
+        log_sys ("can't read job file"); 
+
+    if (n == 0)
+        nextjob = 1; 
+    else 
+        nextjob = atol (name); 
+}
+
+void init_printer (void)
+{
+    printer = get_printaddr (); 
+    if (printer == NULL) { 
+        log_msg ("no printer device registered"); 
+        exit (1); 
+    }
+
+    printer_name = printer->ai_canonname; 
+    if (printer_name == NULL)
+        printer_name = "printer"; 
+
+    log_msg ("printer is %s", printer_name); 
+}
+
+void update_jobno (void)
+{
+    char buf[FILENMSZ]; 
+    lseek (jobfd, 0, SEEK_SET); 
+    sprintf (buf, "%ld", nextjob); 
+    if (write (jobfd, buf, strlen (buf)) < 0)
+        log_sys ("can't update job file"); 
+}
 
 int main (int argc, char *argv[])
 {
@@ -112,4 +152,26 @@ int main (int argc, char *argv[])
     if (setuid (pwdp->pw_uid) < 0)
         log_sys ("can't change IDs to user lp"); 
 
+    pthread_create (&tid, NULL, printer_thread, NULL); 
+    pthread_create (&tid, NULL, signal_thread, NULL); 
+    build_qonstart (); 
+    log_msg ("daemon initialized"); 
+
+    for (;;) {
+        rset = rendezvous; 
+        if (select (maxfd + 1, &rset, NULL, NULL, NULL) < 0)
+            log_sys ("select failed"); 
+
+        for (i=0; i<=maxfd; i++) { 
+            if (FD_ISSET (i, &rset)) { 
+                sockfd = accept (i, NULL, NULL); 
+                if (sockfd < 0)
+                    log_ret ("accept failed"); 
+
+                pthread_create (&tid, NULL, client_thread, (void *)sockfd); 
+            }
+        }
+    }
+
+    exit (1); 
 }
