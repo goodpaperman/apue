@@ -15,7 +15,6 @@
 // for index file only (hash & free list)
 #define PTR_SZ 6 // size of ptr field in hash chain
 #define PTR_MAX 999999 // max file offset = 10 ** PTR_SZ - 1
-#define NHASH_DEF 137 // default hash table size
 #define FREE_OFF 0 // free list offset in index file
 
 #ifdef HAS_HASHSIZE
@@ -637,12 +636,12 @@ doreturn:
     return ptr; 
 }
 
-int _db_walk_free (DB* db)
+int _db_dump_free (DB* db)
 {
     int total = 0; 
     off_t offset, nextoffset, saveoffset; 
     if (readw_lock (db->idxfd, FREE_OFF, SEEK_SET, 1) < 0)
-        err_dump ("_db_walk_free: readw_lock error"); 
+        err_dump ("_db_dump_free: readw_lock error"); 
 
     printf ("free nodes: \n"); 
     saveoffset = FREE_OFF; 
@@ -661,7 +660,7 @@ int _db_walk_free (DB* db)
     return total; 
 }
 
-int _db_walk_hash (DB* db, int n)
+int _db_dump_hash (DB* db, int n)
 {
     int total = 0; 
     off_t offset, nextoffset; 
@@ -670,7 +669,7 @@ int _db_walk_hash (DB* db, int n)
 
     printf ("  hash[%d] nodes: \n", n); 
     if (readw_lock (db->idxfd, db->chainoff, SEEK_SET, 1) < 0)
-        err_dump ("_db_walk_hash: readw_lock error"); 
+        err_dump ("_db_dump_hash: readw_lock error"); 
 
     offset = _db_readptr (db, db->ptroff); 
     while (offset != 0) {
@@ -685,16 +684,16 @@ int _db_walk_hash (DB* db, int n)
     return total; 
 }
 
-void db_walk (DBHANDLE h)
+void db_dump (DBHANDLE h)
 {
     DB* db = (DB *)h; 
     int i; 
     int *cnt_hash = (int *)malloc(sizeof (int) * db->nhash); 
     printf ("hash nodes: \n"); 
     for (i=0; i<db->nhash; ++ i)
-        cnt_hash[i] = _db_walk_hash (db, i); 
+        cnt_hash[i] = _db_dump_hash (db, i); 
 
-    int cnt_free = _db_walk_free(db); 
+    int cnt_free = _db_dump_free(db); 
     int cnt_total = cnt_free; 
     printf ("\n"); 
     printf ("total free: %d\n", cnt_free); 

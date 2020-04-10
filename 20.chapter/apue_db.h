@@ -21,6 +21,6 @@ char* db_fetch (DBHANDLE db, char *key);
 int db_delete (DBHANDLE db, const char *key); 
 void db_rewind (DBHANDLE db); 
 char *db_nextrec (DBHANDLE db, char *key); 
-void db_walk (DBHANDLE db); 
+void db_dump (DBHANDLE db); 
 
 #endif

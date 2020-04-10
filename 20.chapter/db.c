@@ -9,8 +9,8 @@ void Usage ()
     printf ("Usage: db filename insert key data\n"); 
     printf ("       db filename query key\n"); 
     printf ("       db filename delete key\n"); 
-    printf ("       db filename dump\n"); 
     printf ("       db filename walk\n"); 
+    printf ("       db filename dump\n"); 
     exit (-1); 
 }
 
@@ -67,22 +67,22 @@ int main (int argc, char *argv[])
         err_sys ("db_open error"); 
 
     int ret = 0; 
-    if (strcasecmp (action, "walk") == 0)
+    if (strcasecmp (action, "dump") == 0)
     {
-        db_walk (db); 
+        db_dump (db); 
     }
-    else if (strcasecmp (action, "dump") == 0)
+    else if (strcasecmp (action, "walk") == 0)
     {
+        //db_rewind (); 
         int n = 0; 
-        char key[IDXLEN_MAX] = { 0 };
-        char *data = NULL; 
-        while ((data = db_nextrec (db, key)) != NULL)
+        char buf[IDXLEN_MAX] = { 0 }; 
+        while ((ptr = db_nextrec(db, buf)) != NULL)
         {
             n ++; 
-            printf ("%s --- %s\n", key, data); 
+            printf ("[%5d] %s --- %s\n", n, buf, ptr); 
         }
 
-        printf ("total %d\n", n); 
+        printf ("walk done!\n"); 
     }
     else if (strcasecmp (action, "insert") == 0)
     {
@@ -109,19 +109,8 @@ int main (int argc, char *argv[])
         // only print data to allow assigned in shell script
         printf ("%s\n", ptr == NULL ? "nil" : ptr); 
     }
-    else  // walk
-    {
-        //db_rewind (); 
-        int n = 0; 
-        char buf[IDXLEN_MAX] = { 0 }; 
-        while ((ptr = db_nextrec(db, buf)) != NULL)
-        {
-            n ++; 
-            printf ("[%5d] %s --- %s\n", n, buf, ptr); 
-        }
-
-        printf ("walk done!\n"); 
-    }
+    else
+        Usage (); 
 
     db_close (db); 
     return ret; 
