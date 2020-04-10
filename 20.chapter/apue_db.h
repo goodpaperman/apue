@@ -12,6 +12,7 @@ typedef void* DBHANDLE;
 #define IDXLEN_MAX 1024 // single index can not exceed this size
 #define DATLEN_MIN 2
 #define DATLEN_MAX 1024 // single data can not exceed this size
+#define NHASH_DEF 137 // default hash table size
 
 DBHANDLE db_open (char const* pathname, int oflag, .../*mode*/); 
 void db_close (DBHANDLE db); 

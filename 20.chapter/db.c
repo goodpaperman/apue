@@ -50,8 +50,16 @@ int main (int argc, char *argv[])
     }
 
     DBHANDLE db; 
+    char *ptr = NULL; 
 #ifdef HAS_HASHSIZE
-    int hashsize = 1061; 
+    int hashsize = 0; 
+    ptr = getenv ("APUE_DB_HASH_SIZE"); 
+    if (ptr)
+        hashsize = atoi (ptr); 
+
+    if (hashsize <= 0)
+        hashsize = NHASH_DEF; 
+
     if ((db = db_open (filename, O_RDWR | O_CREAT /*| O_TRUNC*/, FILE_MODE, hashsize)) == NULL)
 #else
     if ((db = db_open (filename, O_RDWR | O_CREAT /*| O_TRUNC*/, FILE_MODE)) == NULL)
@@ -59,7 +67,6 @@ int main (int argc, char *argv[])
         err_sys ("db_open error"); 
 
     int ret = 0; 
-    char *ptr = NULL; 
     if (strcasecmp (action, "walk") == 0)
     {
         db_walk (db); 
