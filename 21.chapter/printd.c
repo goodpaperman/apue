@@ -151,6 +151,101 @@ void build_qonstart (void)
     closedir (dirp); 
 }
 
+void* client_thread (void *arg)
+{
+    int n, fd, sockfd, nr, nw, first; 
+    long jobid; 
+    pthread_t tid; 
+    struct printreq req; 
+    struct printresp res; 
+    char name[FILENMSZ]; 
+    char buf[IOBUFSZ]; 
+
+    tid = pthread_self (); 
+    pthread_cleanup_push (client_cleanup, (void *)tid); 
+    sockfd = (int)arg; 
+    add_worker (tid, sockfd); 
+
+    if ((n = treadn (sockfd, &req, sizeof (struct printreq), 10)) != sizeof(struct printreq)) {
+        res.jobid = 0; 
+        if (n < 0)
+            res.retcode = htonl (errno); 
+        else 
+            res.retcode = htonl (EIO); 
+
+        strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
+        writen (sockfd, &res, sizeof (struct printresp)); 
+        pthread_exit ((void *)1); 
+    }
+
+    req.size = ntohl (req.size); 
+    req.flags = ntohl (req.flags); 
+
+    jobid = get_newjobno (); 
+    sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+    if ((fd = creat (name, FILEPERM)) < 0) {
+        res.jobid = 0; 
+        res.retcode = htonl (errno); 
+        log_msg ("client thread: can't create %s: %s", name, strerror (errno)); 
+        strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
+        writen (sockfd, &res, sizeof (struct printresp)); 
+        pthread_exit ((void *)1); 
+    }
+
+    first = 1; 
+    while ((nr = tread (sockfd, buf, IOBUFSZ, 20)) > 0) { 
+        if (first) { 
+            first = 0; 
+            if (strncmp (buf, "%!PS", 4) != 0)
+                req.flags |= PR_TEXT; 
+        }
+
+        nw = write (fd, buf, nr); 
+        if (nw != nr) { 
+            if (nw < 0)
+                res.retcode = htonl (errno); 
+            else 
+                res.retcode = htonl (EIO); 
+
+            log_msg ("client_thread: can't write %s: %s", name, strerror (errno)); 
+            strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
+            writen (sockfd, &res, sizeof (struct printresp)); 
+
+            close (fd); 
+            unlink (name); 
+            pthread_exit ((void *)1); 
+        }
+    }
+
+    close (fd); 
+    sprintf (name, "%s/%s/%ld", SPOOLDIR, REQDIR, jobid); 
+    fd = creat (name, FILEPERM); 
+    if (fd < 0) { 
+        res.jobid = 0; 
+        res.retcode = htonl (errno); 
+        log_msg ("client_thread: can't create %s: %s", name, strerror (errno)); 
+        strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
+        writen (sockfd, &res, sizeof (struct printresp)); 
+
+        close (fd); 
+        unlink (name); 
+        sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+        unlink (name); 
+        pthread_exit ((void *)1); 
+    }
+
+    close (fd); 
+    res.retcode = 0; 
+    res.jobid = htonl (jobid); 
+    sprintf (res.msg, "request ID %ld", jobid); 
+    writen (sockfd, &res, sizeof (struct printresp)); 
+
+    log_msg ("adding job %ld to queue", jobid); 
+    add_job (&req, jobid); 
+    pthread_cleanup_pop (1); 
+    return ((void *)0); 
+}
+
 int main (int argc, char *argv[])
 {
     pthread_t tid; 
