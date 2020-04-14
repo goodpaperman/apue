@@ -76,6 +76,43 @@ void init_printer (void)
     log_msg ("printer is %s", printer_name); 
 }
 
+void kill_workers (void)
+{
+    struct worker_thread *wtp; 
+    pthread_mutex_lock (&workerlock); 
+    for (wtp = workers; wtp != NULL; wtp = wtp->next) 
+        // when thread cancelled later, 
+        // worker nodes will be deleted from list by client_cleanup of that thread(with lock).
+        pthread_cancel (wtp->tid); 
+
+    pthread_mutex_unlock (&workerlock); 
+}
+
+void* signal_thread (void *arg)
+{
+    int err, signo; 
+    for (;;) { 
+        err = sigwait (&mask, &signo); 
+        if (err != 0) { 
+            log_quit ("sigwait failed: %s", strerror (err)); 
+            switch (signo) { 
+                case SIGHUP:
+                    pthread_mutex_lock (&configlock); 
+                    reread = 1; 
+                    pthread_mutex_unlock (&configlock); 
+                    break; 
+                case SIGTERM:
+                    kill_workers (); 
+                    log_msg ("terminate with signal %s", strsignal (signo)); 
+                    exit (0); 
+                default:
+                    kill_workers (); 
+                    log_quit ("unexpected signal %d", signo); 
+            }
+        }
+    }
+}
+
 void update_jobno (void)
 {
     char buf[FILENMSZ]; 
@@ -149,6 +186,91 @@ void build_qonstart (void)
     }
 
     closedir (dirp); 
+}
+
+void client_cleanup (void *arg)
+{
+    struct worker_thread *wtp; 
+    pthread_t tid = (pthread_t) arg; 
+    pthread_mutex_lock (&workerlock); 
+    for (wtp = workers; wtp != NULL; wtp = wtp->next) { 
+        if (wtp->tid == tid) { 
+            if (wtp->next != NULL)
+                wtp->next->prev = wtp->prev; 
+            if (wtp->prev != NULL)
+                wtp->prev->next = wtp->next; 
+            else 
+                // is the HEAD
+                workers = wtp->next; 
+
+            break; 
+        }
+    }
+
+    pthread_mutex_unlock (&workerlock); 
+    if (wtp != NULL) { 
+        close (wtp->sockfd); 
+        free (wtp); 
+    }
+}
+
+void add_worker (pthread_t tid, int sockfd)
+{
+    struct worker_thread *wtp; 
+    if ((wtp = malloc (sizeof (struct worker_thread))) == NULL) { 
+        log_ret ("add_worker: can't malloc"); 
+        pthread_exit ((void *)1); 
+    }
+
+    wtp->tid = tid; 
+    wtp->sockfd = sockfd; 
+
+    pthread_mutex_lock (&workerlock); 
+#if 0
+    wtp->prev = NULL; 
+    wtp->next = workers; 
+    if (workers == NULL)
+        workers = wtp; 
+    else 
+        workers->prev = wtp; 
+#else
+    // for single list, we can only insert head
+#  if 0
+    // too complex...
+    wtp->prev = workers; 
+    wtp->next = workers ? workers->next : NULL; 
+    if (workers == NULL)
+        workers = wtp; 
+    else { 
+        if (workers->next == NULL)
+            workers->next = wtp; 
+        else {
+            workers->next->prev = wtp; 
+            workers->next = wtp; 
+        }
+    }
+#  else
+    wtp->prev = NULL; 
+    wtp->next = workers; 
+    if (workers != NULL)
+        workers->prev = wtp; 
+
+    workers = wtp; 
+#  endif
+#endif
+
+    pthread_mutex_lock (&workerlock); 
+}
+
+long get_newjobno (void)
+{
+    long jobid; 
+    pthread_mutex_lock (&joblock); 
+    jobid = nextjob ++; 
+    if (nextjob <= 0)
+        nextjob = 1; 
+    pthread_mutex_unlock (&joblock); 
+    return jobid; 
 }
 
 void* client_thread (void *arg)
