@@ -6,6 +6,7 @@
 
 void test_siglist ()
 {
+    printf ("-----sys_siglist-----\n"); 
     for (int i=0; i<_NSIG; ++ i)
         printf ("%s: %d\n", sys_siglist[i], i); 
 
@@ -14,6 +15,7 @@ void test_siglist ()
 
 void test_psig ()
 {
+    fprintf (stderr, "-----psignal-----\n"); 
     char msg[64] = { 0 }; 
     for (int i=0; i<_NSIG; ++ i)
     {
@@ -27,6 +29,7 @@ void test_psig ()
 
 void test_strsig ()
 {
+    printf ("-----strsignal-----\n"); 
     for (int i=0; i<_NSIG; ++ i)
     {
         printf ("[%d] %s\n", i, strsignal (i)); 
@@ -38,6 +41,7 @@ void test_strsig ()
 #if defined(SOLARIS) || defined(APUE_SIG2STR)
 void test_conv ()
 {
+    printf ("-----str2sig-----\n"); 
     int signo; 
     char str[SIG2STR_MAX] = { 0 }; 
     for (int i=0; i<_NSIG; ++ i)

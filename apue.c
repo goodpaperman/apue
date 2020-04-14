@@ -93,7 +93,12 @@ err_doit (int errnoflag, int error, const char *fmt, va_list ap)
   fflush (0); 
 }
 
+#if !defined(NO_LOG_TO_STDERR)
 int log_to_stderr = 1; 
+#else
+extern int log_to_stderr; 
+#endif
+
 static void log_doit (int, int, const char*, va_list ap); 
 void log_open (const char *ident, int option, int facility)
 {
