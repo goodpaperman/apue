@@ -122,6 +122,149 @@ void update_jobno (void)
         log_sys ("can't update job file"); 
 }
 
+void* printer_thread (void *arg)
+{
+    struct job *jp; 
+    int hlen, ilen, sockfd, fd, nr, nw; 
+    char *icp, *hcp; 
+    struct ipp_hdr *hp; 
+    struct stat sbuf; 
+    struct iovec iov[2]; 
+    char name[FILENMSZ]; 
+    char hbuf[HBUFSZ]; 
+    char ibuf[IBUFSZ]; 
+    char buf[IOBUFSZ]; 
+    char str[64]; 
+
+    for (;;) {
+        pthread_mutex_lock (&joblock); 
+        while (jobhead == NULL) { 
+            log_msg("printer_thread: waiting..."); 
+            pthread_cond_wait (&jobwait, &joblock); 
+        }
+
+        remove_job (jp = jobhead); 
+        log_msg ("printer_thread: picked up job %ld", jp->jobid); 
+        pthread_mutex_unlock (&joblock); 
+
+        update_jobno ();
+
+        pthread_mutex_lock (&configlock); 
+        if (reread) { 
+            freeaddrinfo (printer); 
+            printer = NULL; 
+            printer_name = NULL; 
+            reread = 0; 
+            pthread_mutex_unlock (&configlock); 
+            init_printer (); 
+        } else { 
+            pthread_mutex_unlock (&configlock); 
+        }
+
+        sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jp->jobid); 
+        if ((fd = open (name, O_RDONLY)) < 0) { 
+            log_msg ("job %ld canceled - can't open %s: %s", job->jobid, name, strerror (errno)); 
+            free (jp); 
+            continue; 
+        }
+
+        if (fstat (fd, &sbuf) < 0) { 
+            log_msg ("job %ld canceled - can't fstat %s: %s", jp->jobid, name, strerror (errno)); 
+            free (jp); 
+            close (fd); 
+            continue; 
+        }
+
+        if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0) { 
+            log_msg ("job %ld deferred - can't create socket: %s", jp->jobid, strerror (errno)); 
+            goto defer; 
+        }
+
+        if (connect_retry (sockfd, printer->ai_addr, printer->ai_addrlen) < 0) { 
+            log_msg ("job %ld deferred - can't contact printer: %s", jp->jobid, strerror (errno)); 
+            goto defer; 
+        }
+
+        icp = ibuf; 
+        hp = (struct ipp_hdr *)icp; 
+        hp->major_version = 1; 
+        hp->minor_version = 1; 
+        hp->operation = htons (OP_PRINT_JOB); 
+        hp->reqeust_id = htonl (jp->jobid); 
+        icp += offsetof (struct ipp_hdr, attr_group); 
+        *icp ++ = TAG_OPERATION_ATTR; 
+        icp = add_option (icp, TAG_CHARSET, "attributes-charset", "utf-8"); 
+        icp = add_option (icp, TAG_NATULANG, "attributes-natural-language", "en-us"); 
+        sprintf (str, "http://%s:%d", printer_name, IPP_PORT); 
+        icp = add_option (icp, TAG_URI, "printer-uri", str); 
+        icp = add_option (icp, TAG_NAMEWOLANG, "requesting-user-name", jp->req.usernm); 
+        icp = add_option (icp, TAG_NAMEWOLANG, "job-name", jp->req.jobnm); 
+        if (jp->req.flags & PR_TEXT) { 
+            icp = add_option (icp, TAG_MIMETYPE, "document-format", "text/plain"); 
+        } else { 
+            icp = add_option (icp, TAG_MIMETYPE, "document-format", "application/postscript"); 
+        }
+
+        *icp ++ = TAG_END_OF_ATTR; 
+        ilen = icp - ibuf; 
+
+        hcp = hbuf; 
+        sprintf (hcp, "POST /%s/ipp HTTP/1.1\r\n", printer_name); 
+        hcp += strlen (hcp); 
+        sprintf (hcp, "Content-Length: %ld\r\n", (long) sbuf.st_size + ilen); 
+        hcp += strlen (hcp); 
+        strcpy (hcp, "Content-Type: application/ipp\r\n"); 
+        hcp += strlen (hcp); 
+        sprintf (hcp, "Host: %s:%d\r\n", printer_name, IPP_PORT); 
+        hcp += strlen (hcp); 
+        *hcp ++ = '\r'; 
+        *hcp ++ = '\n'; 
+        hlen = hcp - hbuf; 
+
+        iov[0].iov_base = hbuf; 
+        iov[0].iov_len = hlen; 
+        iov[1].iov_base = ibuf; 
+        iov[1].iov_len = ilen; 
+        if ((nw = writev (sockfd, iov, 2)) != hlen + ilen) { 
+            log_ret ("can't write to printer"); 
+            goto defer; 
+        }
+
+        while ((nr = read (fd, buf, IOBUFSZ)) > 0) { 
+            if ((nw = write (sockfd, buf, nr)) != nr) { 
+                if (nw < 0)
+                    log_ret ("can't write to printer"); 
+                else 
+                    log_msg ("short write (%d/%d) to printer", nw, nr); 
+
+                goto defer; 
+            }
+        }
+
+        if (nr < 0) { 
+            log_ret ("can't read %s", name); 
+            goto defer; 
+        }
+
+        if (printer_status (sockfd, jp)) { 
+            unlink (name); 
+            sprintf (name, "%s/%s/%ld", SPOOLDIR, REQDIR, jp->jobid); 
+            unlink (name); 
+            free (jp); 
+            jp = NULL; 
+        }
+
+defer:
+        close (fd); 
+        if (sockfd >= 0) 
+            close (sockfd); 
+        if (jp != NULL) { 
+            replace_job (jp); 
+            sleep (60); 
+        }
+    }
+}
+
 void add_job (struct printreq *reqp, long jobid)
 {
     struct job *jp; 
@@ -396,6 +539,7 @@ int main (int argc, char *argv[])
         log_sys ("pthread_sigmask failed"); 
 
     init_request (); 
+    // no lock here, as no other thread created yet, we are single thread~
     init_printer (); 
 
 #ifdef _SC_HOST_NAME_MAX
