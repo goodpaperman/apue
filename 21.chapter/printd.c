@@ -113,6 +113,19 @@ void* signal_thread (void *arg)
     }
 }
 
+void remove_job (struct job *target)
+{
+    if (target->next != NULL)
+        target->next->prev = target->prev; 
+    else 
+        jobtail = target->prev; 
+
+    if (target->prev != NULL)
+        target->prev->next = target->next; 
+    else 
+        jobhead = target->next; 
+}
+
 void update_jobno (void)
 {
     char buf[FILENMSZ]; 
@@ -120,6 +133,176 @@ void update_jobno (void)
     sprintf (buf, "%ld", nextjob); 
     if (write (jobfd, buf, strlen (buf)) < 0)
         log_sys ("can't update job file"); 
+}
+
+void replace_job (struct job *jp)
+{
+    pthread_mutex_lock (&joblock); 
+    jp->prev = NULL; 
+    jp->next = jobhead; 
+    if (jobhead == NULL)
+        jobtail = jp; 
+    else 
+        jobhead->prev = jp; 
+
+    jobhead = jp; 
+    pthread_mutex_unlock (&joblock); 
+}
+
+char* add_option (char *cp, int tag, char *optname, char *optval)
+{
+    int n; 
+    union { 
+        int16_t s; 
+        char c[2]; 
+    } u; 
+
+    // TAG_ATTR
+    *cp ++ = tag; 
+
+
+    // OPTNAME : LEN + NAME
+    n = strlen (optname); 
+    u.s = htons (n); 
+    *cp ++ = u.c[0]; 
+    *cp ++ = u.c[1]; 
+
+    strcpy (cp, optname); 
+    cp += n; 
+
+
+    // OPTVAL: LEN + VAL
+    n = strlen (optval); 
+    u.s = htons (n); 
+    *cp ++ = u.c[0]; 
+    *cp ++ = u.c[1]; 
+
+    strcpy (cp, optval); 
+    return cp + n;
+}
+
+int printer_status (int sockfd, struct job* jp)
+{
+    int i, success, code, len, found, bufsz; 
+    long jobid; 
+    ssize_t nr; 
+    char *statcode, *reason, *cp, *contentlen; 
+    struct ipp_hdr *hp; 
+    char *bp; 
+
+    success = 0; 
+    bufsz = IOBUFSZ; 
+    if ((bp = malloc (IOBUFSZ)) == NULL)
+        log_sys ("printer_status: can't allocate read buffer"); 
+
+    while ((nr = tread (sockfd, bp, IOBUFSZ, 5)) > 0) {
+        cp = bp + 8; 
+        while (isspace ((int) *cp))
+            cp ++; 
+
+        statcode = cp; 
+        while (isdigit ((int) *cp))
+            cp ++; 
+
+        if (cp == statcode) { 
+            log_msg (bp); 
+        } else { 
+            *cp ++ = '\0'; 
+            reason = cp; 
+            while (*cp != '\r' && *cp != '\n')
+                cp ++; 
+
+            *cp = '\0'; 
+            code = atoi (statcode); 
+            if (HTTP_INFO (code))
+                continue; 
+
+            if (!HTTP_SUCCESS (code)) { 
+                bp[nr] = '\0'; 
+                log_msg ("error: %s", reason); 
+                break; 
+            }
+
+            i = cp - bp; 
+            for (;;) {
+                while (*cp != 'C' && *cp != 'c' && i < nr) { 
+                    cp ++; 
+                    i++; 
+                }
+
+                if (i > nr && ((nr = readmore (sockfd, &bp, i, &bufsz)) < 0))
+                    goto out; 
+
+                cp = &bp[i]; 
+                if (strncasecmp (cp, "Content-Length:", 15) == 0) { 
+                    cp += 15; 
+                    while (isspace ((int) *cp))
+                        cp ++; 
+
+                    contentlen = cp; 
+                    while (isdigit ((int) *cp))
+                        cp ++; 
+
+                    *cp ++ = '\0'; 
+                    i = cp - bp; 
+                    len = atoi (contentlen); 
+                    break; 
+                } else { 
+                    cp ++; 
+                    i ++; 
+                }
+            }
+
+            if (i >= nr && ((nr = readmore (sockfd, &bp, i, &bufsz)) < 0))
+                goto out; 
+
+            cp = &bp[i]; 
+            found = 0; 
+            while (!found) { 
+                while (i < nr - 2) { 
+                    if (*cp == '\n' && *(cp + 1) == '\r' && *(cp + 2) == '\n') {
+                        found = 1; 
+                        cp += 3; 
+                        i += 3; 
+                        break; 
+                    }
+
+                    cp ++; 
+                    i ++; 
+                }
+
+                if (i >= nr && ((nr = readmore (sockfd, &bp, i, &bufsz)) < 0))
+                    goto out; 
+
+                cp = &bp[i]; 
+            }
+
+            if (nr - i < len && ((nr = readmore (sockfd, &bp, i, &bufsz)) < 0))
+                goto out; 
+
+            cp = &bp[i]; 
+            hp = (struct ipp_hdr *) cp; 
+            i = ntohs (hp->status); 
+            jobid = ntohl (hp->request_id); 
+            if (jobid != jp->jobid) { 
+                log_msg ("jobid %ld status code %d", jobid, i); 
+                break; 
+            }
+
+            if (STATCLASS_OK (i))
+                success = 1; 
+
+            break; 
+        }
+    }
+
+out:
+    free (bp); 
+    if (nr < 0) { 
+        log_msg ("jobid %ld: error reading printer response: %s", jobid, strerror (errno)); 
+    }
+
+    return success; 
 }
 
 void* printer_thread (void *arg)
@@ -602,3 +785,4 @@ int main (int argc, char *argv[])
 
     exit (1); 
 }
+
