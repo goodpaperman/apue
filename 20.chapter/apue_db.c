@@ -286,6 +286,7 @@ static off_t _db_readidx (DB *db, off_t offset)
         err_dump ("_db_readidx: missing newline"); 
     db->idxbuf[db->idxlen-1] = 0; 
 
+#if 0
     if ((ptr1 = strchr (db->idxbuf, SEP)) == NULL)
         err_dump ("_db_readidx: missing first separator"); 
 
@@ -302,6 +303,22 @@ static off_t _db_readidx (DB *db, off_t offset)
     if ((db->datlen = atol (ptr2)) <= 0 ||
             db->datlen > DATLEN_MAX)
         err_dump ("_db_readidx: invalid length"); 
+#else
+    if ((ptr1 = strrchr (db->idxbuf, SEP)) == NULL)
+        err_dump ("_db_readidx: missing last separator"); 
+
+    *ptr1 ++ = 0; 
+    if ((ptr2 = strrchr (db->idxbuf, SEP)) == NULL)
+        err_dump ("_db_readidx: missing second separator"); 
+
+    *ptr2 ++ = 0; 
+    if ((db->datoff = atol (ptr2)) < 0)
+        err_dump ("_db_readidx: starting offset < 0"); 
+    if ((db->datlen = atol (ptr1)) <= 0 ||
+            db->datlen > DATLEN_MAX)
+        err_dump ("_db_readidx: invalid length"); 
+
+#endif
 
     return db->ptrval; 
 }
