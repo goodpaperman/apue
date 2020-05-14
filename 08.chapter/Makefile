@@ -52,7 +52,7 @@ libhack.so: hack.o
 	gcc -Wall -g -shared -fPIC $^ -o $@
 
 hack.o: hack.c 
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -fPIC -c $< -o $@ -std=c99
 
 login: login.o apue.o
 	gcc -Wall -g $^ -o $@

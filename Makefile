@@ -18,6 +18,8 @@ all:
 	$(MAKE) -C 17.chapter 
 	$(MAKE) -C 18.chapter 
 	$(MAKE) -C 19.chapter 
+	$(MAKE) -C 20.chapter 
+	$(MAKE) -C 21.chapter 
 
 
 clean:

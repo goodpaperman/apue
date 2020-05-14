@@ -115,7 +115,7 @@ realloc.o: realloc.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
 layout_s: layout_s.o apue.o
-	gcc -Wall -g $^ -o $@ -ldl -static
+	gcc -Wall -g $^ -o $@ -static
 
 layout_s.o: layout.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99

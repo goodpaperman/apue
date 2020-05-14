@@ -1,5 +1,6 @@
 #include <stdio.h> 
 #include <string.h> 
+#include <unistd.h>
 
 int strcmp (char const* s1, char const* s2)
 {
