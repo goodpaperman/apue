@@ -76,6 +76,45 @@ void init_printer (void)
     log_msg ("printer is %s", printer_name); 
 }
 
+int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
+{
+    int fd; 
+    int err = 0; 
+    fd = socket (addr->sa_family, type, 0); 
+    if (fd < 0) { 
+        printf ("socket failed %d\n", errno); 
+        return -1; 
+    }
+
+    int reuse = 1; 
+    if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof (reuse)) < 0) { 
+        err = errno; 
+        printf ("setsockopt error %d\n", err); 
+        goto errout; 
+    }
+
+    if (bind (fd, addr, alen) < 0) { 
+        err = errno; 
+        printf ("bind error %d\n", err); 
+        goto errout; 
+    }
+
+    if (type == SOCK_STREAM || type == SOCK_SEQPACKET) { 
+        if (listen (fd, qlen) < 0) { 
+            err = errno; 
+            printf ("listen error %d\n", err); 
+            goto errout; 
+        }
+    }
+
+    return fd; 
+
+errout:
+    close (fd); 
+    errno = err; 
+    return -1; 
+}
+
 void kill_workers (void)
 {
     struct worker_thread *wtp; 
@@ -180,6 +219,29 @@ char* add_option (char *cp, int tag, char *optname, char *optval)
     strcpy (cp, optval); 
     return cp + n;
 }
+
+
+ssize_t readmore (int sockfd, char **bpp, int off, int *bszp)
+{
+    ssize_t nr;
+    char* bp = *bpp;
+    int bsz = *bszp;
+    
+    if (off >= bsz) {
+        bsz += IOBUFSZ;
+        if ((bp = realloc(*bpp, bsz)) == NULL)
+            log_sys("readmore: can't allocate bigger read buffer");
+
+        *bszp = bsz;
+        *bpp = bp;
+    }
+
+    if ((nr = tread(sockfd, &bp[off], bsz-off, 1)) > 0)
+        return(off+nr);
+    else
+        return(-1);
+}
+
 
 int printer_status (int sockfd, struct job* jp)
 {
@@ -305,6 +367,24 @@ out:
     return success; 
 }
 
+#define MAXSLEEP 128
+int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
+{
+    int nsec; 
+    for (nsec = 1; nsec <= MAXSLEEP; nsec <<= 1) { 
+        if (connect (sockfd, addr, alen) == 0) { 
+            printf ("connect ok\n"); 
+            return 0; 
+        }
+
+        printf ("connect failed, retry...\n"); 
+        if (nsec <= MAXSLEEP/2)
+            sleep (nsec); 
+    }
+
+    return -1; 
+}
+
 void* printer_thread (void *arg)
 {
     struct job *jp; 
@@ -346,7 +426,7 @@ void* printer_thread (void *arg)
 
         sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jp->jobid); 
         if ((fd = open (name, O_RDONLY)) < 0) { 
-            log_msg ("job %ld canceled - can't open %s: %s", job->jobid, name, strerror (errno)); 
+            log_msg ("job %ld canceled - can't open %s: %s", jp->jobid, name, strerror (errno)); 
             free (jp); 
             continue; 
         }
@@ -373,7 +453,7 @@ void* printer_thread (void *arg)
         hp->major_version = 1; 
         hp->minor_version = 1; 
         hp->operation = htons (OP_PRINT_JOB); 
-        hp->reqeust_id = htonl (jp->jobid); 
+        hp->request_id = htonl (jp->jobid); 
         icp += offsetof (struct ipp_hdr, attr_group); 
         *icp ++ = TAG_OPERATION_ATTR; 
         icp = add_option (icp, TAG_CHARSET, "attributes-charset", "utf-8"); 
@@ -455,8 +535,8 @@ void add_job (struct printreq *reqp, long jobid)
         log_sys ("malloc failed"); 
 
     memcpy (&jp->req, reqp, sizeof (struct printreq)); 
-    job->jobid = jobid; 
-    job->next = NULL; 
+    jp->jobid = jobid; 
+    jp->next = NULL; 
 
     pthread_mutex_lock (&joblock); 
     jp->prev = jobtail; 

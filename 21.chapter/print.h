@@ -40,7 +40,7 @@ extern struct addrinfo *get_printaddr (void);
 extern ssize_t tread (int, void *, size_t, unsigned int); 
 extern ssize_t treadn (int, void *, size_t, unsigned int); 
 extern int connect_retry (int, const struct sockaddr *, socklen_t); 
-extern int initserver (int, struct sockaddr *, socklen_t, int); 
+//extern int initserver (int, struct sockaddr *, socklen_t, int); 
 
 struct printreq {
     long size; 
