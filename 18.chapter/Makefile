@@ -81,37 +81,42 @@ term.o: term.c ../apue.h
 print_iflag.o: print_iflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_iflag.c: print_flag.awk iflag.sym
+# can NOT put print_flag.awk on top, otherwise, Make will create a rule:
+# print_flag.awk.c -> print_flag.awk, which will clean our print_flag.awk
+# and lead make -B failed due to can not find print_flag.awk
+#
+#print_iflag.c: print_flag.awk iflag.sym
+print_iflag.c: iflag.sym
 	./print_flag.awk -v FUNC_NAME=input -v MACRO_FILE=iflag.sym > print_iflag.c
 
 print_oflag.o: print_oflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_oflag.c: print_flag.awk oflag.sym
+print_oflag.c: oflag.sym
 	./print_flag.awk -v FUNC_NAME=output -v MACRO_FILE=oflag.sym > print_oflag.c
 
 print_cflag.o: print_cflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_cflag.c: print_flag.awk cflag.sym
+print_cflag.c: cflag.sym
 	./print_flag.awk -v FUNC_NAME=control -v MACRO_FILE=cflag.sym > print_cflag.c
 
 print_lflag.o: print_lflag.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_lflag.c: print_flag.awk lflag.sym
+print_lflag.c: lflag.sym
 	./print_flag.awk -v FUNC_NAME=local -v MACRO_FILE=lflag.sym > print_lflag.c
 
 print_cchar.o: print_cchar.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_cchar.c: print_char.awk cchar.sym
+print_cchar.c: cchar.sym
 	./print_char.awk -v FUNC_NAME=control -v MACRO_FILE=cchar.sym > print_cchar.c
 
 print_speed.o: print_speed.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-print_speed.c: print_speed.awk speed.sym
+print_speed.c: speed.sym
 	./print_speed.awk -v MACRO_FILE=speed.sym > print_speed.c
 
 ttyraw: ttyraw.o tty.o print_lflag.o print_iflag.o print_cflag.o print_oflag.o apue.o
