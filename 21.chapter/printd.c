@@ -63,6 +63,7 @@ void init_request (void)
 
 void init_printer (void)
 {
+#ifdef USE_APUE_ADDRLIST
     printer = get_printaddr (); 
     if (printer == NULL) { 
         log_msg ("no printer device registered"); 
@@ -72,7 +73,15 @@ void init_printer (void)
     printer_name = printer->ai_canonname; 
     if (printer_name == NULL)
         printer_name = "printer"; 
+#else
+    printer_name = get_printname (); 
+    if (printer_name == NULL) { 
+        log_msg ("no printer name registered"); 
+        exit (1); 
+    }
 
+#endif
+    
     log_msg ("printer is %s", printer_name); 
 }
 
@@ -82,27 +91,27 @@ int initserver (int type, const struct sockaddr *addr, socklen_t alen, int qlen)
     int err = 0; 
     fd = socket (addr->sa_family, type, 0); 
     if (fd < 0) { 
-        printf ("socket failed %d\n", errno); 
+        log_msg ("socket failed %d", errno); 
         return -1; 
     }
 
     int reuse = 1; 
     if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof (reuse)) < 0) { 
         err = errno; 
-        printf ("setsockopt error %d\n", err); 
+        log_msg ("setsockopt error %d", err); 
         goto errout; 
     }
 
     if (bind (fd, addr, alen) < 0) { 
         err = errno; 
-        printf ("bind error %d\n", err); 
+        log_msg ("bind error %d", err); 
         goto errout; 
     }
 
     if (type == SOCK_STREAM || type == SOCK_SEQPACKET) { 
         if (listen (fd, qlen) < 0) { 
             err = errno; 
-            printf ("listen error %d\n", err); 
+            log_msg ("listen error %d", err); 
             goto errout; 
         }
     }
@@ -373,11 +382,11 @@ int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
     int nsec; 
     for (nsec = 1; nsec <= MAXSLEEP; nsec <<= 1) { 
         if (connect (sockfd, addr, alen) == 0) { 
-            printf ("connect ok\n"); 
+            log_msg ("connect ok"); 
             return 0; 
         }
 
-        printf ("connect failed, retry...\n"); 
+        log_msg ("connect failed, retry..."); 
         if (nsec <= MAXSLEEP/2)
             sleep (nsec); 
     }
@@ -779,7 +788,6 @@ int main (int argc, char *argv[])
     pthread_t tid; 
     struct addrinfo *ailist, *aip; 
     int sockfd, err, i, n, maxfd; 
-    int *host; 
     fd_set rendezvous, rset; 
     struct sigaction sa; 
     struct passwd *pwdp; 
@@ -811,18 +819,22 @@ int main (int argc, char *argv[])
 #endif
         n = HOST_NAME_MAX; 
 
+    FD_ZERO (&rendezvous); 
+    maxfd = -1; 
+#ifdef USE_APUE_ADDRLIST
+    int *host; 
     if ((host = malloc (n)) == NULL)
         log_sys ("malloc error"); 
+
     if (gethostname (host, n) < 0)
         log_sys ("gethostname error"); 
 
+    log_msg ("host: %s", host); 
     if ((err = getaddrlist (host, "print", &ailist)) != 0) { 
         log_quit ("getaddrinfo error: %s", gai_strerror (err)); 
         exit (1); 
     }
 
-    FD_ZERO (&rendezvous); 
-    maxfd = -1; 
     for (aip = ailist; aip != NULL; aip = aip->ai_next) {
         if ((sockfd = initserver (SOCK_STREAM, aip->ai_addr, aip->ai_addrlen, QLEN)) >= 0) {
             FD_SET (sockfd, &rendezvous); 
@@ -830,6 +842,19 @@ int main (int argc, char *argv[])
                 maxfd = sockfd; 
         }
     }
+#else
+    struct sockaddr_in addr = { 0 }; 
+    addr.sin_family = AF_INET; 
+    addr.sin_addr.s_addr = INADDR_ANY; 
+
+    size_t addrlen = sizeof (addr); 
+    //inet_aton (printer_name, &addr.sin_addr); 
+    if ((sockfd = initserver (SOCK_STREAM, (struct sockaddr *) &addr, addrlen, QLEN)) >= 0) {
+        FD_SET (sockfd, &rendezvous); 
+        if (sockfd > maxfd)
+            maxfd = sockfd; 
+    }
+#endif
 
     if (maxfd == -1)
         log_quit ("service not enabled"); 

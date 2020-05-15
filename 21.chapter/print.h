@@ -36,7 +36,11 @@
 
 extern int getaddrlist (const char*, const char *, struct addrinfo **); 
 extern char *get_printserver (void); 
+#ifdef USE_APUE_ADDRLIST
 extern struct addrinfo *get_printaddr (void); 
+#else
+extern char *get_printname (void); 
+#endif
 extern ssize_t tread (int, void *, size_t, unsigned int); 
 extern ssize_t treadn (int, void *, size_t, unsigned int); 
 extern int connect_retry (int, const struct sockaddr *, socklen_t); 

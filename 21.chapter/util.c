@@ -53,6 +53,7 @@ char *get_printserver (void)
     return scan_configfile ("printserver"); 
 }
 
+#ifdef USE_APUE_ADDRLIST
 struct addrinfo* get_printaddr (void)
 {
     int err; 
@@ -70,6 +71,18 @@ struct addrinfo* get_printaddr (void)
     log_msg ("no printer address specified"); 
     return NULL; 
 }
+#else
+char* get_printname (void)
+{
+    char *p; 
+    if ((p = scan_configfile ("printer")) != NULL) {
+        return p; 
+    }
+
+    log_msg ("no printer address specified"); 
+    return NULL; 
+}
+#endif
 
 ssize_t tread (int fd, void* buf, size_t nbytes, unsigned int timeout)
 {
