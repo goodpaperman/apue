@@ -59,6 +59,8 @@ void init_request (void)
         nextjob = 1; 
     else 
         nextjob = atol (name); 
+
+    log_msg ("nextjob: %ld", nextjob); 
 }
 
 void init_printer (void)
@@ -127,6 +129,7 @@ errout:
 void kill_workers (void)
 {
     struct worker_thread *wtp; 
+    log_msg ("prepare to kill all workers"); 
     pthread_mutex_lock (&workerlock); 
     for (wtp = workers; wtp != NULL; wtp = wtp->next) 
         // when thread cancelled later, 
@@ -561,15 +564,17 @@ void add_job (struct printreq *reqp, long jobid)
 
 void build_qonstart (void)
 {
-    int fd, err, nr; 
+    int fd, err, nr, total = 0; 
     long jobid; 
     DIR *dirp; 
     struct dirent *entp; 
     struct printreq req; 
     char dname [FILENMSZ], fname [FILENMSZ]; 
     sprintf (dname, "%s/%s", SPOOLDIR, REQDIR);  
-    if ((dirp = opendir (dname)) == NULL)
+    if ((dirp = opendir (dname)) == NULL) {
+        log_msg ("opendir %s failed", dname); 
         return; 
+    }
 
     while ((entp = readdir (dirp)) != NULL) {
         if (strcmp (entp->d_name, ".") == 0 || 
@@ -577,8 +582,10 @@ void build_qonstart (void)
             continue; 
 
         sprintf (fname, "%s/%s/%s", SPOOLDIR, REQDIR, entp->d_name); 
-        if ((fd = open (fname, O_RDONLY)) < 0)
+        if ((fd = open (fname, O_RDONLY)) < 0) {
+            log_msg ("open req file failed: %s", fname); 
             continue; 
+        }
 
         nr = read (fd, &req, sizeof (struct printreq)); 
         if (nr != sizeof (struct printreq)) {
@@ -598,15 +605,18 @@ void build_qonstart (void)
         jobid = atol (entp->d_name); 
         log_msg ("adding job %ld to queue", jobid); 
         add_job (&req, jobid); 
+        total ++; 
     }
 
     closedir (dirp); 
+    log_msg("add total %d jobs from dir", total); 
 }
 
 void client_cleanup (void *arg)
 {
     struct worker_thread *wtp; 
     pthread_t tid = (pthread_t) arg; 
+    log_msg ("prepare to cleanup client when thread exit"); 
     pthread_mutex_lock (&workerlock); 
     for (wtp = workers; wtp != NULL; wtp = wtp->next) { 
         if (wtp->tid == tid) { 
@@ -640,6 +650,7 @@ void add_worker (pthread_t tid, int sockfd)
     wtp->tid = tid; 
     wtp->sockfd = sockfd; 
 
+    log_msg ("prepare to add worker"); 
     pthread_mutex_lock (&workerlock); 
 #if 0
     wtp->prev = NULL; 
@@ -674,7 +685,8 @@ void add_worker (pthread_t tid, int sockfd)
 #  endif
 #endif
 
-    pthread_mutex_lock (&workerlock); 
+    pthread_mutex_unlock (&workerlock); 
+    log_msg ("add worker for client %d", sockfd); 
 }
 
 long get_newjobno (void)
@@ -685,6 +697,7 @@ long get_newjobno (void)
     if (nextjob <= 0)
         nextjob = 1; 
     pthread_mutex_unlock (&joblock); 
+    log_msg ("got new jobno: %d", jobid); 
     return jobid; 
 }
 
@@ -712,14 +725,24 @@ void* client_thread (void *arg)
 
         strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
         writen (sockfd, &res, sizeof (struct printresp)); 
+        log_msg ("readn failed, send back client err %d", ntohl (res.retcode)); 
         pthread_exit ((void *)1); 
     }
 
+    log_msg ("readn %d", n); 
     req.size = ntohl (req.size); 
     req.flags = ntohl (req.flags); 
 
     jobid = get_newjobno (); 
     sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+    log_msg ("got a new request: \n"
+             "    size: %ld\n"
+             "    flag: %d\n"
+             "    name: %s", 
+             req.size, 
+             req.flags, 
+             name); 
+
     if ((fd = creat (name, FILEPERM)) < 0) {
         res.jobid = 0; 
         res.retcode = htonl (errno); 
@@ -806,6 +829,7 @@ int main (int argc, char *argv[])
     sigemptyset (&sa.sa_mask); 
     sigaddset (&mask, SIGHUP); 
     sigaddset (&mask, SIGTERM); 
+    sigaddset (&mask, SIGINT); 
     if ((err = pthread_sigmask (SIG_BLOCK, &mask, NULL)) != 0)
         log_sys ("pthread_sigmask failed"); 
 
@@ -846,6 +870,7 @@ int main (int argc, char *argv[])
     struct sockaddr_in addr = { 0 }; 
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = INADDR_ANY; 
+    addr.sin_port = htons (PRINTSVC_PORT); 
 
     size_t addrlen = sizeof (addr); 
     //inet_aton (printer_name, &addr.sin_addr); 
@@ -853,6 +878,8 @@ int main (int argc, char *argv[])
         FD_SET (sockfd, &rendezvous); 
         if (sockfd > maxfd)
             maxfd = sockfd; 
+
+        log_msg ("init server fd: %d", sockfd); 
     }
 #endif
 
@@ -862,10 +889,14 @@ int main (int argc, char *argv[])
     pwdp = getpwnam("lp"); 
     if (pwdp == NULL)
         log_sys ("can't find user lp"); 
+
     if (pwdp->pw_uid == 0)
         log_quit ("user lp is privileged"); 
+
     if (setuid (pwdp->pw_uid) < 0)
         log_sys ("can't change IDs to user lp"); 
+    else 
+        log_msg ("change user to lp: %d", pwdp->pw_uid); 
 
     pthread_create (&tid, NULL, printer_thread, NULL); 
     pthread_create (&tid, NULL, signal_thread, NULL); 
@@ -876,12 +907,17 @@ int main (int argc, char *argv[])
         rset = rendezvous; 
         if (select (maxfd + 1, &rset, NULL, NULL, NULL) < 0)
             log_sys ("select failed"); 
+        else
+            log_msg ("select return"); 
 
         for (i=0; i<=maxfd; i++) { 
             if (FD_ISSET (i, &rset)) { 
+                log_msg ("listen fd %d has event", i); 
                 sockfd = accept (i, NULL, NULL); 
                 if (sockfd < 0)
                     log_ret ("accept failed"); 
+                else 
+                    log_msg ("accept new client %d", sockfd); 
 
                 pthread_create (&tid, NULL, client_thread, (void *)sockfd); 
             }

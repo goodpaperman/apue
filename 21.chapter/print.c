@@ -37,6 +37,14 @@ void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text
         strcpy (req.jobnm, fname); 
     }
 
+    printf ("prepare to submit file: %s\n", fname); 
+    printf ("    usernm: %s\n"
+            "    size: %d\n"
+            "    jobnm: %s\n", 
+            req.usernm, 
+            nbytes, 
+            req.jobnm); 
+
     nw = writen (sockfd, &req, sizeof (struct printreq)); 
     if (nw != sizeof (struct printreq)) {
         if (nw < 0)
@@ -46,6 +54,7 @@ void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text
                     nw, sizeof (struct printreq)); 
     }
 
+    printf ("writen %d, prepare to send file content\n", nw); 
     while ((nr = read (fd, buf, IOBUFSZ)) != 0) { 
         nw = writen (sockfd, buf, nr); 
         if (nw != nr) {
@@ -57,6 +66,7 @@ void submit_file (int fd, int sockfd, const char* fname, size_t nbytes, int text
         }
     }
 
+    printf ("prepare to receive response\n"); 
     if ((nr = readn (sockfd, &res, sizeof (struct printresp))) != sizeof (struct printresp))
         err_sys ("can't read response from server"); 
 
@@ -122,6 +132,9 @@ int main (int argc, char *argv[])
     if ((host = get_printserver ()) == NULL)
         err_quit ("print: no print server defined"); 
 
+    log_msg ("print host: %s", host); 
+
+#ifdef USE_APUE_ADDRLIST
     if ((err = getaddrlist (host, "print", &ailist)) != 0)
         err_quit ("print: getaddrinfo error: %s", gai_strerror (err)); 
 
@@ -135,6 +148,22 @@ int main (int argc, char *argv[])
             exit (0); 
         }
     }
+#else
+    struct sockaddr_in addr = { 0 }; 
+    addr.sin_family = AF_INET; 
+    addr.sin_addr.s_addr = inet_addr (host); 
+    addr.sin_port = htons(PRINTSVC_PORT); 
+
+    size_t addrlen = sizeof (addr); 
+    if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0) { 
+        err = errno; 
+    } else if (connect_retry (sockfd, (struct sockaddr *) &addr, addrlen) < 0) {
+        err = errno; 
+    } else {
+        submit_file (fd, sockfd, argv[optind], sbuf.st_size, text); 
+        exit (0); 
+    }
+#endif
 
     errno = err; 
     err_ret ("print: can't contact %s", host); 

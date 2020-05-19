@@ -25,6 +25,7 @@
 #endif
 
 #define IPP_PORT            631
+#define PRINTSVC_PORT       39874
 #define QLEN                10  // listen backlog
 #define IBUFSZ              512 // ipp header buffer
 #define HBUFSZ              512 // http header buffer
