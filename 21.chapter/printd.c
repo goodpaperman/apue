@@ -48,7 +48,7 @@ void init_request (void)
     int n; 
     char name [FILENMSZ]; 
     sprintf (name, "%s/%s", SPOOLDIR, JOBFILE); 
-    jobfd = open (name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); 
+    jobfd = open (name, O_CREAT | O_RDWR, FILEPERM); 
     if (write_lock (jobfd, 0, SEEK_SET, 0) < 0)
         log_quit ("daemon already running"); 
 
@@ -175,6 +175,8 @@ void remove_job (struct job *target)
         target->prev->next = target->next; 
     else 
         jobhead = target->next; 
+
+    log_msg ("remove job %d", target->jobid); 
 }
 
 void update_jobno (void)
@@ -184,6 +186,8 @@ void update_jobno (void)
     sprintf (buf, "%ld", nextjob); 
     if (write (jobfd, buf, strlen (buf)) < 0)
         log_sys ("can't update job file"); 
+    else 
+        log_msg ("update jobno to %s", buf); 
 }
 
 void replace_job (struct job *jp)
@@ -419,8 +423,8 @@ void* printer_thread (void *arg)
         }
 
         remove_job (jp = jobhead); 
-        log_msg ("printer_thread: picked up job %ld", jp->jobid); 
         pthread_mutex_unlock (&joblock); 
+        log_msg ("printer_thread: picked up job %ld", jp->jobid); 
 
         update_jobno ();
 
@@ -436,6 +440,7 @@ void* printer_thread (void *arg)
             pthread_mutex_unlock (&configlock); 
         }
 
+        log_msg("re-reading config file"); 
         sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jp->jobid); 
         if ((fd = open (name, O_RDONLY)) < 0) { 
             log_msg ("job %ld canceled - can't open %s: %s", jp->jobid, name, strerror (errno)); 
@@ -559,6 +564,7 @@ void add_job (struct printreq *reqp, long jobid)
 
     jobtail = jp; 
     pthread_mutex_unlock (&joblock); 
+    log_msg ("add job %ld to queue", jobid); 
     pthread_cond_signal (&jobwait); 
 }
 
@@ -603,7 +609,6 @@ void build_qonstart (void)
         }
 
         jobid = atol (entp->d_name); 
-        log_msg ("adding job %ld to queue", jobid); 
         add_job (&req, jobid); 
         total ++; 
     }
@@ -798,9 +803,9 @@ void* client_thread (void *arg)
     res.retcode = 0; 
     res.jobid = htonl (jobid); 
     sprintf (res.msg, "request ID %ld", jobid); 
-    writen (sockfd, &res, sizeof (struct printresp)); 
+    nr = writen (sockfd, &res, sizeof (struct printresp)); 
+    log_msg ("send back client response: %d", nr); 
 
-    log_msg ("adding job %ld to queue", jobid); 
     add_job (&req, jobid); 
     pthread_cleanup_pop (1); 
     return ((void *)0); 
@@ -819,6 +824,7 @@ int main (int argc, char *argv[])
         err_quit ("usage: printd"); 
 
     daemonize ("printd"); 
+    log_msg ("daemonize ok"); 
 
     sigemptyset (&sa.sa_mask); 
     sa.sa_flags = 0; 
@@ -832,10 +838,6 @@ int main (int argc, char *argv[])
     sigaddset (&mask, SIGINT); 
     if ((err = pthread_sigmask (SIG_BLOCK, &mask, NULL)) != 0)
         log_sys ("pthread_sigmask failed"); 
-
-    init_request (); 
-    // no lock here, as no other thread created yet, we are single thread~
-    init_printer (); 
 
 #ifdef _SC_HOST_NAME_MAX
     n = sysconf (_SC_HOST_NAME_MAX); 
@@ -879,7 +881,7 @@ int main (int argc, char *argv[])
         if (sockfd > maxfd)
             maxfd = sockfd; 
 
-        log_msg ("init server fd: %d", sockfd); 
+        log_msg ("init server fd: %d, port %d", sockfd, PRINTSVC_PORT); 
     }
 #endif
 
@@ -898,11 +900,15 @@ int main (int argc, char *argv[])
     else 
         log_msg ("change user to lp: %d", pwdp->pw_uid); 
 
+    init_request (); 
+    // no lock here, as no other thread created yet, we are single thread~
+    init_printer (); 
+
     pthread_create (&tid, NULL, printer_thread, NULL); 
     pthread_create (&tid, NULL, signal_thread, NULL); 
     build_qonstart (); 
+    
     log_msg ("daemon initialized"); 
-
     for (;;) {
         rset = rendezvous; 
         if (select (maxfd + 1, &rset, NULL, NULL, NULL) < 0)
