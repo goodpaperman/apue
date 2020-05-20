@@ -100,6 +100,7 @@ ssize_t tread (int fd, void* buf, size_t nbytes, unsigned int timeout)
         return -1; 
     }
 
+    log_msg ("%d has data", fd); 
     return read (fd, buf, nbytes);
 }
 

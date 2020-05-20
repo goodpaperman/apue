@@ -31,7 +31,7 @@ int log_to_stderr = 0;
 struct addrinfo *printer; 
 char *printer_name; 
 pthread_mutex_t configlock = PTHREAD_MUTEX_INITIALIZER; 
-int reread; 
+int reread = 0; 
 
 struct worker_thread *workers; 
 pthread_mutex_t workerlock = PTHREAD_MUTEX_INITIALIZER; 
@@ -436,11 +436,11 @@ void* printer_thread (void *arg)
             reread = 0; 
             pthread_mutex_unlock (&configlock); 
             init_printer (); 
+            log_msg("re-reading config file"); 
         } else { 
             pthread_mutex_unlock (&configlock); 
         }
 
-        log_msg("re-reading config file"); 
         sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jp->jobid); 
         if ((fd = open (name, O_RDONLY)) < 0) { 
             log_msg ("job %ld canceled - can't open %s: %s", jp->jobid, name, strerror (errno)); 
@@ -448,6 +448,7 @@ void* printer_thread (void *arg)
             continue; 
         }
 
+        log_msg ("open data file ok"); 
         if (fstat (fd, &sbuf) < 0) { 
             log_msg ("job %ld canceled - can't fstat %s: %s", jp->jobid, name, strerror (errno)); 
             free (jp); 
@@ -455,15 +456,31 @@ void* printer_thread (void *arg)
             continue; 
         }
 
+        log_msg ("file size: %d", sbuf.st_size); 
         if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0) { 
             log_msg ("job %ld deferred - can't create socket: %s", jp->jobid, strerror (errno)); 
             goto defer; 
         }
 
+        log_msg ("create socket for printer ok, printer addr: %s", printer_name); 
+#ifdef USE_APUE_ADDRLIST
         if (connect_retry (sockfd, printer->ai_addr, printer->ai_addrlen) < 0) { 
             log_msg ("job %ld deferred - can't contact printer: %s", jp->jobid, strerror (errno)); 
             goto defer; 
         }
+#else
+        struct sockaddr_in addr = { 0 }; 
+        addr.sin_family = AF_INET; 
+        addr.sin_addr.s_addr = inet_addr (printer_name); 
+        addr.sin_port = htons (IPP_PORT); 
+        size_t addrlen = sizeof (addr); 
+        if (connect_retry (sockfd, (struct sockaddr *) &addr, addrlen) < 0) { 
+            log_msg ("job %ld deferred - can't contact printer: %s", jp->jobid, strerror (errno)); 
+            goto defer; 
+        }
+#endif
+
+        log_msg ("connect to printer ok"); 
 
         icp = ibuf; 
         hp = (struct ipp_hdr *)icp; 
@@ -510,7 +527,9 @@ void* printer_thread (void *arg)
             goto defer; 
         }
 
+        log_msg ("write to printer ipp protocol ok"); 
         while ((nr = read (fd, buf, IOBUFSZ)) > 0) { 
+            log_msg ("read file data %d", nr); 
             if ((nw = write (sockfd, buf, nr)) != nr) { 
                 if (nw < 0)
                     log_ret ("can't write to printer"); 
@@ -519,6 +538,8 @@ void* printer_thread (void *arg)
 
                 goto defer; 
             }
+            else 
+                log_msg ("write to printer ipp data %d", nw); 
         }
 
         if (nr < 0) { 
@@ -734,7 +755,7 @@ void* client_thread (void *arg)
         pthread_exit ((void *)1); 
     }
 
-    log_msg ("readn %d", n); 
+    log_msg ("got request data: %d", n); 
     req.size = ntohl (req.size); 
     req.flags = ntohl (req.flags); 
 
@@ -756,6 +777,8 @@ void* client_thread (void *arg)
         writen (sockfd, &res, sizeof (struct printresp)); 
         pthread_exit ((void *)1); 
     }
+    else
+        log_msg ("create job file %s", name); 
 
     first = 1; 
     while ((nr = tread (sockfd, buf, IOBUFSZ, 20)) > 0) { 
@@ -765,6 +788,7 @@ void* client_thread (void *arg)
                 req.flags |= PR_TEXT; 
         }
 
+        log_msg ("got file data %d", nr); 
         nw = write (fd, buf, nr); 
         if (nw != nr) { 
             if (nw < 0)
@@ -780,6 +804,8 @@ void* client_thread (void *arg)
             unlink (name); 
             pthread_exit ((void *)1); 
         }
+
+        log_msg ("write into file %d", nw); 
     }
 
     close (fd); 
@@ -798,6 +824,8 @@ void* client_thread (void *arg)
         unlink (name); 
         pthread_exit ((void *)1); 
     }
+    else 
+        log_msg ("create request file %s", name); 
 
     close (fd); 
     res.retcode = 0; 
