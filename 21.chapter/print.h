@@ -24,7 +24,9 @@
 #  define HOST_NAME_MAX     256
 #endif
 
-#define IPP_PORT            631
+//#define IPP_PORT            631
+// use windows smb protocol (netbios under hood) to simulate ipp
+#define IPP_PORT            445
 #define PRINTSVC_PORT       874
 #define QLEN                10  // listen backlog
 #define IBUFSZ              512 // ipp header buffer

@@ -827,6 +827,27 @@ void* client_thread (void *arg)
     else 
         log_msg ("create request file %s", name); 
 
+    nw = write (fd, &req, sizeof (struct printreq)); 
+    if (nw != sizeof (struct printreq))
+    {
+        res.jobid = 0; 
+        if (nw < 0)
+            res.retcode = htonl (errno); 
+        else 
+            res.retcode = htonl (EIO); 
+
+        log_msg ("client_thread: can't write %s: %s", name, strerror (res.retcode)); 
+
+        strncpy (res.msg, strerror (res.retcode), MSGLEN_MAX); 
+        writen (sockfd, &res, sizeof (struct printresp)); 
+
+        close (fd); 
+        unlink (name); 
+        sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+        unlink (name); 
+        pthread_exit ((void *)1); 
+    }
+
     close (fd); 
     res.retcode = 0; 
     res.jobid = htonl (jobid); 
