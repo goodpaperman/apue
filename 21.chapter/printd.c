@@ -128,15 +128,21 @@ errout:
 
 void kill_workers (void)
 {
+    int n = 0; 
     struct worker_thread *wtp; 
-    log_msg ("prepare to kill all workers"); 
+    log_msg ("prepare to kill all workers, header %p", workers); 
     pthread_mutex_lock (&workerlock); 
     for (wtp = workers; wtp != NULL; wtp = wtp->next) 
+    {
         // when thread cancelled later, 
         // worker nodes will be deleted from list by client_cleanup of that thread(with lock).
+        log_msg ("kill worker %p", wtp); 
         pthread_cancel (wtp->tid); 
+        n ++; 
+    }
 
     pthread_mutex_unlock (&workerlock); 
+    log_msg ("kill total %d workers"); 
 }
 
 void* signal_thread (void *arg)
@@ -144,14 +150,16 @@ void* signal_thread (void *arg)
     int err, signo; 
     for (;;) { 
         err = sigwait (&mask, &signo); 
-        if (err != 0) { 
-            log_quit ("sigwait failed: %s", strerror (err)); 
+        if (err == 0) { 
+            log_msg ("wait signal %d", signo); 
             switch (signo) { 
                 case SIGHUP:
                     pthread_mutex_lock (&configlock); 
                     reread = 1; 
                     pthread_mutex_unlock (&configlock); 
+                    log_msg ("record to reread configuration next time..."); 
                     break; 
+                case SIGINT:
                 case SIGTERM:
                     kill_workers (); 
                     log_msg ("terminate with signal %s", strsignal (signo)); 
@@ -161,6 +169,8 @@ void* signal_thread (void *arg)
                     log_quit ("unexpected signal %d", signo); 
             }
         }
+        else 
+            log_quit ("sigwait failed: %s", strerror (err)); 
     }
 }
 
@@ -660,6 +670,7 @@ void client_cleanup (void *arg)
 
     pthread_mutex_unlock (&workerlock); 
     if (wtp != NULL) { 
+        log_msg ("clear worker %p, header now %p", wtp, workers); 
         close (wtp->sockfd); 
         free (wtp); 
     }
@@ -712,7 +723,7 @@ void add_worker (pthread_t tid, int sockfd)
 #endif
 
     pthread_mutex_unlock (&workerlock); 
-    log_msg ("add worker for client %d", sockfd); 
+    log_msg ("add worker %p for client %d, header now %p", wtp, sockfd, workers); 
 }
 
 long get_newjobno (void)
@@ -837,7 +848,6 @@ void* client_thread (void *arg)
             res.retcode = htonl (EIO); 
 
         log_msg ("client_thread: can't write %s: %s", name, strerror (res.retcode)); 
-
         strncpy (res.msg, strerror (res.retcode), MSGLEN_MAX); 
         writen (sockfd, &res, sizeof (struct printresp)); 
 
