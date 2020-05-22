@@ -162,7 +162,8 @@ void* signal_thread (void *arg)
                 case SIGINT:
                 case SIGTERM:
                     kill_workers (); 
-                    log_msg ("terminate with signal %s", strsignal (signo)); 
+                    // strsignal return null ?
+                    log_msg ("terminate with signal %d", signo); //strsignal (signo)); 
                     exit (0); 
                 default:
                     kill_workers (); 
