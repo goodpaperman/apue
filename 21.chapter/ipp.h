@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 #define STATCLASS_OK(x)         ((x) >= 0x0000 && (x) <= 0x00ff)
 #define STATCLASS_INFO(x)       ((x) >= 0x0100 && (x) <= 0x01ff)
@@ -99,3 +100,5 @@ struct ipp_hdr {
 
 #define operation u.op
 #define status u.st
+
+extern char const* ipp_err_to_msg (int err); 

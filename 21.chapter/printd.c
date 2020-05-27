@@ -381,6 +381,7 @@ int printer_status (int sockfd, struct job* jp)
             if (STATCLASS_OK (i))
                 success = 1; 
 
+            log_msg ("jobid %ld status %d: %s", jobid, i, ipp_err_to_msg (i)); 
             break; 
         }
     }

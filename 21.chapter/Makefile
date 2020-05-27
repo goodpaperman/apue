@@ -1,6 +1,6 @@
 all: print getopt printd
 
-printd: printd.o apue.o util.o
+printd: printd.o apue.o util.o ipp.o
 	gcc -Wall -g $^ -o $@ -lpthread
 
 printd.o: printd.c print.h ../apue.h
@@ -17,6 +17,9 @@ print: print.o apue.o util.o
 
 print.o: print.c print.h ../apue.h
 	gcc -Wall -g -c $< -o $@ 
+
+ipp.o: ipp.c ipp.h 
+	gcc -Wall -g -c $< -o $@
 
 util.o: util.c print.h 
 	gcc -Wall -g -c $< -o $@
