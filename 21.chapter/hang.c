@@ -72,7 +72,7 @@ int main (int argc, char *argv[])
     } else if (connect_retry (sockfd, (struct sockaddr *) &addr, addrlen) < 0) {
         return errno; 
     } else {
-        submit_req (sockfd, argc > 1 ? atol(argv[2]) : -1); 
+        submit_req (sockfd, argc > 1 ? atol(argv[1]) : -1); 
         exit (0); 
     }
 
