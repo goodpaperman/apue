@@ -125,3 +125,21 @@ ssize_t treadn (int fd, void *buf, size_t nbytes, unsigned int timeout)
     return nbytes - nleft; 
 }
 
+#define MAXSLEEP 128
+int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
+{
+    int nsec; 
+    for (nsec = 1; nsec <= MAXSLEEP; nsec <<= 1) { 
+        if (connect (sockfd, addr, alen) == 0) { 
+            printf ("connect ok\n"); 
+            return 0; 
+        }
+
+        printf ("connect failed, retry...\n"); 
+        if (nsec <= MAXSLEEP/2)
+            sleep (nsec); 
+    }
+
+    return -1; 
+}
+

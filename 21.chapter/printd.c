@@ -395,24 +395,6 @@ out:
     return success; 
 }
 
-#define MAXSLEEP 128
-int connect_retry (int sockfd, const struct sockaddr *addr, socklen_t alen)
-{
-    int nsec; 
-    for (nsec = 1; nsec <= MAXSLEEP; nsec <<= 1) { 
-        if (connect (sockfd, addr, alen) == 0) { 
-            log_msg ("connect ok"); 
-            return 0; 
-        }
-
-        log_msg ("connect failed, retry..."); 
-        if (nsec <= MAXSLEEP/2)
-            sleep (nsec); 
-    }
-
-    return -1; 
-}
-
 void* printer_thread (void *arg)
 {
     struct job *jp; 
