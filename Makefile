@@ -42,5 +42,7 @@ clean:
 	$(MAKE) -C 17.chapter clean 
 	$(MAKE) -C 18.chapter clean 
 	$(MAKE) -C 19.chapter clean 
+	$(MAKE) -C 20.chapter clean 
+	$(MAKE) -C 21.chapter clean 
 
 .PHONY: clean
