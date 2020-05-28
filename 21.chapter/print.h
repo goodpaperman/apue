@@ -28,6 +28,7 @@
 // use windows smb protocol (netbios under hood) to simulate ipp
 #define IPP_PORT            445
 #define PRINTSVC_PORT       874
+#define HANGSVC_PORT        875
 #define QLEN                10  // listen backlog
 #define IBUFSZ              512 // ipp header buffer
 #define HBUFSZ              512 // http header buffer
@@ -64,4 +65,13 @@ struct printresp {
     char msg [MSGLEN_MAX]; 
 }; 
 
+struct hangreq {
+    long jobid; 
+    char usernm [USERNM_MAX]; 
+}; 
+
+struct hangresp {
+    long retcode;  // 0: success
+    char msg [MSGLEN_MAX]; 
+}; 
 

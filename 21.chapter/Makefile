@@ -1,4 +1,10 @@
-all: print getopt printd
+all: print getopt printd hang
+
+hang: hang.o apue.o util.o
+	gcc -Wall -g $^ -o $@
+
+hang.o: hang.c print.h ../apue.h
+	gcc -Wall -g -c $< -o $@ 
 
 printd: printd.o apue.o util.o ipp.o
 	gcc -Wall -g $^ -o $@ -lpthread
@@ -29,7 +35,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp print getopt printd
+	-rm -f *.o core.* *.log *~ *.swp print getopt printd hang
 	@echo "end clean"
 
 .PHONY: clean
