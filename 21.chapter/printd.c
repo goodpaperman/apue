@@ -135,7 +135,7 @@ void kill_workers (void)
     for (wtp = workers; wtp != NULL; wtp = wtp->next) 
     {
         // when thread cancelled later, 
-        // worker nodes will be deleted from list by client_cleanup of that thread(with lock).
+        // worker nodes will be deleted from list by print_cleanup of that thread(with lock).
         log_msg ("kill worker %p", wtp); 
         pthread_cancel (wtp->tid); 
         n ++; 
@@ -173,6 +173,21 @@ void* signal_thread (void *arg)
         else 
             log_quit ("sigwait failed: %s", strerror (err)); 
     }
+}
+
+struct job* find_job (long jobid)
+{
+    struct job* jp = jobhead; 
+    while (jp != NULL)
+    {
+        if (jp->jobid == jobid)
+            break; 
+
+        jp = jp->next; 
+    }
+
+    log_msg ("find job %d: %p", jobid, jp); 
+    return jp; 
 }
 
 void remove_job (struct job *target)
@@ -632,7 +647,7 @@ void build_qonstart (void)
     log_msg("add total %d jobs from dir", total); 
 }
 
-void client_cleanup (void *arg)
+void print_cleanup (void *arg)
 {
     struct worker_thread *wtp; 
     pthread_t tid = (pthread_t) arg; 
@@ -722,7 +737,7 @@ long get_newjobno (void)
     return jobid; 
 }
 
-void* client_thread (void *arg)
+void* print_client (void *arg)
 {
     int n, fd, sockfd, nr, nw, first; 
     long jobid; 
@@ -733,7 +748,7 @@ void* client_thread (void *arg)
     char buf[IOBUFSZ]; 
 
     tid = pthread_self (); 
-    pthread_cleanup_push (client_cleanup, (void *)tid); 
+    pthread_cleanup_push (print_cleanup, (void *)tid); 
     sockfd = (int)arg; 
     add_worker (tid, sockfd); 
 
@@ -791,7 +806,7 @@ void* client_thread (void *arg)
             else 
                 res.retcode = htonl (EIO); 
 
-            log_msg ("client_thread: can't write %s: %s", name, strerror (errno)); 
+            log_msg ("print_client: can't write %s: %s", name, strerror (errno)); 
             strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
             writen (sockfd, &res, sizeof (struct printresp)); 
 
@@ -809,7 +824,7 @@ void* client_thread (void *arg)
     if (fd < 0) { 
         res.jobid = 0; 
         res.retcode = htonl (errno); 
-        log_msg ("client_thread: can't create %s: %s", name, strerror (errno)); 
+        log_msg ("print_client: can't create %s: %s", name, strerror (errno)); 
         strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
         writen (sockfd, &res, sizeof (struct printresp)); 
 
@@ -831,7 +846,7 @@ void* client_thread (void *arg)
         else 
             res.retcode = htonl (EIO); 
 
-        log_msg ("client_thread: can't write %s: %s", name, strerror (res.retcode)); 
+        log_msg ("print_client: can't write %s: %s", name, strerror (res.retcode)); 
         strncpy (res.msg, strerror (res.retcode), MSGLEN_MAX); 
         writen (sockfd, &res, sizeof (struct printresp)); 
 
@@ -854,11 +869,80 @@ void* client_thread (void *arg)
     return ((void *)0); 
 }
 
+void* hang_client (void *arg)
+{
+    int n, sockfd, nr, nw, first; 
+    long jobid; 
+    pthread_t tid; 
+    struct hangreq req; 
+    struct hangresp res; 
+    char name[FILENMSZ]; 
+    char buf[IOBUFSZ]; 
+
+    tid = pthread_self (); 
+    sockfd = (int)arg; 
+    if ((n = treadn (sockfd, &req, sizeof (struct hangreq), 10)) != sizeof(struct hangreq)) {
+        if (n < 0)
+            res.retcode = htonl (errno); 
+        else 
+            res.retcode = htonl (EIO); 
+
+        strncpy (res.msg, strerror (errno), MSGLEN_MAX); 
+        writen (sockfd, &res, sizeof (struct printresp)); 
+        log_msg ("readn failed, send back client err %d", ntohl (res.retcode)); 
+        pthread_exit ((void *)1); 
+    }
+
+    log_msg ("got request data: %d", n); 
+
+    jobid = req.jobid; 
+    pthread_mutex_lock (&joblock); 
+    if (jobid < 0)
+    {
+        //list all hanging jobs
+        int n = 0; 
+        struct job* jp; 
+        for (jp = jobhead; jp != NULL; jp = jp->next)
+        {
+            n ++; 
+            sprintf (res.msg + strlen (res.msg), "  %ld: %s (%u)\n", jp->jobid, jp->req.jobnm, jp->req.size); 
+        }
+
+        res.retcode = 0; 
+        log_msg ("list total %d jobs\n", n); 
+    }
+    else
+    {
+        //cancel this job, first find it..
+        struct job* jp = find_job (jobid); 
+        if (jp == NULL)
+        {
+            res.retcode = -1; 
+            sprintf (res.msg, "can not find that job"); 
+        }
+        else 
+        {
+            res.retcode = 0; 
+            remove_job (jp); 
+            sprintf (res.msg, "find and remove that job"); 
+            sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+            unlink (name); 
+            sprintf (name, "%s/%s/%ld", SPOOLDIR, REQDIR, jobid); 
+            unlink (name); 
+        }
+    }
+
+    pthread_mutex_unlock (&joblock); 
+    nr = writen (sockfd, &res, sizeof (struct hangresp)); 
+    log_msg ("send back client response: %d", nr); 
+    return ((void *)0); 
+}
+
 int main (int argc, char *argv[])
 {
     pthread_t tid; 
     struct addrinfo *ailist, *aip; 
-    int sockfd, err, i, n, maxfd; 
+    int fd, sockfd, err, i, n, maxfd; 
     fd_set rendezvous, rset; 
     struct sigaction sa; 
     struct passwd *pwdp; 
@@ -924,7 +1008,17 @@ int main (int argc, char *argv[])
         if (sockfd > maxfd)
             maxfd = sockfd; 
 
-        log_msg ("init server fd: %d, port %d", sockfd, PRINTSVC_PORT); 
+        log_msg ("init print server fd: %d, port %d", sockfd, PRINTSVC_PORT); 
+    }
+
+    addr.sin_port = htons (HANGSVC_PORT); 
+    addrlen = sizeof (addr); 
+    if ((sockfd = initserver (SOCK_STREAM, (struct sockaddr *) &addr, addrlen, QLEN)) >= 0) {
+        FD_SET (sockfd, &rendezvous); 
+        if (sockfd > maxfd)
+            maxfd = sockfd; 
+
+        log_msg ("init hang server fd: %d, port %d", sockfd, HANGSVC_PORT); 
     }
 #endif
 
@@ -961,14 +1055,29 @@ int main (int argc, char *argv[])
 
         for (i=0; i<=maxfd; i++) { 
             if (FD_ISSET (i, &rset)) { 
-                log_msg ("listen fd %d has event", i); 
-                sockfd = accept (i, NULL, NULL); 
-                if (sockfd < 0)
-                    log_ret ("accept failed"); 
-                else 
-                    log_msg ("accept new client %d", sockfd); 
+                if (i == sockfd) { 
+                    // hang server
+                    log_msg ("hang listen fd %d has event", i); 
+                    fd = accept (i, NULL, NULL); 
+                    if (fd < 0)
+                        log_ret ("accept failed"); 
+                    else 
+                        log_msg ("accept new client %d", fd); 
 
-                pthread_create (&tid, NULL, client_thread, (void *)sockfd); 
+                    pthread_create (&tid, NULL, hang_client, (void *)fd); 
+                }
+                else 
+                {
+                    // print server
+                    log_msg ("print listen fd %d has event", i); 
+                    fd = accept (i, NULL, NULL); 
+                    if (fd < 0)
+                        log_ret ("accept failed"); 
+                    else 
+                        log_msg ("accept new client %d", fd); 
+
+                    pthread_create (&tid, NULL, print_client, (void *)fd); 
+                }
             }
         }
     }
