@@ -23,7 +23,7 @@ void submit_req (int sockfd, long jobid)
     else 
         strcpy (req.usernm, pwd->pw_name); 
 
-    req.jobid = jobid; 
+    req.jobid = htonl(jobid); 
     printf ("prepare to submit request: %ld\n", jobid); 
     nw = writen (sockfd, &req, sizeof (struct hangreq)); 
     if (nw != sizeof (struct hangreq)) {
@@ -72,7 +72,7 @@ int main (int argc, char *argv[])
     } else if (connect_retry (sockfd, (struct sockaddr *) &addr, addrlen) < 0) {
         return errno; 
     } else {
-        submit_req (sockfd, argc > 1 ? atol(argv[1]) : -1); 
+        submit_req (sockfd, argc > 1 ? atol(argv[1]) : 0); 
         exit (0); 
     }
 

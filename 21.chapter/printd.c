@@ -871,15 +871,13 @@ void* print_client (void *arg)
 
 void* hang_client (void *arg)
 {
-    int n, sockfd, nr, nw, first; 
-    long jobid; 
-    pthread_t tid; 
+    int n, sockfd, nr, nw; 
     struct hangreq req; 
     struct hangresp res; 
     char name[FILENMSZ]; 
     char buf[IOBUFSZ]; 
+    long jobid; 
 
-    tid = pthread_self (); 
     sockfd = (int)arg; 
     if ((n = treadn (sockfd, &req, sizeof (struct hangreq), 10)) != sizeof(struct hangreq)) {
         if (n < 0)
@@ -895,17 +893,22 @@ void* hang_client (void *arg)
 
     log_msg ("got request data: %d", n); 
 
-    jobid = req.jobid; 
+    jobid = ntohl(req.jobid); 
     pthread_mutex_lock (&joblock); 
-    if (jobid < 0)
+    if (jobid == 0)
     {
         //list all hanging jobs
         int n = 0; 
         struct job* jp; 
         for (jp = jobhead; jp != NULL; jp = jp->next)
         {
-            n ++; 
-            sprintf (res.msg + strlen (res.msg), "  %ld: %s (%u)\n", jp->jobid, jp->req.jobnm, jp->req.size); 
+            if (strcasecmp (req.usernm, "root") == 0 ||
+                strcasecmp (req.usernm, jp->req.usernm) == 0)
+            {
+                // only list files issued by himself
+                n ++; 
+                sprintf (res.msg + strlen (res.msg), "  %ld, %s : %s (%u)\n", jp->jobid, jp->req.usernm, jp->req.jobnm, jp->req.size); 
+            }
         }
 
         res.retcode = 0; 
@@ -922,13 +925,23 @@ void* hang_client (void *arg)
         }
         else 
         {
-            res.retcode = 0; 
-            remove_job (jp); 
-            sprintf (res.msg, "find and remove that job"); 
-            sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
-            unlink (name); 
-            sprintf (name, "%s/%s/%ld", SPOOLDIR, REQDIR, jobid); 
-            unlink (name); 
+            if (!(strcasecmp (req.usernm, "root") == 0 ||
+                  strcasecmp (req.usernm, jp->req.usernm) == 0))
+            {
+                // only cancel files issued by himself
+                res.retcode = -2; 
+                sprintf (res.msg, "can not hang files issued by other user!"); 
+            }
+            else
+            {
+                res.retcode = 0; 
+                remove_job (jp); 
+                sprintf (res.msg, "find and remove that job"); 
+                sprintf (name, "%s/%s/%ld", SPOOLDIR, DATADIR, jobid); 
+                unlink (name); 
+                sprintf (name, "%s/%s/%ld", SPOOLDIR, REQDIR, jobid); 
+                unlink (name); 
+            }
         }
     }
 
