@@ -1,4 +1,4 @@
-all: threadequal threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadcleanup.i threadcleanup.ii threadmutex threaddeadlock threadmutex2 threadmutex3 threadrwlock threadrdlimit threadequal2 threadcond threadequal3 threadequal4
+all: threadid threadexit threadcancel threaddetach threadstruct threadcleanup threadcleanup.i threadcleanup.ii threadmutex threaddeadlock threadmutex2 threadmutex3 threadrwlock threadrdlimit threadequal2 threadcond threadequal3 threadequal4
 
 threadequal4: threadequal4.o apue.o 
 	gcc -Wall -g $^ -o $@ -pthread
@@ -102,11 +102,11 @@ threadid: threadid.o apue.o
 threadid.o: threadid.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
-threadequal: threadequal.o apue.o 
-	g++ -Wall -g $^ -o $@ -pthread
+#threadequal: threadequal.o apue.o 
+#	g++ -Wall -g $^ -o $@ -pthread
 
-threadequal.o: threadequal.c ../apue.h concurrent_queue.hpp
-	g++ -Wall -g -c $< -o $@  -std=c++11 
+#threadequal.o: threadequal.c ../apue.h concurrent_queue.hpp
+#	g++ -Wall -g -c $< -o $@  -std=c++11 
 
 log.o: ../log.c ../log.h
 	gcc -Wall -g -c $< -o $@
