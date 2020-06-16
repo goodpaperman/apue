@@ -51,8 +51,8 @@ conf: conf.o apue.o
 conf.o: conf.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-conf.c: conf.awk.c sysconf.sym pathconf.sym
-	./conf.awk conf.awk.c > conf.c
+conf.c: conf.awk sysconf.sym pathconf.sym
+	./$^ > $@
 
 option: option.o apue.o
 	gcc -Wall -g $^ -o $@
