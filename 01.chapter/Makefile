@@ -1,4 +1,4 @@
-all: myls myecho ourecho pid shell shell_s error uid conf tmpname limit option clock
+all: myls myecho ourecho pid shell shell_s error uid conf conf.out tmpname limit option clock
 
 myls: myls.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -54,14 +54,20 @@ conf.o: conf.c ../apue.h
 conf.c: conf.awk sysconf.sym pathconf.sym
 	./$^ > $@
 
+conf.out: conf.out.o apue.o
+	gcc -Wall -g $^ -o $@
+
+conf.out.o: conf.awk.c ../apue.h
+	gcc -Wall -g -c $< -o $@
+
 option: option.o apue.o
 	gcc -Wall -g $^ -o $@
 
 option.o: option.c ../apue.h
 	gcc -Wall -g -c $< -o $@
 
-option.c: option.awk.c
-	./option.awk option.awk.c > option.c
+option.c: option.awk
+	./option.awk > option.c
 
 tmpname: tmpname.o
 	gcc -Wall -g $^ -o $@
@@ -89,7 +95,7 @@ clock.o: clock.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp myls myecho ourecho pid shell shell_s error uid conf conf.c tmpname limit option option.c clock
+	-rm -f *.o core.* *.log *~ *.swp myls myecho ourecho pid shell shell_s error uid conf conf.c conf.out tmpname limit option option.c clock
 	@echo "end clean"
 
 .PHONY: clean
