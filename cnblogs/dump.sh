@@ -1,3 +1,3 @@
 #! /bin/sh
-./plot.sh
+./plot.p
 eog goodcitizen.png
