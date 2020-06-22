@@ -11,6 +11,7 @@
 #include <errno.h> 
 #include <sys/stat.h> 
 #endif 
+#include <string.h>
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h>
@@ -57,7 +58,7 @@ int main (int argc, char *argv[])
 //#endif 
 
   srand (time(0)); 
-  name = (char *) calloc (1, max (dir_len, file_len) + 1); 
+  name = (char *) calloc (1, (dir_len > file_len ? dir_len : file_len) + 1); 
   if (name == 0)
     return -1; 
 
