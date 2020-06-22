@@ -1,18 +1,8 @@
-// path_max.cpp : 定义控制台应用程序的入口点。
-//
-//
-//#include "stdafx.h"
-//
-//
-//int _tmain(int argc, _TCHAR* argv[])
-//{
-//	return 0;
-//}
 
-
-#include <stdio.h> 
-#include <stdlib.h> 
 #ifdef WIN32
+#  ifndef _WIN32_WINNT            // 指定要求的最低平台是 Windows Vista。
+#  define _WIN32_WINNT 0x0600     // 将此值更改为相应的值，以适用于 Windows 的其他版本。
+#  endif
 #include <windows.h> 
 #include <direct.h> 
 #else 
@@ -21,6 +11,8 @@
 #include <errno.h> 
 #include <sys/stat.h> 
 #endif 
+#include <stdio.h> 
+#include <stdlib.h> 
 
 void get_random_name (char *name, int len)
 {
@@ -33,9 +25,13 @@ void get_random_name (char *name, int len)
 
 int main (int argc, char *argv[])
 {
+  int name_len = 0; 
+  char *name = 0; 
+  int ret = 0, level = 0; 
 #ifdef WIN32
 	int name_max = MAX_PATH; 
 	int path_max = MAX_PATH; 
+  HANDLE fd = 0; 
 #else 
   //char const* path = "."; 
   char const* path = "/"; 
@@ -47,7 +43,6 @@ int main (int argc, char *argv[])
     name_max, path_max); 
 
   name_max = 25; 
-  int name_len = 0; 
 
 #if 0
   // will fail 
@@ -55,13 +50,14 @@ int main (int argc, char *argv[])
 #else 
   name_len = name_max; 
 #endif 
-  char *name = (char *) malloc (name_len + 1); 
+
+  name = (char *) malloc (name_len + 1); 
   if (name == 0)
     return -1; 
 
   get_random_name (name, name_len); 
 #ifdef WIN32
-  HANDLE fd = CreateFile (name, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0); 
+  fd = CreateFile (name, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0); 
   if (fd == 0)
 	  printf ("open %s failed, errno = %d\n", name, errno); 
   else 
@@ -80,13 +76,12 @@ int main (int argc, char *argv[])
   }
 #endif 
 
-  int ret = 0, level = 0; 
   do
   {
     level ++; 
     get_random_name (name, name_len); 
 #ifdef WIN32
-	ret = ::_mkdir (name); 
+	  ret = _mkdir (name); 
 #else 
     ret = mkdir (name, 0777); 
 #endif 
