@@ -15,8 +15,10 @@ set y2label "rank"
 set y2tics
 set ytics nomirror
 
-set yrange [0:6000]
-set y2range [0:120000]
+#set yrange [0:6000]
+#set y2range [0:120000]
+set yrange [4400:4700]
+set y2range [112000:117000]
 #set ytics ("0" 0,"1" 1000,"2" 2000,"3" 3000,"4" 4000,"5" 5000,"6" 6000)   #设置y轴范围、刻度参数
 #set y2tics ("0" 0,"0.2" 20000,"0.4" 40000,"0.6" 60000,"0.8" 80000,"1.0" 100000,"1.2" 120000)   #设置y轴范围、刻度参数
 
