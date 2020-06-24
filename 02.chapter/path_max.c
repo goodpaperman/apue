@@ -102,11 +102,11 @@ int main (int argc, char *argv[])
     if (ret == -1)
 #endif 
     {
-      printf ("mkdir %s failed, errno = %d, level = %d\n", name, errno, level); 
+      printf ("mkdir %s failed, errno = %d\n", name, errno); 
       break; 
     }
     
-    printf ("mkdir %s @ %d\n", name, level); 
+    printf ("mkdir %s\n", name); 
 #ifdef WIN32
 	//ret = _chdir (name); 
     ret = SetCurrentDirectoryA(name); 
@@ -116,7 +116,7 @@ int main (int argc, char *argv[])
     if (ret == -1)
 #endif 
     {
-      printf ("chdir %s failed, errno = %d, level = %d\n", name, errno, level); 
+      printf ("chdir %s failed, errno = %d\n", name, errno); 
       break; 
     }
 
