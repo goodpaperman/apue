@@ -16,6 +16,32 @@
 #include <stdlib.h> 
 #include <time.h>
 
+#if 1
+
+int main ()
+{
+#ifdef WIN32
+    static char buf[MAX_PATH + 1] = { 0 };
+    if (GetModuleFileNameA(NULL, buf, MAX_PATH) == 0)
+    {
+        printf("get current module path failed, errno %d", GetLastError());
+        return -1;
+    }
+#else
+    static char buf[PATH_MAX + 1] = { 0 };
+    if (readlink("/proc/self/exe", buf, MAX_PATH) < 0)
+    {
+        printf("read exe path failed, errno %d", errno);
+        return -1;
+    }
+#endif
+
+    printf("current executable file path: %s\n", buf);
+    return 0; 
+}
+
+#else
+
 void get_random_name (char *name, int len, int level)
 {
   int i, n; 
@@ -119,3 +145,5 @@ int main (int argc, char *argv[])
   free (name); 
   return 0; 
 }
+
+#endif
