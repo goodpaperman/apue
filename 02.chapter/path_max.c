@@ -6,6 +6,7 @@
 #include <windows.h> 
 #include <direct.h> 
 #else 
+#include <limits.h>
 #include <unistd.h> 
 #include <fcntl.h> 
 #include <errno.h> 
@@ -16,7 +17,7 @@
 #include <stdlib.h> 
 #include <time.h>
 
-#if 1
+#if 0
 
 int main ()
 {
@@ -29,7 +30,7 @@ int main ()
     }
 #else
     static char buf[PATH_MAX + 1] = { 0 };
-    if (readlink("/proc/self/exe", buf, MAX_PATH) < 0)
+    if (readlink("/proc/self/exe", buf, PATH_MAX) < 0)
     {
         printf("read exe path failed, errno %d", errno);
         return -1;
