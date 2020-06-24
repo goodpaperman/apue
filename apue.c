@@ -255,11 +255,16 @@ void clr_fl (int fd, int flags)
 void tell_buf (char const* name, FILE* fp)
 {
   printf ("%s is: ", name); 
+#ifdef _IO_UNBUFFERED
   if (fp->_flags & _IO_UNBUFFERED)
     printf ("unbuffered\n"); 
-  else if (fp->_flags & _IO_LINE_BUF)
+  else 
+#endif
+#ifdef _IO_LINE_BUF
+  if (fp->_flags & _IO_LINE_BUF)
     printf ("line-buffered\n"); 
   else 
+#endif
     printf ("fully-buffered\n"); 
 
   printf ("buffer size is %d\n", fp->_IO_buf_end - fp->_IO_buf_base); 
