@@ -95,37 +95,47 @@ int main (int argc, char *argv[])
     get_random_name (name, dir_len, ++level); 
 #ifdef WIN32
     //ret = _mkdir (name); 
-	  ret = CreateDirectoryA(name, NULL); 
+    //if (ret == -1)
+	ret = CreateDirectory(name, NULL); 
     if (!ret)
+    {
+        printf ("CreateDirectory %s failed, errno = %d\n", name, GetLastError ()); 
+        break; 
+    }
 #else 
     ret = mkdir (name, 0777); 
     if (ret == -1)
-#endif 
     {
-      printf ("mkdir %s failed, errno = %d\n", name, errno); 
-      break; 
+        printf("mkdir %s failed, errno = %d\n", name, errno);
+        break;
     }
+#endif 
     
     printf ("mkdir %s\n", name); 
 #ifdef WIN32
 	//ret = _chdir (name); 
-    ret = SetCurrentDirectoryA(name); 
+    //if (ret == -1)
+    ret = SetCurrentDirectory(name); 
     if (!ret)
+    {
+        printf("SetCurrentDirectory %s failed, errno = %d\n", name, GetLastError ());
+        break;
+    }
 #else 
     ret = chdir (name); 
     if (ret == -1)
-#endif 
     {
-      printf ("chdir %s failed, errno = %d\n", name, errno); 
-      break; 
+        printf("chdir %s failed, errno = %d\n", name, errno);
+        break;
     }
+#endif 
 
     //printf ("change to that dir\n"); 
     get_random_name (name, file_len, level); 
 #ifdef WIN32
     fd = CreateFile (name, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0); 
-    if (fd == 0)
-      printf ("open %s failed, errno = %d\n", name, errno); 
+    if (fd == INVALID_HANDLE_VALUE)
+      printf ("open %s failed, errno = %d\n", name, GetLastError ()); 
     else 
     {
       printf ("open %s OK.\n", name); 
@@ -148,3 +158,4 @@ int main (int argc, char *argv[])
 }
 
 #endif
+
