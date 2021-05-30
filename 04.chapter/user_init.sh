@@ -13,8 +13,10 @@ groups lippman steven caveman paperman
 echo "show user and their group ok"
 
 # TODO: add testing script here
-cp ./file_group_unchanged.sh /tmp/
-su - lippman -s /tmp/file_group_unchanged.sh
+cp ./file_group_unchanged_1.sh /tmp/
+cp ./file_group_unchanged_2.sh /tmp/
+su - lippman -s /tmp/file_group_unchanged_1.sh
+su - lippman -s /tmp/file_group_unchanged_2.sh
 
 userdel lippman
 userdel steven
