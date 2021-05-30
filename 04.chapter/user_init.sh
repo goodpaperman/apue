@@ -1,18 +1,18 @@
 #! /bin/bash
-groupadd common
+groupadd men
 groupadd share
 echo "create group ok"
 
-useradd lippman -G share,common
+useradd lippman -G share,men
 useradd steven -G share
-useradd caveman -G common
-useradd paperman -G common
+useradd caveman -G men
+useradd paperman -G men
 echo "create user ok"
 
 groups lippman steven caveman paperman
 echo "show user and their group ok"
 
-groupdel common
+groupdel men
 groupdel share
 echo "delete group ok"
 
