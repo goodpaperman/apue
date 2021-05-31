@@ -8,14 +8,12 @@ cd /tmp
 # lippman belongs to lippman/share/men
 # can change between them
 touch this_is_a_test_file
-ls -lhrt this_is_a_test_file
+ls -lh this_is_a_test_file
 
 # change current owner's group
-# using full path to avoid usermod not find..
 sudo usermod -g share lippman
-groups lippman 
+groups lippman
 echo "show user and their group ok"
 
 cd -
 echo "test file group unchange over"
-
