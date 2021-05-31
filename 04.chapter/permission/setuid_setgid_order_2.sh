@@ -11,8 +11,7 @@ id
 ./setuid_setgid_demo &
 
 echo "start setuid/setgid program ok"
-#ps -ao pid,ruid,rgid,euid,egid,suid,sgid,supgid,cmd | head -n 1
-ps -ao pid,ruid,rgid,euid,egid,suid,sgid,supgid,cmd #| grep '_demo'
+ps -ao pid,ruid,rgid,euid,egid,suid,sgid,supgid,cmd
 
 echo "waiting them to exit..."
 wait
