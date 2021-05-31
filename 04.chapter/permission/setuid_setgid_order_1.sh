@@ -1,19 +1,22 @@
 #! /bin/sh
-echo "switch to user steven"
+echo "switch to user lippman"
 # ensure new user can create file
 cd /tmp
 
+# show user & group id for later use
+id
+
 # create setuid/setgid/setuid & setgid program
-echo "sleep 10" > setuid_demo.sh
-chmod u+s,ugo+wx !$
-ls -lh !$
+cp setugid setuid_demo 
+chmod u+s,ugo+wx /tmp/setuid_demo
+ls -lh setuid_demo
 
-echo "sleep 10" > setgid_demo.sh
-chmod g+s,ugo+wx !$
-ls -lh !$
+cp setugid setgid_demo
+chmod g+s,ugo+wx setgid_demo
+ls -lh setgid_demo
 
-echo "sleep 10" > setuid_setgid_demo.sh
-chmod ug+s,ugo+wx !$
-ls -lh !$
+cp setugid setuid_setgid_demo
+chmod ug+s,ugo+wx setuid_setgid_demo
+ls -lh setuid_setgid_demo
 
 echo "create testing setuid/setgid file ok"

@@ -1,4 +1,5 @@
 all:  stat_fd acc umask_fd chmod_fd hold follow_links ftw ftimes dtimes z0 trunc0 dirproc dirmode dirftw dirscan dirch devid dirmk devfd
+	$(MAKE) -C permission
 
 stat_fd: stat_fd.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -120,6 +121,7 @@ apue.o: ../apue.c ../apue.h
 clean: 
 	@echo "start clean..."
 	-rm -f *.o core.* *.log *~ *.swp stat_fd acc umask_fd chmod_fd hold follow_links ftw ftimes z0 trunc0 dirproc dirmode dirftw dirscan dirch devid dirmk devfd
+	$(MAKE) -C permission clean 
 	@echo "end clean"
 
 .PHONY: clean

@@ -14,16 +14,19 @@ echo "show user and their group ok"
 
 # TODO: add testing script here
 # case 01
-cp ./file_group_unchanged_1.sh /tmp/
-cp ./file_group_unchanged_2.sh /tmp/
-su - lippman -s /tmp/file_group_unchanged_1.sh
-su - lippman -s /tmp/file_group_unchanged_2.sh
+#cp ./file_group_unchanged_1.sh /tmp/
+#cp ./file_group_unchanged_2.sh /tmp/
+#su - lippman -s /tmp/file_group_unchanged_1.sh
+#su - lippman -s /tmp/file_group_unchanged_2.sh
 
 # case 02
-#cp ./setuid_setgid_order_1.sh /tmp/
-#cp ./setuid_setgid_order_2.sh /tmp/
-#su - steven -s /tmp/setuid_setgid_order_1.sh
-#su - caveman -s /tmp/setuid_setgid_order_2.sh
+cp ./setugid /tmp/
+cp ./setuid_setgid_order_1.sh /tmp/
+cp ./setuid_setgid_order_2.sh /tmp/
+cp ./setuid_setgid_order_3.sh /tmp/
+su - lippman -s /tmp/setuid_setgid_order_1.sh
+su - caveman -s /tmp/setuid_setgid_order_2.sh
+su - lippman -s /tmp/setuid_setgid_order_3.sh
 
 userdel lippman
 userdel steven
