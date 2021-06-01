@@ -13,20 +13,36 @@ groups lippman steven caveman paperman
 echo "show user and their group ok"
 
 # TODO: add testing script here
-# case 01
-#cp ./file_group_unchanged_1.sh /tmp/
-#cp ./file_group_unchanged_2.sh /tmp/
-#su - lippman -s /tmp/file_group_unchanged_1.sh
-#su - lippman -s /tmp/file_group_unchanged_2.sh
+if false; then 
+    # case: file group unchanged
+    cp ./file_group_unchanged_1.sh /tmp/
+    cp ./file_group_unchanged_2.sh /tmp/
+    su - lippman -s /tmp/file_group_unchanged_1.sh
+    su - lippman -s /tmp/file_group_unchanged_2.sh
+fi
 
-# case 02
-cp ./setugid /tmp/
-cp ./setuid_setgid_order_1.sh /tmp/
-cp ./setuid_setgid_order_2.sh /tmp/
-cp ./setuid_setgid_order_3.sh /tmp/
-su - lippman -s /tmp/setuid_setgid_order_1.sh
-su - caveman -s /tmp/setuid_setgid_order_2.sh
-su - lippman -s /tmp/setuid_setgid_order_3.sh
+if false; then 
+    # case: setuid setgid order
+    cp ./setugid /tmp/
+    cp ./setuid_setgid_order_1.sh /tmp/
+    cp ./setuid_setgid_order_2.sh /tmp/
+    cp ./setuid_setgid_order_3.sh /tmp/
+    su - lippman -s /tmp/setuid_setgid_order_1.sh
+    su - caveman -s /tmp/setuid_setgid_order_2.sh
+    su - lippman -s /tmp/setuid_setgid_order_3.sh
+fi
+
+if true; then 
+    # case: process groups unchanged
+    cp ./setugid /tmp/
+    cp ./process_supgid_unchanged.sh /tmp/
+    rm /tmp/should_wait
+    su - lippman -s /tmp/process_supgid_unchanged.sh
+    # change current owner's supplementary group
+    usermod -G lippman lippman
+    touch /tmp/should_wait
+    su - lippman -s /tmp/process_supgid_unchanged.sh
+fi
 
 userdel lippman
 userdel steven

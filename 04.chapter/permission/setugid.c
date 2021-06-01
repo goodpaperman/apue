@@ -1,9 +1,14 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 
-int main (void)
+int main (int argc, char* argv[])
 {
-    sleep (10); 
+    int timeout = 10; 
+    if (argc > 1)
+        timeout = atoi(argv[1]); 
+
+    sleep (timeout); 
     printf ("%d exit\n", getpid()); 
     return 0; 
 }
