@@ -28,12 +28,12 @@ echo "checking /tmp/share/caveman"
 try_move_file "/tmp/share/caveman"
 echo ""
 
-echo "checking /tmp/share/paperman"
-./probe_file_perm.sh "/tmp/share/paperman"
-try_move_file "/tmp/share/paperman"
-echo ""
-
 echo "checking /tmp/share/lippman"
 ./probe_file_perm.sh "/tmp/share/lippman"
 try_move_file "/tmp/share/lippman"
+echo ""
+
+echo "checking /tmp/share/paperman"
+./probe_file_perm.sh "/tmp/share/paperman"
+try_move_file "/tmp/share/paperman"
 echo ""
