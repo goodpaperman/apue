@@ -44,11 +44,7 @@ if false; then
     su - lippman -s /tmp/process_supgid_unchanged.sh
 fi
 
-if true; then 
-#useradd lippman -G share,men
-#useradd -g share steven
-#useradd -g men caveman 
-#useradd -g men paperman
+if false; then 
     # case: permission group fusing
     cp ./probe_file_perm.sh /tmp/
     cp ./perm_group_fuse_1.sh /tmp/
@@ -61,6 +57,23 @@ if true; then
     su - caveman -s /tmp/perm_group_fuse_2.sh
     su - paperman -s /tmp/perm_group_fuse_2.sh
     su - lippman -s /tmp/perm_group_fuse_2.sh
+fi
+
+if true; then 
+    # case: share with svtx
+    cp ./probe_file_perm.sh /tmp/
+    cp ./share_with_svtx_1.sh /tmp/
+    cp ./share_with_svtx_2.sh /tmp/
+    su - steven -s /tmp/share_with_svtx_1.sh
+    su - caveman -s /tmp/share_with_svtx_1.sh
+    su - lippman -s /tmp/share_with_svtx_1.sh
+    su - paperman -s /tmp/share_with_svtx_1.sh
+    # start access test
+    su - paperman -s /tmp/share_with_svtx_2.sh
+    su - lippman -s /tmp/share_with_svtx_2.sh
+    su - caveman -s /tmp/share_with_svtx_2.sh
+    su - steven -s /tmp/share_with_svtx_2.sh
+    rm -rf /tmp/share
 fi
 
 userdel lippman
