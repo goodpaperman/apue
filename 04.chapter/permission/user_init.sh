@@ -59,7 +59,7 @@ if false; then
     su - lippman -s /tmp/perm_group_fuse_2.sh
 fi
 
-if true; then 
+if false; then 
     # case: share with svtx
     cp ./probe_file_perm.sh /tmp/
     cp ./share_with_svtx_1.sh /tmp/
@@ -73,6 +73,17 @@ if true; then
     su - lippman -s /tmp/share_with_svtx_2.sh
     su - caveman -s /tmp/share_with_svtx_2.sh
     su - steven -s /tmp/share_with_svtx_2.sh
+    rm -rf /tmp/share
+fi
+
+if true; then 
+    # case: setgid parent dir
+    cp ./setgid_parent_dir.sh /tmp/
+    su - lippman -s /tmp/setgid_parent_dir.sh
+    su - caveman -s /tmp/setgid_parent_dir.sh
+    su - paperman -s /tmp/setgid_parent_dir.sh
+    su - steven -s /tmp/setgid_parent_dir.sh
+    ls -lh "/tmp/share/"
     rm -rf /tmp/share
 fi
 
