@@ -1,7 +1,7 @@
 #! /bin/sh
 # set -x
 
-echo "switch to user lippman"
+echo "switch to user $(whoami)"
 # ensure new user can create file
 cd /tmp
 
@@ -11,8 +11,8 @@ touch this_is_a_test_file
 ls -lh this_is_a_test_file
 
 # change current owner's group
-sudo usermod -g share lippman
-groups lippman
+sudo usermod -g share $(whoami)
+groups $(whoami)
 echo "show user and their group ok"
 
 cd -
