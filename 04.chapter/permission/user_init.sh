@@ -83,7 +83,7 @@ if true; then
     su - caveman -s /tmp/setgid_parent_dir.sh
     su - paperman -s /tmp/setgid_parent_dir.sh
     su - steven -s /tmp/setgid_parent_dir.sh
-    ls -lh "/tmp/share/"
+    #ls -lh "/tmp/share/"
     rm -rf /tmp/share
 fi
 
