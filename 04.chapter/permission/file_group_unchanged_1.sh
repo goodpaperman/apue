@@ -9,11 +9,3 @@ cd /tmp
 # can change between them
 touch this_is_a_test_file
 ls -lh this_is_a_test_file
-
-# change current owner's group
-sudo usermod -g share $(whoami)
-groups $(whoami)
-echo "show user and their group ok"
-
-cd -
-echo "test file group unchange over"

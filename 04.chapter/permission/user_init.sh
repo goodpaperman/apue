@@ -48,7 +48,11 @@ if false; then
     cp ./file_group_unchanged_1.sh /tmp/
     cp ./file_group_unchanged_2.sh /tmp/
     su - lippman -s /tmp/file_group_unchanged_1.sh
+    # change current owner's group
+    usermod -g share lippman
     su - lippman -s /tmp/file_group_unchanged_2.sh
+    # change group back, otherwise we will got error on delete group
+    usermod -g lippman lippman
 fi
 
 if false; then 
@@ -106,7 +110,7 @@ if false; then
     rm -rf /tmp/share
 fi
 
-if true; then 
+if false; then 
     # case: setgid parent dir
     cp ./setgid_parent_dir.sh /tmp/
     su - lippman -s /tmp/setgid_parent_dir.sh
