@@ -6,6 +6,8 @@
 #include <time.h> 
 #include <libgen.h> 
 #include <utime.h> 
+//#include <fcntl.h>
+#include <sys/time.h> 
 #include <sys/stat.h> 
 
 void print_ftime (char const* file)
@@ -280,6 +282,7 @@ int main (int argc, char *argv[])
   print_ftime (file); 
   print_ftime (file2); 
 
+#ifdef _ATFILE_SOURCE
   struct timespec times[2] = {{ 0 }}, *ptime = &times[0]; 
   times[0].tv_sec = time(0) - 10; 
   times[1].tv_sec = time(0) + 10; 
@@ -289,6 +292,8 @@ int main (int argc, char *argv[])
     printf ("utimensat OK for '%s', actime = %ld, modtime = %ld\n", to, tbuf.actime, tbuf.modtime); 
 
   sleep (2);
+#endif
+
   print_ftime (file); 
   print_ftime (file2); 
 
