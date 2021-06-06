@@ -12,10 +12,9 @@ if [ ! -d /tmp/share ]; then
 fi
 
 mkdir "/tmp/share/$(whoami)_dir"
-ls -lhd "/tmp/share/$(whoami)_dir"
+#ls -lhd "/tmp/share/$(whoami)_dir"
 touch "/tmp/share/$(whoami)_file"
-ls -lh "/tmp/share/$(whoami)_file"
-# will got error
-#strace ls -lhd "/tmp/share/$(whoami)_*"
+#ls -lh "/tmp/share/$(whoami)_file"
+ls -lhd /tmp/share/$(whoami)_*
 
 echo "prepare testing file ok"
