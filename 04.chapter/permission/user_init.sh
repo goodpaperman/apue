@@ -1,4 +1,34 @@
 #! /bin/bash
+$1: user or group name
+$2: is group ?
+check_user_group_existence ()
+{
+    local name=$1
+    local is_group=$2
+    if [ $is_group -gt 0 ]; then 
+        grep "\b$name\b" /etc/group
+    else
+        grep "\b$name\b" /etc/passwd
+    fi
+
+    if [ $? -eq 0 ]; then 
+        if [ $is_group -gt 0 ]; then 
+            echo "group exist: $name"
+        else
+            echo "user exist: $name"
+        fi
+        exit 1
+    fi
+}
+
+# check user & group existence, to avoid mistaken delete
+check_user_group_existence "men" 1
+check_user_group_existence "share" 1
+check_user_group_existence "lippman" 0
+check_user_group_existence "steven" 0
+check_user_group_existence "caveman" 0
+check_user_group_existence "paperman" 0
+
 groupadd men
 groupadd share
 echo "create group ok"
