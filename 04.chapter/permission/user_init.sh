@@ -121,7 +121,7 @@ if false; then
     rm -rf /tmp/share
 fi
 
-if true; then
+if false; then
     # case: change ogid clear setgid
     rm /tmp/this_is_a_demo_file 2>/dev/null
     rm -rf /tmp/this_is_a_demo_dir 2>/dev/null
@@ -135,6 +135,17 @@ if true; then
     chmod o+t "/tmp/this_is_a_demo_dir"
     chown steven "/tmp/this_is_a_demo_dir"
     ls -lhd "/tmp/this_is_a_demo_dir"
+fi
+
+if true; then 
+    # case: setgid not inherit
+    cp ./setgid_parent_dir.sh /tmp/setgid_not_inherit.sh
+    sed -i 's/ugo/ug/g' /tmp/setgid_not_inherit.sh
+    su - paperman -s /tmp/setgid_not_inherit.sh
+    su - lippman -s /tmp/setgid_not_inherit.sh
+    su - caveman -s /tmp/setgid_not_inherit.sh
+    su - steven -s /tmp/setgid_not_inherit.sh
+    rm -rf /tmp/share
 fi
 
 userdel lippman
