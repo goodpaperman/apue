@@ -3,12 +3,11 @@ echo "switch to user $(whoami)"
 # ensure new user can create file
 cd /tmp
 
-# lippman belongs to lippman/share/men
-# can change between them
 touch this_is_a_test_file
 ls -lh this_is_a_test_file
 
 # change current owner's group
+# change gid to it's supgid doesn't need root ? false!
 sudo usermod -g share $(whoami)
 groups $(whoami)
 echo "show user and their group ok"

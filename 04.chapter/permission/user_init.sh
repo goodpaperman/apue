@@ -43,16 +43,16 @@ groups lippman steven caveman paperman
 echo "show user and their group ok"
 
 # TODO: add testing script here
-if false; then 
+if true; then 
     # case: file group unchanged
     cp ./file_group_unchanged_1.sh /tmp/
     cp ./file_group_unchanged_2.sh /tmp/
-    su - lippman -s /tmp/file_group_unchanged_1.sh
+    su - steven -s /tmp/file_group_unchanged_1.sh
     # change current owner's group
-    usermod -g share lippman
-    su - lippman -s /tmp/file_group_unchanged_2.sh
+    usermod -g men steven
+    su - steven -s /tmp/file_group_unchanged_2.sh
     # change group back, otherwise we will got error on delete group
-    usermod -g lippman lippman
+    usermod -g share steven
 fi
 
 if false; then 
