@@ -43,7 +43,7 @@ groups lippman steven caveman paperman
 echo "show user and their group ok"
 
 # TODO: add testing script here
-if true; then 
+if false; then 
     # case: file group unchanged
     cp ./file_group_unchanged_1.sh /tmp/
     cp ./file_group_unchanged_2.sh /tmp/
@@ -119,6 +119,22 @@ if false; then
     su - steven -s /tmp/setgid_parent_dir.sh
     #ls -lh "/tmp/share/"
     rm -rf /tmp/share
+fi
+
+if true; then
+    # case: change ogid clear setgid
+    rm /tmp/this_is_a_demo_file 2>/dev/null
+    rm -rf /tmp/this_is_a_demo_dir 2>/dev/null
+    cp ./chgrp_clear_setgid.sh /tmp/
+    su - lippman -s /tmp/chgrp_clear_setgid.sh
+    chmod ug+s "/tmp/this_is_a_demo_file"
+    chmod o+t "/tmp/this_is_a_demo_file"
+    chown caveman "/tmp/this_is_a_demo_file"
+    ls -lh "/tmp/this_is_a_demo_file"
+    chmod ug+s "/tmp/this_is_a_demo_dir"
+    chmod o+t "/tmp/this_is_a_demo_dir"
+    chown steven "/tmp/this_is_a_demo_dir"
+    ls -lhd "/tmp/this_is_a_demo_dir"
 fi
 
 userdel lippman
