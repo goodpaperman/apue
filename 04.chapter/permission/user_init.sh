@@ -137,7 +137,7 @@ if false; then
     ls -lhd "/tmp/this_is_a_demo_dir"
 fi
 
-if true; then 
+if false; then 
     # case: setgid not inherit
     cp ./setgid_parent_dir.sh /tmp/setgid_not_inherit.sh
     sed -i 's/ugo/ug/g' /tmp/setgid_not_inherit.sh
@@ -146,6 +146,13 @@ if true; then
     su - caveman -s /tmp/setgid_not_inherit.sh
     su - steven -s /tmp/setgid_not_inherit.sh
     rm -rf /tmp/share
+fi
+
+if true; then 
+    # case: write clear setuid 
+    cp ./setugid /tmp/
+    cp ./write_clear_setuid.sh /tmp/
+    su - lippman -s /tmp/write_clear_setuid.sh
 fi
 
 userdel lippman
