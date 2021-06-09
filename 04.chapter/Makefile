@@ -46,14 +46,15 @@ ftw.o: ftw.c ../apue.h
 ftimes: ftimes.o apue.o
 	gcc -Wall -g $^ -o $@ 
 
+# only add ATFILE_SOURCE when glibc version < 2.10
 ftimes.o: ftimes.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -D_ATFILE_SOURCE
+	gcc -Wall -g -c $< -o $@ #-D_ATFILE_SOURCE
 
 dtimes: dtimes.o apue.o
 	gcc -Wall -g $^ -o $@
 
 dtimes.o: ftimes.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -DSEE_BASE -D_ATFILE_SOURCE
+	gcc -Wall -g -c $< -o $@ -DSEE_BASE #-D_ATFILE_SOURCE
 
 z0: z0.o apue.o
 	gcc -Wall -g $^ -o $@

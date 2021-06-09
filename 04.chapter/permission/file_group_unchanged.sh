@@ -1,16 +1,15 @@
 #! /bin/sh
-echo "switch to user lippman"
+echo "switch to user $(whoami)"
 # ensure new user can create file
 cd /tmp
 
-# lippman belongs to lippman/share/men
-# can change between them
 touch this_is_a_test_file
 ls -lh this_is_a_test_file
 
 # change current owner's group
-sudo usermod -g share lippman
-groups lippman
+# change gid to it's supgid doesn't need root ? false!
+sudo usermod -g share $(whoami)
+groups $(whoami)
 echo "show user and their group ok"
 
 touch this_is_a_demo_file
@@ -20,6 +19,6 @@ rm this_is_a*
 echo "remove testing file ok"
 
 # change group back
-sudo usermod -g lippman lippman
+sudo usermod -g lippman $(whoami)
 cd -
 echo "test file group unchange over"

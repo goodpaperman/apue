@@ -1,5 +1,5 @@
 #! /bin/sh
-echo "switch to user lippman"
+echo "switch to user $(whoami)"
 # ensure new user can create file
 cd /tmp
 

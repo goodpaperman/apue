@@ -74,8 +74,6 @@ if true; then
     su - caveman -s /tmp/share_with_svtx_2.sh
     su - steven -s /tmp/share_with_svtx_2.sh
     rm -rf /tmp/share
-fi
-
 userdel -r lippman
 userdel -r steven
 userdel -r caveman

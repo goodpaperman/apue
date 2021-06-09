@@ -1,4 +1,5 @@
 #include "../apue.h" 
+#include <stdio.h>
 
 void pr_stdio (char const*, FILE *); 
 
@@ -30,6 +31,7 @@ void pr_stdio (char const* name, FILE *fp)
 {
   printf ("stream = %s, ", name); 
   // nonportable
+#ifdef LINUX
   if (fp->_IO_file_flags & _IO_UNBUFFERED)
     printf ("unbuffered"); 
   else if (fp->_IO_file_flags & _IO_LINE_BUF)
@@ -38,4 +40,5 @@ void pr_stdio (char const* name, FILE *fp)
     printf ("fully buffered"); 
 
   printf (", buffer size = %d\n", fp->_IO_buf_end - fp->_IO_buf_base); 
+#endif
 }
