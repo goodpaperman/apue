@@ -76,17 +76,11 @@ if true; then
     rm -rf /tmp/share
 fi
 
-userdel lippman
-userdel steven
-userdel caveman
-userdel paperman
+userdel -r lippman
+userdel -r steven
+userdel -r caveman
+userdel -r paperman
 echo "delete user ok"
-
-rm -rf /home/lippman
-rm -rf /home/steven
-rm -rf /home/caveman
-rm -rf /home/paperman
-echo "remve user home dir ok"
 
 groupdel men
 groupdel share
