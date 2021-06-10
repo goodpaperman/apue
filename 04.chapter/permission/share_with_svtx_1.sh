@@ -6,8 +6,7 @@ cd /tmp
 if [ ! -d /tmp/share ]; then 
     mkdir /tmp/share
     # allow every to create file 
-    chmod ugo+rwx /tmp/share
-    chmod o+t /tmp/share
+    chmod ugo+rwx,o+t /tmp/share
     ls -lhd /tmp/share
 fi
 

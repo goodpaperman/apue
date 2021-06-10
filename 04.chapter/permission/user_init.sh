@@ -40,7 +40,7 @@ if false; then
     su - lippman -s /tmp/setuid_setgid_order_3.sh
 fi
 
-if true; then 
+if false; then 
     # case: process groups unchanged
     cp ./setugid /tmp/
     cp ./process_supgid_unchanged.sh /tmp/
@@ -61,6 +61,7 @@ if false; then
     su - steven -s /tmp/perm_group_fuse_1.sh
     rm /tmp/this_is_a_demo_file 2>/dev/null
     su - caveman -s /tmp/perm_group_fuse_1.sh
+    # start access test
     su - steven -s /tmp/perm_group_fuse_2.sh
     su - caveman -s /tmp/perm_group_fuse_2.sh
     su - paperman -s /tmp/perm_group_fuse_2.sh
