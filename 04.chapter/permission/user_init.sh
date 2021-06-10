@@ -12,6 +12,11 @@ echo "create user ok"
 groups lippman steven caveman paperman
 echo "show user and their group ok"
 
+# too see user's supgrp store where -- in /etc/group
+#cat /etc/passwd
+#echo ""
+#cat /etc/group
+
 # TODO: add testing script here
 if false; then 
     # case: file group unchanged
@@ -35,7 +40,7 @@ if false; then
     su - lippman -s /tmp/setuid_setgid_order_3.sh
 fi
 
-if false; then 
+if true; then 
     # case: process groups unchanged
     cp ./setugid /tmp/
     cp ./process_supgid_unchanged.sh /tmp/
@@ -62,7 +67,7 @@ if false; then
     su - lippman -s /tmp/perm_group_fuse_2.sh
 fi
 
-if true; then 
+if false; then 
     # case: share with svtx
     cp ./probe_file_perm.sh /tmp/
     cp ./share_with_svtx_1.sh /tmp/
