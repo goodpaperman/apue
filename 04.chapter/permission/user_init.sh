@@ -18,7 +18,10 @@ if false; then
     cp ./file_group_unchanged_1.sh /tmp/
     cp ./file_group_unchanged_2.sh /tmp/
     su - lippman -s /tmp/file_group_unchanged_1.sh
+    # change current owner's group
+    usermod -g share lippman
     su - lippman -s /tmp/file_group_unchanged_2.sh
+    usermod -g lippman lippman
 fi
 
 if false; then 
@@ -74,6 +77,8 @@ if true; then
     su - caveman -s /tmp/share_with_svtx_2.sh
     su - steven -s /tmp/share_with_svtx_2.sh
     rm -rf /tmp/share
+fi
+
 userdel -r lippman
 userdel -r steven
 userdel -r caveman
