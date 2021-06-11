@@ -68,7 +68,21 @@ if false; then
     su - lippman -s /tmp/perm_group_fuse_2.sh
 fi
 
-if true; then 
+if false; then
+    # case: change ogid clear setgid
+    rm /tmp/this_is_a_demo_file 2>/dev/null
+    rm -rf /tmp/this_is_a_demo_dir 2>/dev/null
+    cp ./chgrp_clear_setgid.sh /tmp/
+    su - lippman -s /tmp/chgrp_clear_setgid.sh
+    chmod ug+s,o+t "/tmp/this_is_a_demo_file"
+    chown caveman "/tmp/this_is_a_demo_file"
+    ls -lh "/tmp/this_is_a_demo_file"
+    chmod ug+s,o+t "/tmp/this_is_a_demo_dir"
+    chown steven "/tmp/this_is_a_demo_dir"
+    ls -lhd "/tmp/this_is_a_demo_dir"
+fi
+
+if false; then 
     # case: setgid parent dir
     cp ./setgid_parent_dir.sh /tmp/
     su - lippman -s /tmp/setgid_parent_dir.sh
