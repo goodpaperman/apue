@@ -79,6 +79,8 @@ static int dopath (Myfunc* func)
   DIR *dp; 
   char *ptr; 
 
+  // may loop for dir soft links
+  //if (stat (fullpath, &statbuf) < 0)
   if (lstat (fullpath, &statbuf) < 0)
     return (func (fullpath, &statbuf, FTW_NS)); 
   if (S_ISDIR(statbuf.st_mode) == 0)
