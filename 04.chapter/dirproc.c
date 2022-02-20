@@ -2,6 +2,8 @@
 #include <fcntl.h> 
 #include <pwd.h> 
 #include <errno.h> 
+#include <dirent.h>
+#include <linux/limits.h>
 
 int main (int argc, char *argv[])
 {
@@ -27,16 +29,32 @@ int main (int argc, char *argv[])
   else if (ret == 0)
   {
     // child
+    char filename[PATH_MAX] = { 0 }; 
+    strcpy (filename, "xyz.txt"); 
+#if 0
     if (chdir (argv[1]) < 0)
       err_sys ("chdir error"); 
 
     printf ("chdir OK\n"); 
-    sleep (5); 
-    if (creat ("xyz.txt", 0755) < 0)
-      printf ("create xyz.txt failed, errno = %d\n", errno); 
+#else
+    DIR* d = opendir(argv[1]); 
+    if (d == NULL)
+        err_sys ("opendir error"); 
     else 
-      printf ("create xyz.txt\n"); 
+        printf ("opendir\n"); 
 
+    strcpy (filename, argv[1]); 
+    strcat (filename, "/xyz.txt"); 
+#endif
+
+    sleep (5); 
+    if (creat (filename, 0755) < 0)
+      printf ("create %s failed, errno = %d\n", filename, errno); 
+    else 
+      printf ("create %s\n", filename); 
+
+    closedir (d); 
+    printf ("closedir \n"); 
     sleep (3); 
     printf ("child quit\n"); 
     exit (0); 
