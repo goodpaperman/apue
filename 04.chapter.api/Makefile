@@ -1,4 +1,4 @@
-all: mkdir_api open_api link_api symlink_api readlink_api unlink_api remove_api rmdir_api rename_api
+all: mkdir_api open_api link_api symlink_api readlink_api unlink_api remove_api rmdir_api rename_api write_api
 
 mkdir_api: mkdir_api.o apue.o
 	gcc -Wall -g $^ -o $@ 
@@ -54,12 +54,18 @@ rename_api: rename_api.o apue.o
 rename_api.o: rename_api.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
+write_api: write_api.o apue.o
+	gcc -Wall -g $^ -o $@ 
+
+write_api.o: write_api.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
+
 apue.o: ../apue.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp mkdir_api open_api link_api symlink_api readlink_api unlink_api remove_api rmdir_api rename_api
+	-rm -f *.o core.* *.log *~ *.swp mkdir_api open_api link_api symlink_api readlink_api unlink_api remove_api rmdir_api rename_api write_api
 	@echo "end clean"
 
 .PHONY: clean
