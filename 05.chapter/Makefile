@@ -4,13 +4,13 @@ fwide: fwide.o apue.o
 	gcc -Wall -g $^ -o $@
 
 fwide.o: fwide.c ../apue.h 
-	gcc -Wall -g -c $< -o $@
+	gcc -Wall -g -c $< -o $@ -DUSE_EXPLICIT_FWIDE
 
 fwidew: fwidew.o apue.o
 	gcc -Wall -g $^ -o $@
 
 fwidew.o: fwide.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ -DUSE_WCHAR
+	gcc -Wall -g -c $< -o $@ -DUSE_WCHAR -DUSE_EXPLICIT_FWIDE
 
 fsetbuf: fsetbuf.o apue.o
 	gcc -Wall -g $^ -o $@
