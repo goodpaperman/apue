@@ -1,4 +1,4 @@
-all: fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fprintf fsprintf fscanf pr_stdio tmpnam mktemp
+all: fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
 
 fwide: fwide.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -126,12 +126,18 @@ mktemp: mktemp.o apue.o
 mktemp.o: mktemp.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
+fflushline: fflushline.o apue.o
+	gcc -Wall -g $^ -o $@
+
+fflushline.o: fflushline.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
+
 apue.o: ../apue.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fprintf fsprintf fscanf pr_stdio tmpnam mktemp
+	-rm -f *.o core.* *.log *~ *.swp fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
 	@echo "end clean"
 
 .PHONY: clean
