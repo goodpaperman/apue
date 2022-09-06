@@ -1,5 +1,4 @@
 #include "../apue.h"
-#include <wchar.h> 
 
 int main (int argc, char* argv[])
 {

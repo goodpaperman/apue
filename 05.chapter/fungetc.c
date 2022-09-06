@@ -1,5 +1,4 @@
 #include "../apue.h"
-#include <wchar.h> 
 
 int main (int argc, char* argv[])
 {
@@ -36,18 +35,22 @@ int main (int argc, char* argv[])
   else 
     printf ("not read error\n"); 
 
-  int i = 0; 
+  unsigned long long i = 0; 
   char ch = 0; 
-  for (i=0; i<26; ++ i)
+  while (1)
   {
-    ch = 'a'+i; 
-    if (ungetc (ch, stdin) != ch)
+    ch = 'a' + i % 26; 
+    if (ungetc (ch, stdin) < 0)
     {
-      printf ("ungetc failed\n"); 
+      printf ("ungetc %c failed\n", ch); 
       break; 
     }
+    ++ i; 
+    if (i % 100000000 == 0)
+        printf ("unget %lld: %c\n", i, ch); 
   }
 
+  printf ("unget %lld chars\n", i); 
   if (ungetc (EOF, stdin) == EOF)
     printf ("ungetc EOF failed\n"); 
 
@@ -57,8 +60,12 @@ int main (int argc, char* argv[])
     if (ret == EOF)
       break; 
 
-    printf ("read %c\n", (unsigned char) ret); 
+    if (i % 100000000 == 0 || i <  30)
+        printf ("read %lld: %c\n", i, (unsigned char) ret); 
+
+    --i; 
   }
 
+  printf ("over!\n"); 
   return 0; 
 }
