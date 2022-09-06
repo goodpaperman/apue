@@ -258,16 +258,16 @@ void tell_buf (char const* name, FILE* fp)
 #ifdef _IO_UNBUFFERED
   if (fp->_flags & _IO_UNBUFFERED)
     printf ("unbuffered\n"); 
-  else 
+  else
 #endif
 #ifdef _IO_LINE_BUF
   if (fp->_flags & _IO_LINE_BUF)
     printf ("line-buffered\n"); 
-  else 
+  else
 #endif
     printf ("fully-buffered\n"); 
 
-  printf ("buffer size is %d\n", fp->_IO_buf_end - fp->_IO_buf_base); 
+  printf ("buffer size is %d, %p\n", fp->_IO_buf_end - fp->_IO_buf_base, fp->_IO_buf_base); 
   printf ("discriptor is %d\n\n", fileno (fp)); 
 }
 

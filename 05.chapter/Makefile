@@ -22,7 +22,7 @@ fgetbuf: fgetbuf.o apue.o
 	gcc -Wall -g $^ -o $@
 
 fgetbuf.o: fgetbuf.c ../apue.h 
-	gcc -Wall -g -c $< -o $@ #-DUSE_LINEBUF
+	gcc -Wall -g -c $< -o $@
 
 freopen: freopen.o apue.o
 	gcc -Wall -g $^ -o $@
