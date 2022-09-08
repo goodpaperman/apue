@@ -1,7 +1,6 @@
 #include "../apue.h"
 #include <stdio.h> 
 
-
 int main (int argc, char* argv[])
 {
   tell_buf ("stdin", stdin); 
@@ -28,23 +27,26 @@ int main (int argc, char* argv[])
 
   setvbuf (stderr, NULL, _IONBF, 0); 
   tell_buf ("stderr (no)", stderr); 
-  setvbuf (stdout, buf, _IOLBF, 2048); 
-  tell_buf ("stdout (line)", stdout); 
-  setvbuf (stderr, buf, _IOFBF, 1024); 
-  tell_buf ("stderr (full)", stderr); 
+  setvbuf (stdout, buf, _IOFBF, 2048); 
+  // fprintf (stdout, "a = %d\n", a); 
+  // fflush (stdout); 
+  tell_buf ("stdout (full, 2048)", stdout); 
+  setvbuf (stderr, buf, _IOLBF, 1024); 
+  // fprintf (stderr, "a = %d\n", a); 
+  tell_buf ("stderr (line, 1024)", stderr); 
   setvbuf (stdout, NULL, _IOLBF, 4096); 
-  printf ("a = %d\n", a); 
-  tell_buf ("stdout (line null)", stdout); 
+  // fprintf (stdout, "a = %d\n", a); 
+  tell_buf ("stdout (line null 4096)", stdout); 
   setvbuf (stderr, NULL, _IOFBF, 3072); 
-  fprintf (stderr, "a = %d\n", a); 
-  fflush (stderr); 
-  tell_buf ("stderr (full null)", stderr); 
-  setvbuf (stdout, NULL, _IOLBF, 0); 
-  printf ("a = %d\n", a); 
-  tell_buf ("stdout (line 0)", stdout); 
-  setvbuf (stderr, NULL, _IOFBF, 0); 
-  fprintf (stderr, "a = %d\n", a); 
-  fflush (stderr); 
-  tell_buf ("stderr (full 0)", stderr); 
+  // fprintf (stderr, "a = %d\n", a); 
+  // fflush (stderr); 
+  tell_buf ("stderr (full null 3072)", stderr); 
+  setvbuf (stdout, NULL, _IOFBF, 0); 
+  // fprintf (stdout, "a = %d\n", a); 
+  // fflush (stdout); 
+  tell_buf ("stdout (full null 0)", stdout); 
+  setvbuf (stderr, NULL, _IOLBF, 0); 
+  // fprintf (stderr, "a = %d\n", a); 
+  tell_buf ("stderr (line null 0)", stderr); 
   return 0; 
 }

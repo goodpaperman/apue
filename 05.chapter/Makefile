@@ -1,4 +1,4 @@
-all: fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fseeko32 fseeko64 fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
+all: fwide fwidew fsetbuf fgetbuf fgetbuf_fp fgetbuf_un freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fseeko32 fseeko64 fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
 
 fwide: fwide.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -22,6 +22,18 @@ fgetbuf: fgetbuf.o apue.o
 	gcc -Wall -g $^ -o $@
 
 fgetbuf.o: fgetbuf.c ../apue.h 
+	gcc -Wall -g -c $< -o $@
+
+fgetbuf_fp: fgetbuf_fp.o apue.o
+	gcc -Wall -g $^ -o $@
+
+fgetbuf_fp.o: fgetbuf_fp.c ../apue.h 
+	gcc -Wall -g -c $< -o $@ #-DFP_CHANGE
+
+fgetbuf_un: fgetbuf_un.o apue.o
+	gcc -Wall -g $^ -o $@
+
+fgetbuf_un.o: fgetbuf_un.c ../apue.h 
 	gcc -Wall -g -c $< -o $@
 
 freopen: freopen.o apue.o
@@ -149,7 +161,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp fwide fwidew fsetbuf fgetbuf freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fseeko32 fseeko64 fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
+	-rm -f *.o core.* *.log *~ *.swp fwide fwidew fsetbuf fgetbuf fgetbuf_fp fgetbuf_un freopen fdopen fdopen_t finout fgetc fungetc fgets fputs fcopyc fcopys fseek fseeko32 fseeko64 fprintf fsprintf fscanf pr_stdio tmpnam mktemp fflushline
 	@echo "end clean"
 
 .PHONY: clean
