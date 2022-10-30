@@ -13,6 +13,7 @@ my_getpwnam (char const* name)
   setpwent (); 
   while ((ptr = getpwent ()) != NULL)
   {
+    printf ("%s\n", ptr->pw_name); 
     if (strcmp (name, ptr->pw_name) == 0)
       break; 
   }
