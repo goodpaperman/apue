@@ -43,10 +43,7 @@ int main (int argc, char* argv[])
   printf ("(%d) open type %s, type %s ", getpid (), type1, type2);
   FILE* fp = fdopen (fd, type2); 
   if (fp == 0)
-  {
     err_sys ("fdopen failed"); 
-    close (fd); 
-  }
 
   //printf ("fdopen with type %s OK\n", type2); 
   printf ("OK\n"); 

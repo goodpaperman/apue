@@ -23,6 +23,15 @@ int main (int argc, char* argv[])
     printf ("not read error\n"); 
 
   ungetc ('O', stdin); 
+  ungetc ('1', stdin); 
+  ungetc ('2', stdin); 
+  ungetc ('3', stdin); 
+  ungetc ('4', stdin); 
+  ungetc ('5', stdin); 
+  ungetc ('6', stdin); 
+  ungetc ('7', stdin); 
+  ungetc ('8', stdin); 
+  ungetc ('9', stdin); 
   printf ("after ungetc\n"); 
 
   if (feof (stdin))
@@ -47,10 +56,10 @@ int main (int argc, char* argv[])
     }
     ++ i; 
     if (i % 100000000 == 0)
-        printf ("unget %lld: %c\n", i, ch); 
+        printf ("unget %llu: %c\n", i, ch); 
   }
 
-  printf ("unget %lld chars\n", i); 
+  printf ("unget %llu chars\n", i); 
   if (ungetc (EOF, stdin) == EOF)
     printf ("ungetc EOF failed\n"); 
 
@@ -61,9 +70,11 @@ int main (int argc, char* argv[])
       break; 
 
     if (i % 100000000 == 0 || i <  30)
-        printf ("read %lld: %c\n", i, (unsigned char) ret); 
+        printf ("read %llu: %c\n", i, (unsigned char) ret); 
 
-    --i; 
+    // prevent unsigned overflow
+    if (i > 0)
+        --i; 
   }
 
   printf ("over!\n"); 

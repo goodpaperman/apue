@@ -21,6 +21,17 @@ int main (int argc, char *argv[])
   strcpy (line, "/tmp/XXXXXX_that_is_a_temp_file"); 
   ptr = mktemp (line); 
   printf ("%p: %s, errno = %d\n", ptr, ptr, errno); 
+
+  strcpy (line, "/tmp/that_is_a_temp_file_XXXX"); 
+  printf ("%p: %s\n", line, line); 
+  ptr = mktemp (line); 
+  printf ("%p: %s, errno = %d\n", ptr, ptr, errno); 
+
+  strcpy (line, "/tmp/that_is_a_temp_file_XXXXXXXX"); 
+  printf ("%p: %s\n", line, line); 
+  ptr = mktemp (line); 
+  printf ("%p: %s, errno = %d\n", ptr, ptr, errno); 
+
   return 0; 
 }
 
