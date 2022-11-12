@@ -13,11 +13,12 @@ my_getspnam (char const* name)
   setspent (); 
   while ((ptr = getpwent ()) != NULL)
   {
+    printf ("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", ptr->sp_namp, ptr->sp_pwdp, ptr->sp_lstchg, ptr->sp_min, ptr->sp_max, ptr->sp_warn, ptr->sp_inact, ptr->sp_expire); 
     if (strcmp (name, ptr->sp_namp) == 0)
       break; 
   }
 
-  endpwent (); 
+  endspent (); 
   return (ptr); 
 }
 
