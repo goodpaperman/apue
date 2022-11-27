@@ -1,9 +1,9 @@
+#include "../apue.h"
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include "../apue.h"
 
 
 struct passwd* 

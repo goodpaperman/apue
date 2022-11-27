@@ -100,7 +100,7 @@ getgrnam_ent: getgrnam_ent.o apue.o
 	gcc -Wall -g $^ -o $@
 
 getgrnam_ent.o: getgrnam_ent.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE 
 
 getgrnam: getgrnam.o apue.o
 	gcc -Wall -g $^ -o $@

@@ -1,9 +1,10 @@
+#include "../apue.h"
 #include <grp.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include "../apue.h"
 
 
 struct group* 
@@ -15,6 +16,8 @@ my_getgrnam (char const* name)
   {
     if (strcmp (name, ptr->gr_name) == 0)
       break; 
+
+    printf ("%s\n", ptr->gr_name); 
   }
 
   endgrent (); 
@@ -24,7 +27,7 @@ my_getgrnam (char const* name)
 int
 main(int argc, char *argv[])
 {
-     struct group pwd;
+     struct group grp;
      struct group *result;
 
      if (argc != 2) {
@@ -38,9 +41,9 @@ main(int argc, char *argv[])
           exit(EXIT_FAILURE);
       }
 
-      pwd = *result; 
-      printf("Name: %s; GID: %d\n", pwd.gr_name, pwd.gr_gid);
-      for (int i=0; pwd.gr_mem[i] != 0; ++i)
-        printf ("  %s\n", pwd.gr_mem[i]); 
+      grp = *result; 
+      printf("Name: %s; GID: %d\n", grp.gr_name, grp.gr_gid);
+      for (int i=0; grp.gr_mem[i] != 0; ++i)
+        printf ("  %s\n", grp.gr_mem[i]); 
       exit(EXIT_SUCCESS);
 }
