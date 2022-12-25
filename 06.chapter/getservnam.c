@@ -23,7 +23,7 @@ main(int argc, char *argv[])
           exit(EXIT_FAILURE);
       }
 
-      printf("Name: %s; port: %d, proto: %s\n", result->s_name, result->s_port, result->s_proto);
+      printf("Name: %s; port: %d, proto: %s\n", result->s_name, ntohs(result->s_port), result->s_proto);
 
       printf ("-------alias-------------\n"); 
       char **ptr = result->s_aliases; 
