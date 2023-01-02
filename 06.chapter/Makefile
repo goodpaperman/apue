@@ -1,4 +1,10 @@
-all: getpwnam getpwnam_ent getspnam getspnam_ent getgrnam getgrnam_ent getgrps setgrps gethostnam gethostnam_ent getnetnam getnetnam_ent getprotonam getprotonam_ent getservnam getservnam_ent uname utmp hostname time timeshift timeprintf 
+all: getpwnam getpwnam_ent getspnam getspnam_ent getgrnam getgrnam_ent getgrps setgrps gethostnam gethostnam_ent getnetnam getnetnam_ent getprotonam getprotonam_ent getservnam getservnam_ent uname utmp hostname time timeshift timeprintf getutnam_ent
+
+getutnam_ent: getutnam_ent.o apue.o
+	gcc -Wall -g $^ -o $@
+
+getutnam_ent.o: getutnam_ent.c ../apue.h
+	gcc -Wall -g -c $< -o $@
 
 timeprintf: timeprintf.o apue.o
 	gcc -Wall -g $^ -o $@
