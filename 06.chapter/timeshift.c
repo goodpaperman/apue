@@ -4,7 +4,7 @@
 
 void print_tm (struct tm* t)
 {
-  printf ("%04d-%02d-%02d %02d:%02d:%02d (week day %d) (year day %d) (day time saving %d)\n", 
+  printf ("%04d-%02d-%02d %02d:%02d:%02d (week day %d) (year day %d) (daylight saving time %d)\n", 
     t->tm_year + 1900, 
     t->tm_mon + 1, 
     t->tm_mday, 
