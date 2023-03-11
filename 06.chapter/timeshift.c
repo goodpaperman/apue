@@ -27,7 +27,7 @@ main (int argc, char *argv[])
 
   int ret = 0; 
   time_t now = time (NULL); 
-  printf ("now = %ld\n", now); 
+  printf ("sizeof (time_t) = %d, now = %ld\n", sizeof(time_t), now); 
 
   struct tm *tm_now = localtime (&now); 
   print_tm (tm_now); 
