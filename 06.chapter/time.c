@@ -29,7 +29,8 @@ main (int argc, char *argv[])
   if (ret == -1)
     perror("gettimeofday"); 
 
-  printf ("ret %d, tv.sec = %ld, tv.usec = %ld\n", ret, tv.tv_sec, tv.tv_usec); 
+  printf ("sizeof (suseconds_t) = %d, sizeof (struct timeval) = %d, ret %d, tv.sec = %ld, tv.usec = %ld\n", 
+          sizeof (suseconds_t), sizeof (struct timeval), ret, tv.tv_sec, tv.tv_usec); 
 
   struct tm *tm1 = gmtime (&t1); 
   struct tm *tm2 = localtime (&t2); 
