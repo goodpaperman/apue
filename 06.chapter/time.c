@@ -22,13 +22,20 @@ void print_tm (struct tm* t)
     t->tm_isdst); 
 }
 
+void print_tz ()
+{
+  printf ("tzname[0] = %s, tzname[1] = %s, timezone = %d, daylight = %d\n", tzname[0], tzname[1], timezone, daylight); 
+}
+
 int 
 main (int argc, char *argv[])
 {
   int ret = 0; 
   time_t t1, t2; 
+  print_tz (); 
   t1 = time (&t2); 
   printf ("t1 = %ld, t2 = %ld\n", t1, t2); 
+  print_tz (); 
 
   struct timeval tv; 
   struct timezone tzp; 
@@ -39,16 +46,28 @@ main (int argc, char *argv[])
   printf ("sizeof (suseconds_t) = %d, sizeof (struct timeval) = %d, ret %d, tv.sec = %ld, tv.usec = %ld\n", 
           sizeof (suseconds_t), sizeof (struct timeval), ret, tv.tv_sec, tv.tv_usec); 
   printf ("minuteswest = %d, dsttime = %d\n", tzp.tz_minuteswest, tzp.tz_dsttime); 
+  print_tz (); 
+
+#if 0
+  struct tm *tm2 = localtime (&t2); 
+  print_tm (tm2); 
+  print_tz (); 
+#endif 
 
   struct tm *tm1 = gmtime (&t1); 
-  struct tm *tm2 = localtime (&t2); 
   print_tm (tm1); 
-  print_tm (tm2); 
+  print_tz (); 
 
-  time_t t3 = mktime (tm2); 
+#if 0
+  time_t t3 = mktime (tm1); 
   printf ("t3 = %ld\n", t3); 
+  print_tz (); 
+#endif
 
-  printf ("from asctime: %s", asctime (tm2)); 
-  printf ("from ctime: %s", ctime (&t3)); 
+  printf ("from asctime: %s", asctime (tm1)); 
+  print_tz (); 
+
+  printf ("from ctime: %s", ctime (&t1)); 
+  print_tz (); 
   return 0; 
 }
