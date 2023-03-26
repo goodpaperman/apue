@@ -17,7 +17,7 @@ void print_tm (struct tm* t)
     t->tm_hour, 
     t->tm_min, 
     t->tm_sec, 
-    t->tm_wday, 
+    t->tm_wday == 0 ? 7 : t->tm_wday, 
     t->tm_yday + 1, 
     t->tm_isdst); 
 }
@@ -25,6 +25,17 @@ void print_tm (struct tm* t)
 void print_tz ()
 {
   printf ("tzname[0] = %s, tzname[1] = %s, timezone = %d, daylight = %d\n", tzname[0], tzname[1], timezone, daylight); 
+
+#if 0
+  // reset tz information
+  char const* tz = getenv("TZ"); 
+  putenv("TZ="); 
+  tzset(); 
+
+  char tzval[1024] = { 0 }; 
+  sprintf (tzval, "TZ=%s", tz);
+  putenv(tzval); 
+#endif
 }
 
 int 
@@ -48,21 +59,17 @@ main (int argc, char *argv[])
   printf ("minuteswest = %d, dsttime = %d\n", tzp.tz_minuteswest, tzp.tz_dsttime); 
   print_tz (); 
 
-#if 0
-  struct tm *tm2 = localtime (&t2); 
-  print_tm (tm2); 
-  print_tz (); 
-#endif 
-
   struct tm *tm1 = gmtime (&t1); 
   print_tm (tm1); 
   print_tz (); 
 
-#if 0
+  struct tm *tm2 = localtime (&t2); 
+  print_tm (tm2); 
+  print_tz (); 
+
   time_t t3 = mktime (tm1); 
   printf ("t3 = %ld\n", t3); 
   print_tz (); 
-#endif
 
   printf ("from asctime: %s", asctime (tm1)); 
   print_tz (); 
