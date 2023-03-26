@@ -71,14 +71,22 @@ main (int argc, char *argv[])
   print_tm (&tm2); 
   print_tz (); 
 
-  time_t t3 = mktime (&tm1); 
+  struct tm tm3 = { 0 }; 
+  memcpy (&tm3, &tm1, sizeof (struct tm)); 
+#if 1
+  // tm3.tm_isdst = 0; 
+  time_t t3 = mktime (&tm3); 
   printf ("t3 = %ld\n", t3); 
+  print_tm (&tm3); 
   print_tz (); 
+#else 
+  time_t t3 = t1 + 18000; 
+#endif 
 
   printf ("from asctime: %s", asctime (&tm1)); 
   print_tz (); 
 
-  printf ("from ctime: %s", ctime (&t1)); 
+  printf ("from ctime: %s", ctime (&t3)); 
   print_tz (); 
   return 0; 
 }
