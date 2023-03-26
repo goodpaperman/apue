@@ -72,7 +72,12 @@ main (int argc, char *argv[])
   print_tz (); 
 
   struct tm tm3 = { 0 }; 
+#if 1
+  memcpy (&tm3, &tm2, sizeof (struct tm)); 
+#else 
   memcpy (&tm3, &tm1, sizeof (struct tm)); 
+#endif
+
 #if 1
   // tm3.tm_isdst = 0; 
   time_t t3 = mktime (&tm3); 
@@ -87,7 +92,7 @@ main (int argc, char *argv[])
   print_tz (); 
 
   printf ("from ctime: %s", ctime (&t3)); 
-  printf ("t1 = %ld\n", t1); 
+  printf ("t1 = %ld\n", t3); 
   print_tz (); 
   return 0; 
 }
