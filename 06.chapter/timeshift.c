@@ -11,7 +11,7 @@ void print_tm (struct tm* t)
     t->tm_hour, 
     t->tm_min, 
     t->tm_sec, 
-    t->tm_wday, 
+    t->tm_wday == 0 ? 7 : t->tm_wday, 
     t->tm_yday + 1, 
     t->tm_isdst); 
 }
