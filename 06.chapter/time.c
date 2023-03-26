@@ -87,6 +87,7 @@ main (int argc, char *argv[])
   print_tz (); 
 
   printf ("from ctime: %s", ctime (&t3)); 
+  printf ("t1 = %ld\n", t1); 
   print_tz (); 
   return 0; 
 }
