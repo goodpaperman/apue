@@ -59,20 +59,23 @@ main (int argc, char *argv[])
   printf ("minuteswest = %d, dsttime = %d\n", tzp.tz_minuteswest, tzp.tz_dsttime); 
   print_tz (); 
 
-  struct tm *tm1 = gmtime (&t1); 
-  print_tm (tm1); 
+  struct tm *tm0 = gmtime (&t1); 
+  struct tm tm1 = { 0 }; 
+  memcpy (&tm1, tm0, sizeof (struct tm)); 
+  print_tm (&tm1); 
   print_tz (); 
 
-  struct tm *tm2 = localtime (&t2); 
-  print_tm (tm2); 
+  tm0 = localtime (&t2); 
+  struct tm tm2 = { 0 }; 
+  memcpy (&tm2, tm0, sizeof (struct tm)); 
+  print_tm (&tm2); 
   print_tz (); 
 
-  printf ("gmt %p, local %p\n", tm1, tm2); 
-  time_t t3 = mktime (tm1); 
+  time_t t3 = mktime (&tm1); 
   printf ("t3 = %ld\n", t3); 
   print_tz (); 
 
-  printf ("from asctime: %s", asctime (tm1)); 
+  printf ("from asctime: %s", asctime (&tm1)); 
   print_tz (); 
 
   printf ("from ctime: %s", ctime (&t1)); 
