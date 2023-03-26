@@ -67,6 +67,7 @@ main (int argc, char *argv[])
   print_tm (tm2); 
   print_tz (); 
 
+  printf ("gmt %p, local %p\n", tm1, tm2); 
   time_t t3 = mktime (tm1); 
   printf ("t3 = %ld\n", t3); 
   print_tz (); 
