@@ -27,10 +27,26 @@ int
 main (int argc, char *argv[])
 {
   int ret = 0; 
-  time_t now = time (NULL); 
-  printf ("now = %ld\n", now); 
+  struct tm *t = NULL; 
+  if (argc == 1) 
+  {
+    time_t now = time (NULL); 
+    printf ("now = %ld\n", now); 
+    t = localtime (&now); 
+  }
+  else if (argc == 2)
+  {
+    static struct tm tmp = { 0}; 
+    char const* ptr = strptime (argv[1], "%F %T", &tmp); 
+    printf ("strptime ret:[%d] %s\n", ptr-argv[1], ptr); 
+    t = &tmp; 
+  }
+  else
+  {
+      printf ("Usage: ./timeprintf [YYYY-MM-DD HH:MM:SS]\n"); 
+      exit (1); 
+  }
 
-  struct tm *t = localtime (&now); 
   print_tm (t); 
   printf ("year group:\n");
   my_strftime ("%Y", t); 
