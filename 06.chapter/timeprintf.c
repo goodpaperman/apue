@@ -37,8 +37,18 @@ main (int argc, char *argv[])
   else if (argc == 2)
   {
     static struct tm tmp = { 0}; 
-    char const* ptr = strptime (argv[1], "%F %T", &tmp); 
-    printf ("strptime ret:[%d] %s\n", ptr-argv[1], ptr); 
+    char const* ptr = strptime (argv[1], "%F %T %z", &tmp); 
+    if (ptr == NULL)
+    {
+        printf ("parse time %s failed\n", argv[1]); 
+        return -1;
+    }
+
+    if (*ptr != NULL)
+    {
+        printf ("strptime ret:[%d] %s\n", ptr-argv[1], ptr); 
+    }
+
     t = &tmp; 
   }
   else
