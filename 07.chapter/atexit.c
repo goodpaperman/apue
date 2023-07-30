@@ -5,11 +5,18 @@ void do_dirty_work ()
   printf ("doing dirty works!\n"); 
 }
 
+int exit_status = 10; 
 void bye ()
 {
   printf ("bye, forks~\n"); 
-  //exit (2);  // no effect
-  //_exit (2);  // quit and no other atexit function running anymore !
+#if 1
+  exit (exit_status++);  // no effect
+  printf ("after exit (2)\n"); 
+#endif
+#if 1
+  _exit (3);  // quit and no other atexit function running anymore !
+  printf ("after _exit (3)\n"); 
+#endif
 }
 
 void times ()
