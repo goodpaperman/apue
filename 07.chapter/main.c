@@ -7,8 +7,10 @@ int main (int argc, char* argv[])
 void main (int argc, char* argv[])
 #elif 0
 void main ()
-#else
+#elif 0
 int main()
+#else
+int main (int argc, char* argv[], char* envp[])
 #endif
 {
   printf ("hello this is nake main!\n"); 
@@ -18,5 +20,9 @@ int main()
   return; 
 #elif 0
   exit (2); 
+#else
+  int i=0; 
+  for (i=0; envp[i]!=NULL; ++i)
+      printf ("%d: %s\n", i, envp[i]); 
 #endif
 }

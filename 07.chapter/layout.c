@@ -14,11 +14,9 @@ int main (int argc, char *argv[])
   char buf2[1024] = { 0 }; 
   char *buf3 = malloc(1024); 
   char *buf4 = malloc(1024); 
-  printf ("onstack %p (%lu), %p (%lu)\n", 
+  printf ("onstack %p, %p\n", 
     buf1, 
-    (unsigned long)buf1, 
-    buf2, 
-    (unsigned long)buf2); 
+    buf2); 
 
   extern char ** environ; 
   printf ("env %p\n", environ); 
@@ -28,26 +26,23 @@ int main (int argc, char *argv[])
   printf ("arg %p\n", argv); 
   for (int i=0; i < argc; ++ i)
     printf ("arg[%d] %p\n", i, argv[i]); 
-  printf ("onheap %p (%lu), %p (%lu)\n", 
+
+  printf ("onheap %p, %p\n", 
     buf3, 
-    (unsigned long)buf3, 
-    buf4, 
-    (unsigned long)buf4); 
+    buf4); 
 
   free (buf3); 
   free (buf4); 
 
-  printf ("on init %p (%lu), %p (%lu)\n", 
-    &data1, 
-    (unsigned long)&data1, 
-    &data2, 
-    (unsigned long)&data2); 
-
-  printf ("on bss %p (%lu), %p (%lu)\n", 
+  printf ("on bss %p, %p\n", 
     &data3, 
-    (unsigned long)&data3, 
-    &data4, 
-    (unsigned long)&data4); 
+    &data4); 
+
+  printf ("on init %p, %p\n", 
+    &data1, 
+    &data2); 
+
+  printf ("on code %p\n", main); 
 
 #if 0
   void *base = dlopen (NULL, RTLD_LAZY); 
