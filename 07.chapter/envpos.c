@@ -6,7 +6,7 @@ void print_envs()
   printf ("base %p\n", environ); 
   for (int i=0; environ && environ[i] != 0; ++ i)
   {
-    printf ("env[%d] = [%p]%s\n", i, environ[i], environ[i]); 
+    printf ("[%p]  %s\n", environ[i], environ[i]); 
   }
 }
 

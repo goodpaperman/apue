@@ -11,7 +11,7 @@ int main (int argc, char *argv[])
 {
   void *p1 = sbrk (0); 
   char *ptr = malloc (0), *p = 0; 
-  printf ("malloc (0) = %p, %lu\n", ptr, (unsigned long)ptr/8); 
+  printf ("malloc (0) = %p\n", ptr); 
 
   int n = 0, i = 0; 
   for (i=1; 1; i *= 2)
@@ -30,7 +30,7 @@ int main (int argc, char *argv[])
 
   p = realloc (ptr, 1); 
   ptr = p; 
-  printf ("after shrink %p, %lu\n", ptr, (unsigned long) ptr/8); 
+  printf ("after shrink %p\n", ptr); 
   //ptr[2] = 'a'; 
   free (ptr); 
   // crash!
