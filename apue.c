@@ -267,7 +267,9 @@ void tell_buf (char const* name, FILE* fp)
 #endif
     printf ("fully-buffered\n"); 
 
+#ifdef __linux__
   printf ("buffer size is %d, %p\n", fp->_IO_buf_end - fp->_IO_buf_base, fp->_IO_buf_base); 
+#endif
   printf ("discriptor is %d\n\n", fileno (fp)); 
 }
 
@@ -505,6 +507,9 @@ void pr_mask (sigset_t *mask)
 {
     int i; 
     char text[SIG2STR_MAX]; 
+#ifndef _NSIG
+#  define _NSIG 32
+#endif
     for (i=1; i<_NSIG; ++ i)
     {
         if (sigismember (mask, i))
@@ -642,7 +647,9 @@ static struct key_value signames[_NSIG]=
     SIGDEF(SIGPIPE), 
     SIGDEF(SIGALRM), 
     SIGDEF(SIGTERM), 
+#ifdef SIGSTKFLT
     SIGDEF(SIGSTKFLT), 
+#endif
     SIGDEF(SIGCHLD), 
     SIGDEF(SIGCONT), 
     SIGDEF(SIGSTOP), 
@@ -654,9 +661,15 @@ static struct key_value signames[_NSIG]=
     SIGDEF(SIGXFSZ), 
     SIGDEF(SIGVTALRM), 
     SIGDEF(SIGPROF), 
+#ifdef SIGWINCH
     SIGDEF(SIGWINCH), 
+#endif
+#ifdef SIGIO
     SIGDEF(SIGIO), 
+#endif
+#ifdef SIGPWR
     SIGDEF(SIGPWR), 
+#endif
     SIGDEF(SIGSYS), 
     SIGDEF(32), 
     SIGDEF(33), 

@@ -58,9 +58,11 @@ int main (int argc, char *argv[])
     printf ("setenv %s failed\n", key); 
 
   echo_env (key); 
+#ifdef __linux__
   ret = clearenv (); 
   if (ret != 0)
     printf ("clearenv failed\n"); 
+#endif
 
   extern char **environ; 
   printf ("environ = %p\n", environ); 
