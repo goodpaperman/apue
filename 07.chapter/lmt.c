@@ -261,6 +261,8 @@ int main (int argc, char *argv[])
 #define PROC_SIZE 50
   int base = 10; 
   int success_cnt = 0; 
+  ret = sysconf (_SC_CHILD_MAX); 
+  printf ("sysconf (_SC_CHILD_MAX) = %d\n", ret); 
   while (base < 1024 && base + PROC_SIZE < 1024)
   {
       printf ("============================\n"); 
@@ -271,6 +273,9 @@ int main (int argc, char *argv[])
       ret = setrlimit (RLIMIT_NPROC, &lmt);  
       if (ret == -1)
           err_sys ("set rlimit nproc failed"); 
+
+      ret = sysconf (_SC_CHILD_MAX); 
+      printf ("sysconf (_SC_CHILD_MAX) = %d\n", ret); 
 #  endif
 
       success_cnt = 0; 
