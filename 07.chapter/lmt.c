@@ -58,8 +58,8 @@ int main (int argc, char *argv[])
 
 #ifdef TEST_LIMIT_CORE
 #  if 1
-  lmt.rlim_cur = 1; 
-  lmt.rlim_max = 1024; 
+  lmt.rlim_cur = 1024; 
+  lmt.rlim_max = 102400; 
   ret = setrlimit (RLIMIT_CORE, &lmt);  
   if (ret == -1)
     err_sys ("set rlimit core failed"); 
@@ -100,12 +100,12 @@ int main (int argc, char *argv[])
   if (fd == -1)
     err_sys ("open file failed"); 
 
-  char buf[16]; 
+  char buf[32]; 
   int total = 0; 
   while (1)
   {
-    //ret = fwrite (buf, 16, 1, fp); 
-    ret = write (fd, buf, 16); 
+    //ret = fwrite (buf, 32, 1, fp); 
+    ret = write (fd, buf, 32); 
     if (ret == -1)
       err_sys ("write failed"); 
 
@@ -156,23 +156,34 @@ int main (int argc, char *argv[])
 
 #ifdef TEST_LIMIT_MEMLOCK
 #  if 1
-  lmt.rlim_cur = 1024; 
-  lmt.rlim_max = 1024; 
+  lmt.rlim_cur = 32 * 1024; 
+  lmt.rlim_max = 64 * 1024; 
   ret = setrlimit (RLIMIT_MEMLOCK, &lmt);  
   if (ret == -1)
     err_sys ("set rlimit memlock failed"); 
 #  endif 
-  char *ptr = malloc (1024 * 1024); 
+  char *ptr = malloc (32 * 1024); 
   if (ptr == NULL)
     err_sys ("malloc failed"); 
    
-  printf ("alloc 1 MB success!\n"); 
-  ret = mlock (ptr, 1024 * 1024); 
-  if (ret == -1)
-    err_sys ("mlock failed, %d", errno); 
+  printf ("alloc 32K success!\n"); 
+#define BLOCK_NUM 32
+  for (int i=0; i<BLOCK_NUM; ++ i)
+  {
+      ret = mlock (ptr + 1024 * i, 1024); 
+      if (ret == -1)
+          err_sys ("mlock failed, %d", errno); 
 
-  printf ("lock 1 MB success!\n"); 
-  munlock (ptr, 1024 * 1024); 
+      printf ("lock 1 KB success!\n"); 
+  }
+  for (int i=0; i<BLOCK_NUM; ++ i)
+  {
+      ret = munlock (ptr + 1024 * i, 1024); 
+      if (ret == -1)
+          err_sys ("munlock failed, %d", errno); 
+
+      printf ("unlock 1 KB success!\n"); 
+  }
   free (ptr); 
 #endif 
 
@@ -219,6 +230,9 @@ int main (int argc, char *argv[])
   ret = setrlimit (RLIMIT_NOFILE, &lmt);  
   if (ret == -1)
     err_sys ("set rlimit nofile failed"); 
+
+  ret = sysconf (_SC_OPEN_MAX); 
+  printf ("sysconf (_SC_OPEN_MAX) = %d\n", ret); 
 #  endif
 
 #define FD_SIZE 10 
