@@ -226,7 +226,7 @@ int main (int argc, char *argv[])
 #ifdef TEST_LIMIT_NOFILE
 #  if 1
   lmt.rlim_cur = 5; 
-  lmt.rlim_max = 5; 
+  lmt.rlim_max = 10; 
   ret = setrlimit (RLIMIT_NOFILE, &lmt);  
   if (ret == -1)
     err_sys ("set rlimit nofile failed"); 
@@ -258,32 +258,53 @@ int main (int argc, char *argv[])
 #endif 
 
 #ifdef TEST_LIMIT_NPROC
+#define PROC_SIZE 50
+  int base = 10; 
+  int success_cnt = 0; 
+  while (base < 1024 && base + PROC_SIZE < 1024)
+  {
+      printf ("============================\n"); 
+      printf ("detect with limit based %d\n", base); 
 #  if 1
-  lmt.rlim_cur = 65; 
-  lmt.rlim_max = 65; 
-  ret = setrlimit (RLIMIT_NPROC, &lmt);  
-  if (ret == -1)
-    err_sys ("set rlimit nproc failed"); 
+      lmt.rlim_cur = base; 
+      lmt.rlim_max = 1024; 
+      ret = setrlimit (RLIMIT_NPROC, &lmt);  
+      if (ret == -1)
+          err_sys ("set rlimit nproc failed"); 
 #  endif
 
-#define PROC_SIZE 10 
-  int pids[PROC_SIZE] = { 0 }; 
-  for (int i=0; i<PROC_SIZE; ++ i)
-  {
-    pids[i] = fork (); 
-    if (pids[i] == -1)
-      err_sys ("fork failed"); 
-    if (pids[i] == 0)
-    {
-      printf ("child %d running\n", getpid ()); 
+      success_cnt = 0; 
+      int pids[PROC_SIZE] = { 0 }; 
+      for (int i=0; i<PROC_SIZE; ++ i)
+      {
+          pids[i] = fork (); 
+          if (pids[i] == -1)
+          {
+              if (success_cnt > 0)
+                  err_sys ("fork failed"); 
+              else 
+              {
+                  err_msg ("fork failed"); 
+                  break; 
+              }
+          }
+          else if (pids[i] == 0)
+          {
+              printf ("child %d running\n", getpid ()); 
+              sleep (1);
+              exit (0); 
+          }
+
+          printf ("create child %d\n", pids[i]); 
+          success_cnt ++; 
+      }
+
       sleep (1);
-      break; 
-    }
-
-    printf ("create child %d\n", pids[i]); 
+      if (base > PROC_SIZE)
+          base += PROC_SIZE; 
+      else 
+          base *= 2; 
   }
-
-  sleep (1);
 #endif 
 
 #ifdef TEST_LIMIT_STACK
