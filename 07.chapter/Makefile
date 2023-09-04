@@ -1,4 +1,4 @@
-all: main atexit atexit_term echo env envop layout layout_s realloc envpos jump jumpvar jumpvar_opt rlimit lmt_as lmt_data lmt_core lmt_cpu lmt_fsize lmt_locks lmt_memlock lmt_msgque lmt_nofile lmt_nproc lmt_stack ret13 getarg 
+all: main dumpexit atexit atexit_term echo env envop layout layout_s realloc envpos jump jumpvar jumpvar_opt rlimit lmt_as lmt_data lmt_core lmt_cpu lmt_fsize lmt_locks lmt_memlock lmt_msgque lmt_nofile lmt_nproc lmt_stack ret13 getarg 
 
 getarg: getarg.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -144,6 +144,12 @@ echo: echo.o apue.o
 echo.o: echo.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99
 
+dumpexit: dumpexit.o apue.o
+	gcc -Wall -g $^ -o $@ -static
+
+dumpexit.o: dumpexit.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
 atexit: atexit.o apue.o
 	gcc -Wall -g $^ -o $@
 
@@ -167,7 +173,7 @@ apue.o: ../apue.c ../apue.h
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp main atexit atexit_term echo env envop layout layout_s realloc envpos jump jumpvar jumpvar_opt rlimit lmt_as lmt_data lmt_core lmt_cpu lmt_fsize lmt_locks lmt_memlock lmt_msgque lmt_nofile lmt_nproc lmt_stack ret13 getarg
+	-rm -f *.o core.* *.log *~ *.swp main dumpexit atexit atexit_term echo env envop layout layout_s realloc envpos jump jumpvar jumpvar_opt rlimit lmt_as lmt_data lmt_core lmt_cpu lmt_fsize lmt_locks lmt_memlock lmt_msgque lmt_nofile lmt_nproc lmt_stack ret13 getarg
 	@echo "end clean"
 
 .PHONY: clean
