@@ -39,11 +39,11 @@ int main (int argc, char *argv[])
             {
                 time_t end = time(NULL); 
                 printf ("duplicated pid find: %u, total %lu, elapse %lu\n", pid, pids.size(), end-start); 
+                // printf ("sizeof (pid_t) = %d\n", sizeof (pid_t)); 
                 break; 
             }
         }
     }
 
-    printf ("sizeof (pid_t) = %d\n", sizeof (pid_t)); 
     exit (0); 
 }
