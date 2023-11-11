@@ -2,14 +2,15 @@
 #include <stdlib.h> 
 #include <stdio.h> 
 
-// for mem_addr
+// for virtual2physical
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdint.h>
 
-unsigned long mem_addr(unsigned long vaddr)
+unsigned long virtual2physical(void* ptr)
 {
+    unsigned long vaddr = (unsigned long)ptr; 
     int pageSize = getpagesize();
     unsigned long v_pageIndex = vaddr / pageSize;
     unsigned long v_offset = v_pageIndex * sizeof(uint64_t);
@@ -50,8 +51,19 @@ int main()
 {
     int v_count = 42; 
     static int s_count = 1024; 
-    printf ("%d: global ptr %x:%x, local ptr %x:%x, static ptr %x:%x\n", getpid(), &g_count, mem_addr(&g_count), &v_count, mem_addr(&v_count), &s_count, mem_addr(&s_count)); 
+    int* h_count = (int*)malloc(sizeof(int)); 
+    *h_count = 36; 
+    printf ("%d: global ptr 0x%x:0x%x, local ptr 0x%x:0x%x, static ptr 0x%x:0x%x, heap ptr 0x%x:0x%x\n", getpid(), 
+            &g_count, virtual2physical(&g_count), 
+            &v_count, virtual2physical(&v_count), 
+            &s_count, virtual2physical(&s_count), 
+            h_count, virtual2physical(h_count)); 
+
+#if 1
     int pid = fork(); 
+#else
+    int pid = vfork(); 
+#endif
     if (pid < 0)
     {
         // error
@@ -61,9 +73,12 @@ int main()
     {
         // child
         printf ("%d spawn from %d\n", getpid(), getppid()); 
+#if 1
         g_count ++; 
         v_count ++; 
         s_count ++; 
+        (*h_count) ++; 
+#endif
     }
     else 
     {
@@ -72,7 +87,12 @@ int main()
         printf ("%d create %d\n", getpid(), pid); 
     }
 
-    printf ("%d: global %d, local %d, static %d\n", getpid(), g_count, v_count, s_count); 
-    printf ("%d: global ptr %x:%x, local ptr %x:%x, static ptr %x:%x\n", getpid(), &g_count, mem_addr(&g_count), &v_count, mem_addr(&v_count), &s_count, mem_addr(&s_count)); 
+    printf ("%d: global %d, local %d, static %d, heap %d\n", getpid(), g_count, v_count, s_count, *h_count); 
+    printf ("%d: global ptr 0x%x:0x%x, local ptr 0x%x:0x%x, static ptr 0x%x:0x%x, heap ptr 0x%x:0x%x\n", getpid(), 
+            &g_count, virtual2physical(&g_count), 
+            &v_count, virtual2physical(&v_count), 
+            &s_count, virtual2physical(&s_count), 
+            h_count, virtual2physical(h_count)); 
+
     return 0; 
 }

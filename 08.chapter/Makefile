@@ -1,4 +1,11 @@
-all: forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie
+all: forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans
+	
+memtrans: memtrans.o
+	gcc -Wall -g $^ -o $@
+
+memtrans.o: memtrans.c
+	gcc -Wall -g -c $< -o $@ -std=c99
+
 
 zombie: zombie.o apue.o
 	gcc -Wall -g $^ -o $@
