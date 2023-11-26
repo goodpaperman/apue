@@ -59,10 +59,10 @@ int main()
             &s_count, virtual2physical(&s_count), 
             h_count, virtual2physical(h_count)); 
 
-#if 1
-    int pid = fork(); 
-#else
+#ifdef USE_VFORK
     int pid = vfork(); 
+#else
+    int pid = fork(); 
 #endif
     if (pid < 0)
     {
@@ -79,11 +79,24 @@ int main()
         s_count ++; 
         (*h_count) ++; 
 #endif
+
+#ifdef USE_VFORK
+        printf ("%d: global %d, local %d, static %d, heap %d\n", getpid(), g_count, v_count, s_count, *h_count); 
+        printf ("%d: global ptr 0x%x:0x%x, local ptr 0x%x:0x%x, static ptr 0x%x:0x%x, heap ptr 0x%x:0x%x\n", getpid(), 
+                &g_count, virtual2physical(&g_count), 
+                &v_count, virtual2physical(&v_count), 
+                &s_count, virtual2physical(&s_count), 
+                h_count, virtual2physical(h_count)); 
+
+        _exit(0);
+#endif
     }
     else 
     {
         // parent
+#ifndef USE_VFORK
         sleep (1); 
+#endif
         printf ("%d create %d\n", getpid(), pid); 
     }
 
