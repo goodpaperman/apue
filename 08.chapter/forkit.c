@@ -88,7 +88,11 @@ int main()
                 &s_count, virtual2physical(&s_count), 
                 h_count, virtual2physical(h_count)); 
 
+#  if 1
         _exit(0);
+#  else
+        exit(0); 
+#  endif
 #endif
     }
     else 
