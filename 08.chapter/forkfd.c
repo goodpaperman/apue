@@ -4,7 +4,7 @@
 
 int main()
 {
-#if 1
+#if 0
     setvbuf (stdout, NULL, _IOFBF, 0);  
     printf ("before fork\n"); 
 #elif 0
@@ -14,6 +14,7 @@ int main()
 #endif
 
 #ifdef USE_VFORK
+    char buf[128] = { 0 };  
     int pid = vfork();
 #else
     int pid = fork();
@@ -43,16 +44,20 @@ int main()
     else
     {
         // parent
-#ifndef USE_VFOKR
+#ifndef USE_VFORK
         sleep (1);
         printf ("%d create %d\n", getpid(), pid);
 #else
-        char buf[128] = { 0 };  
         sprintf (buf, "%d create %d\n", getpid(), pid);
-        write (buf, strlen(buf)); 
+        write (STDOUT_FILENO, buf, strlen(buf)); 
 #endif
     }
 
+#ifdef USE_VFORK
+    sprintf (buf, "after fork\n"); 
+    write (STDOUT_FILENO, buf, strlen(buf)); 
+#else
     printf ("after fork\n"); 
+#endif
     return 0;
 }
