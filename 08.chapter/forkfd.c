@@ -28,6 +28,15 @@ int main()
         // child
         printf ("%d spawn from %d\n", getpid(), getppid());
 #ifdef USE_VFORK
+#  if 1
+        fclose (stdin); 
+        fclose (stdout); 
+        fclose (stderr); 
+#  else
+        close (STDIN_FILENO); 
+        close (STDOUT_FILENO); 
+        close (STDERR_FILENO); 
+#  endif
         exit(0); 
 #endif
     }
@@ -36,8 +45,12 @@ int main()
         // parent
 #ifndef USE_VFOKR
         sleep (1);
-#endif
         printf ("%d create %d\n", getpid(), pid);
+#else
+        char buf[128] = { 0 };  
+        sprintf (buf, "%d create %d\n", getpid(), pid);
+        write (buf, strlen(buf)); 
+#endif
     }
 
     printf ("after fork\n"); 
