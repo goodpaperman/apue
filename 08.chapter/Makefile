@@ -152,7 +152,7 @@ fork_pthread: fork_pthread.o apue.o
 	gcc -Wall -g $^ -o $@ -pthread
 
 fork_pthread.o: fork_pthread.c ../apue.h
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 #-DFORK_IN_THREAD
 
 pid: pid.o
 	g++ -Wall -g $^ -o $@ 
