@@ -33,17 +33,8 @@ int main (int argc, char *argv[])
     }
     else 
     {
-        printf ("fork and exec child %u\n", pid); 
-        //sleep (6); 
-        ret = pthread_join (tid, NULL); 
-        if (ret != 0)
-            err_sys ("pthread_join"); 
-
-        printf ("wait thread %lu\n", tid); 
-
-        int status = 0; 
-        pid = wait(&status); 
-        printf ("wait child %u return %d\n", pid, status); 
+        printf ("fork and exec child %u in thread %lu\n", pid, pthread_self()); 
+        sleep (4); 
     }
 
     exit (0); 
