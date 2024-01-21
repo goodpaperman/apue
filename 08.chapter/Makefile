@@ -1,4 +1,4 @@
-all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans
+all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans
 	
 memtrans: memtrans.o
 	gcc -Wall -g $^ -o $@
@@ -154,6 +154,12 @@ fork_pthread: fork_pthread.o apue.o
 fork_pthread.o: fork_pthread.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99 #-DFORK_IN_THREAD
 
+fork_zombie: fork_zombie.o apue.o
+	gcc -Wall -g $^ -o $@ -pthread
+
+fork_zombie.o: fork_zombie.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99
+
 pid: pid.o
 	g++ -Wall -g $^ -o $@ 
 
@@ -285,7 +291,7 @@ clonefd.o: clonefd.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans
+	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans
 	@echo "end clean"
 
 .PHONY: clean
