@@ -35,6 +35,10 @@ int main (int argc, char *argv[])
             err_sys ("times error"); 
 
         pr_times (end-begin, &start, &stop); 
+#if 0
+        begin = end; 
+        start = stop; 
+#endif 
         printf ("---------------------------------\n"); 
     }
 
