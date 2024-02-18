@@ -1,3 +1,3 @@
-#! ./echoall script-arg test foo bar
+#! ./echoall -f test foo bar
 # ./echoall aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
