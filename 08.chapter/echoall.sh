@@ -1,2 +1,2 @@
-#! ./echoall script-arg
+#! ./echoall script-arg test foo bar
 
