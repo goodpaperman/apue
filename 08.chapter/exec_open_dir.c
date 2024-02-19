@@ -6,7 +6,6 @@
 #include <dirent.h> 
 
 char *str = 0; 
-
 int main (int argc, char *argv[])
 {
   int fd = 0; 
@@ -36,7 +35,7 @@ int main (int argc, char *argv[])
   else 
   {
     str = strdup ("hello world"); 
-#if 0
+#ifdef USE_FDOPENDIR
     fd = open(".", O_RDONLY); 
     if (fd == -1)
         err_sys ("open"); 
