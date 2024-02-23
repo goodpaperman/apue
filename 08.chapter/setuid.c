@@ -6,10 +6,10 @@
 
 void print_ids ()
 {
-#if 0
-    char buf[1024]={ 0 }; 
-    sprintf (buf, "ps -p %d -eo ppid,pid,ruid,euid,suid,cmd", getpid()); 
-    system(buf); 
+#ifdef __APPLE__
+    uid_t ruid = getuid(); 
+    uid_t euid = geteuid(); 
+    printf ("%d: ruid %d, euid %d\n", getpid(), ruid, euid); 
 #else
     uid_t ruid = 0; 
     uid_t euid = 0; 
