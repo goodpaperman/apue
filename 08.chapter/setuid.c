@@ -17,16 +17,21 @@ void print_ids (uid_t ouid)
     int ret = getresuid (&ruid, &euid, &suid); 
     if (ret == 0)
     {
-        printf ("%d: ruid %d, euid %d, suid %d, ouid %d\n", getpid(), ruid, euid, suid, ouid); 
-        if (ouid != 0 && ruid == euid && euid == suid && suid != ouid)
+        if (ouid > 0)
         {
-            printf ("all uid same %d, change back to old %d\n", ruid, ouid); 
-            ret = seteuid (ouid); 
-            if (ret != 0)
-                err_sys ("seteuid"); 
-            else 
-                print_ids (0); 
+            printf ("%d: ruid %d, euid %d, suid %d, ouid %d\n", getpid(), ruid, euid, suid, ouid); 
+            if (ruid == euid && euid == suid && suid != ouid)
+            {
+                printf ("all uid same %d, change back to old %d\n", ruid, ouid); 
+                ret = seteuid (ouid); 
+                if (ret != 0)
+                    err_sys ("seteuid"); 
+                else 
+                    print_ids (0); 
+            }
         }
+        else 
+            printf ("%d: ruid %d, euid %d, suid %d\n", getpid(), ruid, euid, suid); 
     }
     else 
         err_sys ("getresuid"); 

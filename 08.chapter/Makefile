@@ -1,5 +1,11 @@
-all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid
+all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid fork_setuid
 	
+fork_setuid: fork_setuid.o apue.o
+	gcc -Wall -g $^ -o $@
+
+fork_setuid.o: fork_setuid.c
+	gcc -Wall -g -c $< -o $@ -std=c99
+
 setuid: setuid.o apue.o
 	gcc -Wall -g $^ -o $@
 
@@ -296,7 +302,7 @@ clonefd.o: clonefd.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid
+	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid fork_setuid
 	@echo "end clean"
 
 .PHONY: clean
