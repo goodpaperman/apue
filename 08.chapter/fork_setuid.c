@@ -42,14 +42,21 @@ int main (int argc, char *argv[])
     {
         // children 
         print_ids ("after fork"); 
-#if 0
+#if 1
         int ret = seteuid (ruid); 
         if (ret == -1)
             err_sys ("seteuid"); 
 
         print_ids ("before exec"); 
 #endif 
-        execlp ("./setuid", "./setuid", NULL); 
+
+#if 1
+        execlp ("./setuid", "setuid", NULL); 
+#else
+        char tmp[128] = { 0 }; 
+        sprintf (tmp, "%u", euid); 
+        execlp ("./setuid", "setuid", tmp, "noop", "noop", NULL); 
+#endif
         err_sys ("execlp"); 
     }
     else 

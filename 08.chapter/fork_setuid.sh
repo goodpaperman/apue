@@ -11,6 +11,7 @@ echo "    foo: ${foo_uid}"
 echo "    bar: ${bar_uid}"
 
 cd /tmp
+# chown foo:test ./setuid
 chown bar:test ./fork_setuid
 chmod u+s ./fork_setuid
 su foo -c ./fork_setuid
