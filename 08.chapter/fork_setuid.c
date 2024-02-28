@@ -29,7 +29,7 @@ int main (int argc, char *argv[])
     uid_t euid = geteuid(); 
     if (ruid == euid)
     {
-        printf ("ruid %d != euid %d, please set me set-uid before run this test !\n"); 
+        printf ("ruid %d != euid %d, please set me set-uid before run this test !\n", ruid, euid); 
         exit (1); 
     }
 
