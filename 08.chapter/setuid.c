@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
     else if (argc == 3)
     {
         char* ruid=argv[1]; 
-        char* euid=argv[1]; 
+        char* euid=argv[2]; 
         uid_t ouid = getuid(); 
         int ret = setreuid(atol(ruid), atol(euid)); 
         if (ret != 0)
