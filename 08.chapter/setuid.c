@@ -17,7 +17,7 @@ void print_ids (uid_t ouid)
     int ret = getresuid (&ruid, &euid, &suid); 
     if (ret == 0)
     {
-        if (ouid > 0)
+        if (ouid != -1) 
         {
             printf ("%d: ruid %d, euid %d, suid %d, ouid %d\n", getpid(), ruid, euid, suid, ouid); 
             if (ruid == euid && euid == suid && suid != ouid)
@@ -27,7 +27,7 @@ void print_ids (uid_t ouid)
                 if (ret != 0)
                     err_sys ("seteuid"); 
                 else 
-                    print_ids (0); 
+                    print_ids (-1); 
             }
         }
         else 
@@ -43,11 +43,12 @@ int main (int argc, char *argv[])
     if (argc == 2)
     {
         char* uid=argv[1]; 
+        uid_t ouid = geteuid(); 
         int ret = setuid(atol(uid)); 
         if (ret != 0)
             err_sys ("setuid"); 
 
-        print_ids(0); 
+        print_ids(ouid); 
     }
     else if (argc == 3)
     {
@@ -69,11 +70,11 @@ int main (int argc, char *argv[])
         if (ret != 0)
             err_sys ("seteuid"); 
 
-        print_ids(0); 
+        print_ids(-1); 
     }
     else 
     {
-        print_ids(0); 
+        print_ids(-1); 
     }
 
     return 0; 
