@@ -34,6 +34,18 @@ void print_ids (uid_t ouid)
         else 
 #endif
             printf ("%d: ruid %d, euid %d, suid %d\n", getpid(), ruid, euid, suid); 
+
+#ifdef TEST_CHANGE_ANY_USER_WHEN_ALL_ROOT
+        if (ruid == 0 && euid == 0)
+        {
+            // in root, try setreuid(foo, bar)
+            int ret = setreuid(1003, 1004); 
+            if (ret != 0)
+                err_sys ("setreuid"); 
+            else 
+                print_ids (-1); 
+        }
+#endif
     }
     else 
         err_sys ("getresuid"); 
