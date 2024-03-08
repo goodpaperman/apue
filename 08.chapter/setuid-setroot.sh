@@ -21,8 +21,14 @@ su foo -c ./setuid
 echo "test setuid(foo)"
 su foo -c "./setuid ${foo_uid}"
 
+echo "test setuid(bar)"
+su foo -c "./setuid ${bar_uid}"
+
 echo "test seteuid(foo)"
 su foo -c "./setuid ${foo_uid} noop noop"
+
+echo "test seteuid(bar)"
+su foo -c "./setuid ${bar_uid} noop noop"
 
 echo "test setreuid(root, foo)"
 su foo -c "./setuid ${root_uid} ${foo_uid}"

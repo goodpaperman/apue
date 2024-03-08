@@ -17,6 +17,7 @@ void print_ids (uid_t ouid)
     int ret = getresuid (&ruid, &euid, &suid); 
     if (ret == 0)
     {
+#ifdef TEST_CHANGE_BACK
         if (ouid != -1) 
         {
             printf ("%d: ruid %d, euid %d, suid %d, ouid %d\n", getpid(), ruid, euid, suid, ouid); 
@@ -31,6 +32,7 @@ void print_ids (uid_t ouid)
             }
         }
         else 
+#endif
             printf ("%d: ruid %d, euid %d, suid %d\n", getpid(), ruid, euid, suid); 
     }
     else 
