@@ -6,11 +6,7 @@
 
 void print_ids (uid_t ouid)
 {
-#ifdef __APPLE__
-    uid_t ruid = getuid(); 
-    uid_t euid = geteuid(); 
-    printf ("%d: ruid %d, euid %d\n", getpid(), ruid, euid); 
-#else
+#ifdef __linux__
     uid_t ruid = 0; 
     uid_t euid = 0; 
     uid_t suid = 0;
@@ -49,6 +45,10 @@ void print_ids (uid_t ouid)
     }
     else 
         err_sys ("getresuid"); 
+#else 
+    uid_t ruid = getuid(); 
+    uid_t euid = geteuid(); 
+    printf ("%d: ruid %d, euid %d\n", getpid(), ruid, euid); 
 #endif
 }
 
