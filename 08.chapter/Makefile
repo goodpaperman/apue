@@ -1,4 +1,4 @@
-all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid fork_setuid
+all: clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct exec_loop loginname proctime childtime tsys zombie memtrans setuid fork_setuid
 	
 fork_setuid: fork_setuid.o apue.o
 	gcc -Wall -g $^ -o $@
@@ -52,6 +52,12 @@ oacct: oacct.o apue.o
 	gcc -Wall -g $^ -o $@
 
 oacct.o: oacct.c ../apue.h
+	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
+
+exec_loop: exec_loop.o apue.o
+	gcc -Wall -g $^ -o $@
+
+exec_loop.o: exec_loop.c ../apue.h
 	gcc -Wall -g -c $< -o $@ -std=c99 -D_POSIX_SOURCE
 
 vacct: vacct.o apue.o
@@ -302,7 +308,7 @@ clonefd.o: clonefd.c
 
 clean: 
 	@echo "start clean..."
-	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct loginname proctime childtime tsys zombie memtrans setuid fork_setuid
+	-rm -f *.o core.* *.log *~ *.swp clonefd forkfd forkit fork fork_stdout fork_nproc vfork vforkex vforkest wait waitpid waitid waitusage prexit daemon race exec_on_close exec_no_close exec_open_dir exec_atexit exec_pthread fork_pthread fork_zombie pid exec_signal exec_mmap exec_sem exec execp echoall uucp tip pit tpi pti system login libhack.so checkin vacct oacct exec_loop loginname proctime childtime tsys zombie memtrans setuid fork_setuid
 	@echo "end clean"
 
 .PHONY: clean

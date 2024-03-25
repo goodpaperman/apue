@@ -27,8 +27,8 @@ int main (void)
         err_sys ("fork error"); 
     else if (pid != 0) {
         printf ("3rd child, dd \n"); 
-        //execl ("/usr/bin/dd", "dd", "if=/boot", "of=/dev/null", NULL); 
-        execl ("/bin/dd", "dd", "if=/boot/efi/EFI/redhat/grub.efi", "of=/dev/null", NULL); 
+        execl ("/usr/bin/dd", "dd", "if=/etc/hosts", "of=/dev/null", NULL); 
+        //execl ("/bin/dd", "dd", "if=/boot/efi/EFI/redhat/grub.efi", "of=/dev/null", NULL); 
         printf ("3rd child exit\n"); 
         exit (7); 
     }
