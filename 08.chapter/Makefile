@@ -10,7 +10,7 @@ setuid: setuid.o apue.o
 	gcc -Wall -g $^ -o $@
 
 setuid.o: setuid.c
-	gcc -Wall -g -c $< -o $@ -std=c99
+	gcc -Wall -g -c $< -o $@ -std=c99 #-DTEST_UPDATE_RUID
 
 memtrans: memtrans.o
 	gcc -Wall -g $^ -o $@

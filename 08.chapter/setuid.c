@@ -29,6 +29,18 @@ void print_ids (uid_t ouid)
         }
         else 
 #endif
+#ifdef TEST_UPDATE_RUID
+       if (ruid == euid && euid != suid)
+       {
+           printf ("%d: ruid %d, euid %d, suid %d\n", getpid(), ruid, euid, suid); 
+           printf ("all uid same except suid %d, try to update ruid\n", ruid); 
+           ret = setreuid (ruid, -1); 
+           if (ret != 0)
+               err_sys ("setreuid"); 
+           else 
+               getresuid (&ruid, &euid, &suid); 
+       }
+#endif
             printf ("%d: ruid %d, euid %d, suid %d\n", getpid(), ruid, euid, suid); 
 
 #ifdef TEST_CHANGE_ANY_USER_WHEN_ALL_ROOT
